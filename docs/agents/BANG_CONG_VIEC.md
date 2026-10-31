@@ -8,9 +8,10 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 
 | ID | Việc | FR/NFR | Chủ trì | Review | Phụ thuộc | Trạng thái |
 |---|---|---|---|---|---|---|
-| T200 | Hợp đồng API GĐ2 (`docs/agents/design/API_GD2.md`): endpoint, request/response, mã lỗi, quyền từng vai trò | FR02–FR08, FR16, FR17 | KTS | RV, FE, BE | – | TODO |
+| T199 | Quyết định nâng `zod` 3 → 4 (lỗ hổng GHSA-mrhx-c7xc-m3w5, mức high) hoặc biện pháp thay thế (giới hạn kích thước body/mảng); ghi `design/QD_ZOD.md` | NFR02 | KTS | RV, BM | – | TODO |
+| T200 | Hợp đồng API GĐ2 (`docs/agents/design/API_GD2.md`): endpoint, request/response, mã lỗi, quyền từng vai trò | FR02–FR08, FR16, FR17 | KTS | RV, FE, BE | T199 | TODO |
 | T201 | `docker-compose.test.yml` Postgres 16 + pg_trgm/unaccent; script reset DB cho test; tách DB dev/test | NFR08 | DO | RV, QA | – | TODO |
-| T202 | ESLint + Prettier + GitHub Actions chạy lint + test mỗi PR (có service Postgres) | NFR09 | DO | RV | T201 | TODO |
+| T202 | ESLint + Prettier + GitHub Actions chạy lint + test mỗi PR (có service Postgres); `@vitest/coverage-v8`, báo độ phủ module nghiệp vụ trên CI | NFR09 | DO | RV | T201 | TODO |
 | T203 | Migration init + `after_init.sql`; seed dữ liệu mẫu (1 khoa, 3 ngành, lĩnh vực CNTT, 1 đợt, 2 cán bộ, 8 GV, 40 SV, 30 đề tài đủ trạng thái, từ điển đồng nghĩa) | FR04, FR06 | BE | RV, QA | T201 | TODO |
 | T204 | Service lịch sử thao tác (AuditLog) + helper ghi StatusHistory; integration test trigger chỉ-thêm | FR15 | BE | RV, BM | T203 | TODO |
 | T205 | Repo Prisma cho auth chạy với DB thật; integration test FR01 trên Postgres | FR01 | BE | RV, BM | T203 | TODO |
@@ -22,7 +23,7 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 | T211 | Endpoint kiểm tra tương tự qua DB (pg_trgm) + lưu SimilarityCheck + ẩn hồ sơ chờ với SV | FR06 | BE | RV, BM, QA | T209 | TODO |
 | T212 | Gửi xét duyệt / gửi lại + snapshot bất biến + quyết định duyệt/sửa/từ chối + so sánh 2 snapshot | FR07, FR17 | BE | RV, QA | T210, T211 | TODO |
 | T213 | API tra cứu danh sách: lọc, phân trang server, phạm vi theo vai trò | FR08 | BE | RV, BM, FE | T212 | TODO |
-| T214 | Test integration độc lập cho luồng GĐ2 (viết từ đặc tả, không đọc code service) | FR02–FR08, FR16, FR17 | QA | RV | T213 | TODO |
+| T214 | Test integration độc lập cho luồng GĐ2 (viết từ đặc tả, không đọc code service); gồm test rollback transaction khi lỗi giữa chừng (NFR05) và hạn tính theo giờ server bất kể giờ máy khách (NFR06) | FR02–FR08, FR16, FR17 | QA | RV | T213 | TODO |
 
 ## Giai đoạn 3 – Frontend lõi
 
@@ -56,7 +57,7 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 
 | ID | Việc | FR/NFR | Chủ trì | Review | Phụ thuộc | Trạng thái |
 |---|---|---|---|---|---|---|
-| T501 | Thông báo trong web (đã đọc, chống trùng theo dedupeKey) + endpoint nhắc hạn bảo vệ bằng CRON_SECRET | FR13 | BE | RV, BM | T405 | TODO |
+| T501 | Thông báo trong web (đã đọc, chống trùng theo dedupeKey) + endpoint nhắc hạn bảo vệ bằng CRON_SECRET; gắn thông báo vào mọi endpoint đã có (T208, T210, T212, T401–T405) theo danh sách sự kiện FR13 | FR13 | BE | RV, BM | T405 | TODO |
 | T502 | GitHub Actions theo lịch gọi endpoint nhắc hạn | FR13, NFR10 | DO | RV | T501 | TODO |
 | T503 | API thống kê theo GV/lĩnh vực/trạng thái/kết quả/năm/đợt + CSV cùng bộ lọc; GV chỉ thấy đề tài mình | FR14 | BE | RV, BM, QA | T405 | TODO |
 | T504 | UI chuông thông báo, dashboard Recharts, xuất CSV, kho tra cứu công khai | FR08, FR13, FR14 | FE | RV, QA | T501, T503 | TODO |
@@ -66,14 +67,15 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 
 | ID | Việc | FR/NFR | Chủ trì | Review | Phụ thuộc | Trạng thái |
 |---|---|---|---|---|---|---|
-| T601 | Thay giảng viên (chuyển bản nộp chờ, chấm dứt quyền GV cũ) API + UI | FR19 | BE | RV, BM, QA | T505 | TODO |
-| T602 | Đề nghị và quyết định hủy | FR20 | BE | RV, QA | T505 | TODO |
-| T603 | Rời nhóm + quyền đọc theo khoảng thời gian là thành viên | FR21 | BE | RV, BM | T505 | TODO |
-| T604 | Sửa sai kết quả bằng phiên bản mới | FR23 | BE | RV, QA | T505 | TODO |
-| T605 | Thay đổi sau duyệt (chạy lại FR06 khi đổi tên/tóm tắt) | FR18 | BE | RV, QA | T601 | TODO |
-| T606 | Mở lại mốc đã đạt | FR22 | BE | RV, QA | T604 | TODO |
+| T600 | Hợp đồng API GĐ6 (`design/API_GD6.md`) cho FR18–FR23 | FR18–FR23 | KTS | RV, FE, BE | T400 | TODO |
+| T601 | Thay giảng viên (chuyển bản nộp chờ, chấm dứt quyền GV cũ) – API (UI ở T607) | FR19 | BE | RV, BM, QA | T600, T405 | TODO |
+| T602 | Đề nghị và quyết định hủy | FR20 | BE | RV, QA | T600, T405 | TODO |
+| T603 | Rời nhóm + quyền đọc theo khoảng thời gian là thành viên | FR21 | BE | RV, BM | T600, T208 | TODO |
+| T604 | Sửa sai kết quả bằng phiên bản mới | FR23 | BE | RV, QA | T600, T404 | TODO |
+| T605 | Thay đổi sau duyệt (chạy lại FR06 khi đổi tên/tóm tắt) | FR18 | BE | RV, QA | T600, T212 | TODO |
+| T606 | Mở lại mốc đã đạt | FR22 | BE | RV, QA | T600, T404 | TODO |
 | T607 | UI cho T601–T606 | FR18–FR23 | FE | RV, QA | T601–T606 | TODO |
-| T608 | Sao lưu `pg_dump` hằng ngày (GitHub Actions, giữ 7 bản) + job dọn file mồ côi + hướng dẫn diễn tập khôi phục | FR26 | DO | RV, BM | T505 | TODO |
+| T608 | Sao lưu `pg_dump` hằng ngày (GitHub Actions, giữ 7 bản) + job dọn file mồ côi + hướng dẫn diễn tập khôi phục | FR26 | DO | RV, BM | T202, T203 | TODO |
 
 ## Giai đoạn 7 – Hoàn thiện
 
