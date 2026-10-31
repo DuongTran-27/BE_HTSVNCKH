@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
 import { loginSchema, changePasswordSchema } from '@nckh/shared';
 import { validate } from '../../middlewares/validate.js';
+import { createLimiter } from '../../middlewares/rateLimit.js';
 
 export const REFRESH_COOKIE = 'nckh_rt';
 
@@ -15,7 +15,9 @@ export const authRouter = ({ authService, requireAuth, env }) => {
     path: '/api/auth',
     maxAge: env.REFRESH_TOKEN_TTL_DAYS * 86400e3,
   };
-  const loginLimiter = rateLimit({ windowMs: 15 * 60e3, limit: 20, standardHeaders: true, legacyHeaders: false });
+  // Không đếm lần đăng nhập đúng: sinh viên chung NAT không chặn nhau; dò mật khẩu từng tài khoản đã có TEMP_LOCKED
+  const loginLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 20, keyBy: 'ip', skipSuccessfulRequests: true });
+  const changePasswordLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 5, keyBy: 'user' });
 
   const send = (res, issued) => {
     res.cookie(REFRESH_COOKIE, issued.refreshToken, cookieOpts);
@@ -41,7 +43,7 @@ export const authRouter = ({ authService, requireAuth, env }) => {
     res.status(204).end();
   });
 
-  r.post('/change-password', requireAuth, validate(changePasswordSchema), async (req, res) => {
+  r.post('/change-password', requireAuth, changePasswordLimiter, validate(changePasswordSchema), async (req, res) => {
     await authService.changePassword({ userId: req.user.id, ...req.body, refreshToken: req.cookies?.[REFRESH_COOKIE] });
     res.status(204).end();
   });

@@ -8,7 +8,7 @@ const schema = z.object({
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().default(900),      // 15 phút (FR01)
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().default(7),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
-  ENABLE_SWAGGER: z.coerce.boolean().default(false),
+  ENABLE_SWAGGER: z.stringbool().default(false), // coerce.boolean biến "false" thành true
   CLOUDINARY_URL: z.string().optional(),
   CRON_SECRET: z.string().optional(),
 });

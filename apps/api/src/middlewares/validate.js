@@ -4,7 +4,7 @@ import { badRequest } from '../lib/errors.js';
 export const validate = (schema, source = 'body') => (req, _res, next) => {
   const parsed = schema.safeParse(req[source]);
   if (!parsed.success) {
-    const fields = Object.fromEntries(parsed.error.issues.map((i) => [i.path.join('.') || '_', i.message]));
+    const fields = Object.fromEntries(parsed.error.issues.slice(0, 50).map((i) => [i.path.join('.') || '_', i.message]));
     throw badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', fields);
   }
   if (source === 'body') req.body = parsed.data;

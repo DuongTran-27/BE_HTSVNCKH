@@ -3,3 +3,8 @@
 | # | Task | Câu hỏi | Phương án đề xuất | Trả lời |
 |---|---|---|---|---|
 | 1 | T201 (chặn T202, T203 và mọi task cần DB) | Docker Desktop không chạy được: máy đang **tắt ảo hóa trong BIOS** (`VirtualizationFirmwareEnabled=False`) và **Virtual Machine Platform** chưa bật (log: `engine linux/wsl failed to start: Virtual Machine Platform not enabled`). Cần người có quyền admin xử lý. | 1) Vào BIOS/UEFI bật Intel VT-x / AMD SVM. 2) PowerShell (Admin): `dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart`. 3) Khởi động lại, mở Docker Desktop, chạy `docker info`. Sau đó gõ `/lam-task T201` để devops chạy bằng chứng còn thiếu. Phương án thay thế nếu không bật được: cài PostgreSQL 16 bản Windows (có pg_trgm, unaccent) chạy cổng 54329 – báo lại để devops điều chỉnh. | |
+| 2 | T200 (G1) | Có bắt buộc hồ sơ đầy đủ trường trước khi mời GVHD không? Nếu không, phải cho sửa hồ sơ ở trạng thái Đã có GVHD (lệch FR05) hoặc thêm đường quay về Nháp (lệch mục 5). | Bắt buộc đầy đủ trước khi mời GVHD (đang áp dụng trong `API_GD2.md`). | |
+| 3 | T200 (G2) | Gửi lại sau "Cần chỉnh sửa" có hạn không (ví dụ trước hạn xét duyệt của đợt)? | Không giới hạn thời gian (đang áp dụng). | |
+| 4 | T200 (G3) | Kho đề tài đã đóng đạt có công khai cho người ngoài trường (không đăng nhập) không? | Chỉ người đã đăng nhập (đang áp dụng). | |
+| 5 | T200 (G14) | Đề tài đóng với kết quả Không đạt có nằm trong kho so trùng FR06 không? | Có (đang áp dụng). | |
+| 6 | T200 (G11–G13) | Xác nhận mục 8 đặc tả: hạn mức GV 5 đề tài/đợt, nhóm 1–5 SV, thang kết quả Xuất sắc/Tốt/Đạt/Không đạt, năm học được tham gia, có cho nhóm liên lớp. | Giữ giá trị mặc định, cấu hình theo đợt nên đổi được không cần sửa code. | |
