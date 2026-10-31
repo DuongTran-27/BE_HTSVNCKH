@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "test": "vitest run",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy"
+    "prisma:deploy": "prisma migrate deploy",
+    "db:test:reset": "node scripts/reset-test-db.js"
   },
   "dependencies": {
     "@nckh/shared": "0.1.0",
@@ -27,6 +28,6 @@
   "devDependencies": {
     "prisma": "^5.22.0",
     "supertest": "^7.0.0",
-    "vitest": "^2.1.9"
+    "vitest": "^4.1.12"
   }
 }
