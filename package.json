@@ -1,0 +1,10 @@
+{
+  "name": "nckh-cntt",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint ."
+  }
+}

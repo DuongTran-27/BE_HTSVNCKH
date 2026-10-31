@@ -1,0 +1,38 @@
+# CLAUDE.md – Bộ nhớ dự án NCKH Khoa CNTT
+
+Đọc file này đầu mỗi phiên. Mọi agent (kể cả phiên chính) phải tuân thủ.
+
+## Dự án
+Website quản lý NCKH sinh viên Khoa CNTT. Đặc tả gốc: `docs/DAC_TA.md` (xuất từ Claude Doc). Lộ trình: `docs/LO_TRINH.md`.
+Mục tiêu M1–M5, FR01–FR27, NFR01–NFR10 trong đặc tả là **nguồn sự thật**. Code mâu thuẫn đặc tả = lỗi.
+
+## Công nghệ (không tự ý đổi)
+JavaScript ES modules + JSX (không TypeScript) · React + Vite + React Router · Tailwind · React Hook Form + Zod · TanStack Query ·
+Node.js LTS + Express 5 REST · PostgreSQL (Supabase) · Prisma (JS) + Prisma Migrate, SQL thô cho index/trigger · JWT + refresh token + Argon2id ·
+Cloudinary · pg_trgm + TF-IDF JS · Recharts + CSV · Vitest, Supertest, Playwright · OpenAPI/Swagger · Vercel + Render.
+Muốn đổi/thêm thư viện → ghi đề xuất vào báo cáo task, chờ agent `kien-truc-su` duyệt.
+
+## Cấu trúc
+`packages/shared` (enum, TRANSITIONS, schema Zod dùng chung) · `apps/api` · `apps/web` · `docs/`.
+Bảng chuyển trạng thái chỉ được định nghĩa ở `packages/shared/src/transitions.js`.
+
+## Lệnh
+- `npm test` – toàn bộ unit + integration
+- `npm run lint`
+- `npm run test:e2e -w @nckh/web` – Playwright
+- `npm run build -w @nckh/web`
+- Database test: `docker compose -f docker-compose.test.yml up -d` (Postgres 16 có pg_trgm, unaccent)
+
+## Quy tắc bắt buộc
+1. Không sửa/xóa/skip test để cho qua. Test sai đặc tả → ghi rõ lý do trong báo cáo và để reviewer quyết.
+2. Không đánh dấu xong nếu chưa có **bằng chứng chạy lệnh** (lệnh + kết quả) trong báo cáo.
+3. Kiểm tra quyền luôn ở backend (FR25). Admin không có quyền nghiệp vụ.
+4. Mọi thao tác nhiều bước chạy trong transaction; mọi chuyển trạng thái ghi `StatusHistory`.
+5. Lỗi kiểm tra tương tự không bao giờ được coi là "không trùng".
+6. Không đọc, in hay commit file `.env`, khóa bí mật. Không deploy, không tạo tài khoản dịch vụ ngoài – đó là việc của con người.
+7. Văn bản giao diện, thông báo lỗi: tiếng Việt. Tên biến, hàm: tiếng Anh.
+8. Thời gian lưu `timestamptz`, hiển thị `Asia/Ho_Chi_Minh`; hạn tính theo giờ server.
+
+## Phối hợp agent
+Quy trình chi tiết: `docs/agents/QUY_TRINH.md`. Bảng việc: `docs/agents/BANG_CONG_VIEC.md`.
+Báo cáo task: `docs/agents/reports/TASK-xxx.md`. Review: `docs/agents/reviews/TASK-xxx-<agent>-v<n>.md`.
