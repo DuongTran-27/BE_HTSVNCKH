@@ -96,4 +96,4 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 
 | ID | Mô tả | Phát hiện bởi | Chủ trì | Review | Trạng thái |
 |---|---|---|---|---|---|
-| BUG-001 | `errorHandler` trả 500 INTERNAL + `logger.error` cho lỗi 4xx khác của body-parser (content-encoding lạ, gzip hỏng): phải trả `err.status` với thông điệp tiếng Việt cố định khi `err.expose && err.status < 500`; đổi 2 `it.fails` trong `tests/security/T215-bao-mat.test.js` thành `it` | bao-mat (review T215) | BE | RV, BM | TODO |
+| BUG-001 | `errorHandler` trả 500 INTERNAL + `logger.error` cho lỗi 4xx khác của body-parser (content-encoding lạ, gzip hỏng): phải trả `err.status` với thông điệp tiếng Việt cố định khi `err.expose && err.status < 500`; đổi 2 `it.fails` trong `tests/security/T215-bao-mat.test.js` thành `it` | bao-mat (review T215) | BE | RV, BM | DONE 2026-11-01 |

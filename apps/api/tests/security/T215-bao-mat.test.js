@@ -53,7 +53,7 @@ describe('T215 bao-mat – không lộ chi tiết nội bộ', () => {
 
   // MINOR (BM-v1 #1): lỗi body-parser 4xx khác (content-encoding lạ → 415, gzip hỏng → 400) rơi về
   // 500 INTERNAL + logger.error. Không lộ dữ liệu, nhưng sai mã và ai cũng làm rác log error được.
-  // Đổi it.fails → it khi errorHandler xử lý lỗi body-parser có status 4xx.
+  // Đã sửa ở BUG-001: errorHandler trả err.status cho lỗi body-parser 4xx (it.fails → it).
   it.each([
     ['content-encoding lạ', 'br-fake', '{}'],
     ['gzip hỏng', 'gzip', 'khong-phai-gzip'],
@@ -62,10 +62,10 @@ describe('T215 bao-mat – không lộ chi tiết nội bộ', () => {
       .set('content-type', 'application/json').set('content-encoding', enc).send(body);
     noLeak(r);
   });
-  it.fails.each([
+  it.each([
     ['content-encoding lạ', 'br-fake', '{}'],
     ['gzip hỏng', 'gzip', 'khong-phai-gzip'],
-  ])('%s: trả 4xx và không ghi log error (hiện 500 INTERNAL)', async (_n, enc, body) => {
+  ])('%s: trả 4xx và không ghi log error', async (_n, enc, body) => {
     const logger = pino({ level: 'silent' });
     vi.spyOn(logger, 'error');
     const r = await request(makeApp(logger)).post('/api/auth/login')
