@@ -15,12 +15,13 @@
 - Router: **bắt buộc data router** (`createBrowserRouter` + `RouterProvider`), vì chặn rời trang (R7, R21) dùng `useBlocker`, chỉ chạy với data router. Không dùng `<BrowserRouter>`.
 - Access token chỉ giữ trong bộ nhớ (không `localStorage`, NFR01). Refresh token là cookie httpOnly `nckh_rt`, JS không đọc.
 - **Nguồn duy nhất của `user` + access token: module auth trong bộ nhớ** (T301), có `subscribe` để React đọc qua `useSyncExternalStore`. Không lưu `user` trong cache TanStack Query (không có khóa `['me']`), nên `queryClient.clear()` không làm mất `user`. Login, refresh, `GET /api/auth/me` đều ghi vào module này.
-- Khởi động app: gọi `POST /api/auth/refresh` một lần → có `{ accessToken, user }` thì vào app, 401 thì là khách. Trong lúc chờ: màn tải toàn trang (logo + "Đang tải…").
+- Khởi động app: gọi `POST /api/auth/refresh` một lần → có `{ accessToken, user }` thì vào app, 401/403 thì là khách, lỗi mạng/5xx thì màn "Không kết nối được máy chủ" + "Thử lại". Trong lúc chờ: màn tải toàn trang (logo + "Đang tải…").
 - Gặp 401 `UNAUTHORIZED` ở request thường: refresh **một lần** rồi gửi lại request. Không refresh với chính `/api/auth/login`, `/api/auth/refresh`.
 - **Tuần tự hóa refresh** (API §1.1, refresh gọi đôi sẽ thu hồi cả họ phiên):
   - Promise refresh dùng chung đặt ở **biến cấp module** của API client, không đặt trong state hay effect. Nhờ vậy React StrictMode chạy effect khởi động 2 lần ở dev vẫn chỉ ra 1 request.
   - Giữa các tab: bọc trong `navigator.locks.request('nckh-refresh', …)`. Trình duyệt không có `navigator.locks` → chỉ dùng promise trong tab (chấp nhận rủi ro hai tab cùng refresh trên trình duyệt cũ).
-  - Refresh thất bại → xóa module auth + `queryClient.clear()`, chuyển `/dang-nhap?next=<đường dẫn hiện tại>`, toast "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại".
+  - Refresh bị từ chối (401/403) → xóa module auth + `queryClient.clear()`, chuyển `/dang-nhap?next=<đường dẫn hiện tại>`, toast "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" (chỉ một lần dù nhiều request cùng thất bại).
+  - Refresh lỗi mạng/5xx/429 → **không** đăng xuất: request gốc nhận `ApiError` (xử lý như lỗi mạng/lỗi server ở mục 6, 7). Lúc khởi động → màn "Không kết nối được máy chủ" + "Thử lại", không coi là khách. Lý do: Render ngủ hoặc mất mạng tạm thời không phải lý do để mất phiên (quyết định T301 #5, `kien-truc-su` duyệt).
 - Đăng xuất: `POST /api/auth/logout` → xóa module auth + `queryClient.clear()` → `/dang-nhap`. Lỗi mạng khi logout vẫn xóa phía client.
 - `user` (từ login/refresh/me) có `id`, `code`, `fullName`, `role`, `facultyId`, `mustChangePassword`, `staffFacultyIds` (API §1.1). Sau đổi mật khẩu (204) gọi lại `GET /api/auth/me` và ghi `user` mới vào module auth (cập nhật `mustChangePassword`).
 
@@ -420,7 +421,7 @@ Quy tắc chung:
 - **Thông điệp**: hiện `error.message` của server (đã là tiếng Việt, API §2). Cột "Thông điệp" dưới đây là thông điệp UI dùng **khi thiếu** `message` hoặc khi UI cần nói cụ thể hơn.
 - **`details` dạng map trường** (API §1.3a, cho `VALIDATION_ERROR`, `TOPIC_INCOMPLETE`, `DUPLICATE`): khóa có trong form → `setError(khóa)` (RHF hiểu đường dẫn chấm, ví dụ `keywords.2`, `config.similarity.titleHigh`); khóa `_` hoặc khóa không có trong form → danh sách lỗi cấp form. Focus ô lỗi đầu tiên.
 - Một bộ xử lý lỗi dùng chung ở API client trả về đối tượng `{ status, code, message, details, retryAfter, requestId }`; từng màn chỉ khai báo các mã "Lỗi riêng" của mình.
-- Gắn lỗi vào form làm **một lần** trong helper `applyServerErrors(error, setError, fieldNames)` (T301, có unit test): khóa có trong `fieldNames` → `setError`, còn lại → lỗi cấp form; focus ô lỗi đầu tiên. Tắt nút đến hết `Retry-After` làm một lần trong hook `useCooldown(retryAfter)` (T301). Không màn nào tự viết lại hai việc này.
+- Gắn lỗi vào form làm **một lần** trong helper `applyServerErrors(error, setError, fieldNames)` (T301, có unit test): khóa có trong `fieldNames` → `setError`, còn lại → lỗi cấp form; focus ô lỗi đầu tiên. Tắt nút đến hết `Retry-After` làm một lần trong hook `useCooldown()` (T301): trả `{ active, remaining, message, start }`; màn gọi `start(err.retryAfter)` trong `onError` và đặt `disabled={active}`, hiện `message` ("Vui lòng thử lại sau N phút"). Dùng `start()` thay cho tham số để hai lần 429 liên tiếp cùng số giây vẫn khóa lại (quyết định T301 #4, `kien-truc-su` duyệt). Không màn nào tự viết lại hai việc này.
 
 | HTTP | `code` | Thông điệp UI (khi thiếu `message`) | Hành vi UI |
 |---|---|---|---|
