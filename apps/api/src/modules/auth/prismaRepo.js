@@ -4,7 +4,9 @@ export const createAuthRepo = (prisma) => ({
   updateUser: (id, data) => prisma.user.update({ where: { id }, data }),
   createRefreshToken: (data) => prisma.refreshToken.create({ data }),
   findRefreshTokenByHash: (tokenHash) => prisma.refreshToken.findUnique({ where: { tokenHash } }),
-  revokeToken: (id, at, replacedBy) => prisma.refreshToken.update({ where: { id }, data: { revokedAt: at, replacedBy } }),
+  // Compare-and-set: chỉ xoay nếu chưa bị thu hồi; trả true nếu thành công
+  revokeToken: async (id, at, replacedBy) =>
+    (await prisma.refreshToken.updateMany({ where: { id, revokedAt: null }, data: { revokedAt: at, replacedBy } })).count === 1,
   revokeFamily: (family, at) => prisma.refreshToken.updateMany({ where: { family, revokedAt: null }, data: { revokedAt: at } }),
   revokeAllForUser: (userId, at, exceptFamily) => prisma.refreshToken.updateMany({
     where: { userId, revokedAt: null, ...(exceptFamily ? { NOT: { family: exceptFamily } } : {}) },

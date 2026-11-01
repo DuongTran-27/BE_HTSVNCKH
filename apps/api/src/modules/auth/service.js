@@ -59,15 +59,21 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
         await repo.revokeFamily(record.family, now());
         throw unauthorized();
       }
+      // Tạo token mới TRƯỚC rồi mới xoay token cũ có điều kiện (revokedAt còn null): nếu logout/refresh khác
+      // đã thu hồi token cũ trong lúc này thì thu hồi cả họ (gồm token vừa tạo) – tránh phiên hồi sinh sau logout (BUG-002).
       const issued = await issueTokens(user, { family: record.family, userAgent });
-      await repo.revokeToken(record.id, now(), issued.refreshRecord.id);
+      if (!(await repo.revokeToken(record.id, now(), issued.refreshRecord.id))) {
+        await repo.revokeFamily(record.family, now());
+        throw unauthorized('Phiên đã bị thu hồi, vui lòng đăng nhập lại');
+      }
       return issued;
     },
 
     async logout({ refreshToken }) {
       if (!refreshToken) return;
       const record = await repo.findRefreshTokenByHash(sha256(refreshToken));
-      if (record && !record.revokedAt) await repo.revokeFamily(record.family, now());
+      // Kể cả token đã xoay vòng: thu hồi cả họ để token mới hơn (refresh chạy song song) cũng chết (BUG-002)
+      if (record) await repo.revokeFamily(record.family, now());
     },
 
     async changePassword({ userId, currentPassword, newPassword, refreshToken }) {

@@ -20,7 +20,12 @@ export const createMemoryAuthRepo = (users = []) => {
     updateUser: async (id, data) => { const x = { ...u.get(id), ...data }; u.set(id, x); return x; },
     createRefreshToken: async (data) => { const rec = { id: `rt${++seq}`, revokedAt: null, ...data }; tokens.set(rec.id, rec); return rec; },
     findRefreshTokenByHash: async (h) => [...tokens.values()].find((t) => t.tokenHash === h) ?? null,
-    revokeToken: async (id, at, replacedBy) => { tokens.set(id, { ...tokens.get(id), revokedAt: at, replacedBy }); },
+    revokeToken: async (id, at, replacedBy) => {
+      const t = tokens.get(id);
+      if (!t || t.revokedAt) return false;
+      Object.assign(t, { revokedAt: at, replacedBy });
+      return true;
+    },
     revokeFamily: async (family, at) => { for (const t of tokens.values()) if (t.family === family && !t.revokedAt) t.revokedAt = at; },
     revokeAllForUser: async (userId, at, except) => {
       for (const t of tokens.values()) if (t.userId === userId && !t.revokedAt && t.family !== except) t.revokedAt = at;
