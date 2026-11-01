@@ -24,7 +24,11 @@ for (const name of prismaUrlVars()) {
     execFileSync(process.execPath, [prismaCli, 'db', 'execute', '--stdin', '--url', process.env[name]],
       { cwd: apiDir, input: DB_LEVEL_CHECK_SQL, stdio: ['pipe', 'pipe', 'pipe'] });
   } catch (e) {
-    console.error(`Từ chối reset: ${name} không trỏ DB test cục bộ ở mức DB (NFR08).\n${String(e.stderr ?? e.message).trim()}`);
+    const detail = String(e.stderr ?? e.message).trim();
+    // P1001 = không tới được server (DB chưa bật), khác với bị chốt chặn từ chối (RAISE EXCEPTION, P0001).
+    console.error(detail.includes('P1001')
+      ? `Không kết nối được DB test qua ${name}. Chạy "npm run db:test:up" rồi chạy lại "npm run db:test:reset".\n${detail}`
+      : `Từ chối reset: ${name} không trỏ DB test cục bộ ở mức DB (NFR08).\n${detail}`);
     process.exit(1);
   }
 }

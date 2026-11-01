@@ -35,3 +35,16 @@ chạy server ở cổng **54329**, user/mật khẩu `postgres/postgres`, rồi
 
 ### 1.3 Nâng phiên bản `embedded-postgres`
 Gói được ghim `16.14.0-beta.17`. Nâng bản = tải binary ngoài mới → cần người dùng duyệt (QĐ §4.5); không để Dependabot tự nâng.
+
+## 2. CI GitHub Actions (T202)
+Workflow `.github/workflows/ci.yml` không cần secret nào (DB test là service container `postgres:16`, mật khẩu test `postgres` không phải bí mật).
+1. Đẩy nhánh chứa T202 lên GitHub và mở PR vào `main`.
+2. Tab **Actions** → run "CI" của PR: phải có 3 job xanh – `lint`, `test (22.22)`, `test (24)`.
+3. Mở log job `test (24)`, kiểm:
+   - bước `npm run db:test:up` in K1–K7 đều `OK` (K2 `Asia/Ho_Chi_Minh`);
+   - bước "Địa chỉ server mà lớp kiểm mức DB thấy" in `inet_server_addr = 172.x.x.x` (hoặc 127.0.0.1/::1);
+   - bước `npm test` xanh – nghĩa là `globalSetup` đã qua lớp kiểm mức DB với địa chỉ đó.
+   Địa chỉ ngoài 10.x/172.16–31.x/192.168.x/loopback → test đỏ "Từ chối chạy test"; báo lại devops (mở BUG), **không** nới chốt chặn tay.
+4. Job Summary của run có bảng "Độ phủ module nghiệp vụ"; artifact `coverage` (giữ 7 ngày) có báo cáo HTML.
+5. (Khuyến nghị) Settings → Branches → Branch protection cho `main`: bật "Require status checks to pass", chọn `lint`, `test (22.22)`, `test (24)`.
+6. Nếu job `test (22.22)` báo không tìm được Node 22.22 → báo devops; không hạ `engines` (react-router 8.4 cần ≥ 22.22).

@@ -5,7 +5,7 @@ import { DB_LEVEL_CHECK_SQL } from '../scripts/test-db-guard.js';
 export async function resetData(prisma) {
   // BUG-005: tự kiểm ở mức DB trên chính kết nối này – kể cả khi vitest chạy không qua apps/api/vitest.config.js.
   try { await prisma.$executeRawUnsafe(DB_LEVEL_CHECK_SQL); }
-  catch (e) { throw new Error(`Từ chối dọn dữ liệu: ${e.message.split('\n').filter(Boolean).pop()}`); }
+  catch (e) { throw new Error(`Từ chối dọn dữ liệu: ${e.message.split('\n').filter(Boolean).pop()}`, { cause: e }); }
   const rows = await prisma.$queryRawUnsafe(
     "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'",
   );

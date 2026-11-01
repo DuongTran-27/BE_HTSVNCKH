@@ -55,7 +55,7 @@ async function withClient(url, db, fn) {
   let client;
   try { client = new PrismaClient({ datasourceUrl: urlFor(url, db) }); }
   catch (e) {
-    if (String(e.message).includes('did not initialize yet')) throw new Error('Prisma client chưa generate. Chạy: npx -w @nckh/api prisma generate');
+    if (String(e.message).includes('did not initialize yet')) throw new Error('Prisma client chưa generate. Chạy: npx -w @nckh/api prisma generate', { cause: e });
     throw e;
   }
   try { return await fn(client); } finally { await client.$disconnect(); }
