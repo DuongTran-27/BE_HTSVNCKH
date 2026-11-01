@@ -2,9 +2,15 @@
   "name": "nckh-cntt",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:test:up": "node apps/api/scripts/db-test.js up",
+    "db:test:reset": "npm run db:test:reset -w @nckh/api",
+    "db:test:down": "node apps/api/scripts/db-test.js down"
   }
 }

@@ -1,7 +1,7 @@
 # QĐ-DB-TEST – Chọn Postgres cho test khi máy dev không chạy được Docker
 
 - Task: T217 · NFR08 · Người quyết định: kien-truc-su · Ngày: 2026-11-01 · Bản: vòng sửa 2
-- Trạng thái quyết định: **ĐỀ XUẤT** (chờ RV, DO duyệt). Spike `design/SPIKE_EMBEDDED_PG.md` đã qua V1, V3, V4 và một phần V5. Review DO v1 kiểm tĩnh thêm V2 (một phần), V5 (`postinstall`), V1 (`Đ` trong `unaccent.rules`). Review DO v2 **chạy thật** §4.2/§4.4 trên embedded (thư mục nháp): `pg_ctl start -w -l` không treo, server sống sau khi script thoát (V2), `--locale=en-US` chạy được, K1–K6 đạt, `CREATE DATABASE` qua `@prisma/client` ở `template1` chạy được. Phần còn mở do T201 kiểm và nộp bằng chứng trong repo (§5.1).
+- Trạng thái quyết định: **ĐÃ DUYỆT** (T217 DONE 2026-11-01). Spike `design/SPIKE_EMBEDDED_PG.md` đã qua V1, V3, V4 và một phần V5. Review DO v1 kiểm tĩnh thêm V2 (một phần), V5 (`postinstall`), V1 (`Đ` trong `unaccent.rules`). Review DO v2 **chạy thật** §4.2/§4.4 trên embedded (thư mục nháp): `pg_ctl start -w -l` không treo, server sống sau khi script thoát (V2), `--locale=en-US` chạy được, K1–K6 đạt, `CREATE DATABASE` qua `@prisma/client` ở `template1` chạy được. Phần còn mở do T201 kiểm và nộp bằng chứng trong repo (§5.1).
 - Bối cảnh: CAU_HOI #1, báo cáo T201. Máy dev: Windows 11, Node 24.12.0, không có Postgres cài sẵn, cổng 5432 đóng. Docker Desktop CLI 28.5.1 có nhưng engine không lên (WSL `HCS_E_SERVICE_NOT_AVAILABLE`; log Docker: "Virtual Machine Platform not enabled"; BIOS `VirtualizationFirmwareEnabled=False`). Sửa cần quyền admin + vào BIOS → việc của con người, chưa biết khi nào xong.
 - Người dùng **đã cho phép** tải và chạy gói `embedded-postgres` (điều phối viên báo 2026-11-01, sau khi lệnh thử đầu tiên bị hệ thống quyền chặn "Code from External"). Mỗi lần nâng phiên bản gói này sau này vẫn là tải binary ngoài mới → cần người dùng duyệt lại.
 - QĐ này duyệt thư viện (CLAUDE.md, mục "Công nghệ"): `embedded-postgres` (devDependency của `apps/api`, ghim chính xác, **chỉ dùng cục bộ**), với điều kiện qua được cổng §5. **Không** thêm `pg` (lý do ở §4.4).
@@ -33,7 +33,7 @@
 
 ## 3. Phạm vi của B: chỉ cục bộ
 
-- CI không gọi `db:test:up`; workflow T202 tự khai báo service. Gói vẫn có trong `devDependencies`, nên `npm ci` trên CI sẽ tải và cài gói nền `@embedded-postgres/linux-x64` (optional dependency, có `postinstall`) dù không dùng. Ta chấp nhận cái giá vài chục MB này, với điều kiện script cài của gói linux-x64 đã được đọc trước (§4.5). **Không** dùng `--omit=optional`, vì T202 cần optional deps cho vite.
+- CI không dùng embedded; chỉ gọi `db:test:up` với `DB_TEST_DRIVER=external` (§6 bước 6), service do workflow T202 tự khai báo. Gói vẫn có trong `devDependencies`, nên `npm ci` trên CI sẽ tải và cài gói nền `@embedded-postgres/linux-x64` (optional dependency, có `postinstall`) dù không dùng. Ta chấp nhận cái giá vài chục MB này, với điều kiện script cài của gói linux-x64 đã được đọc trước (§4.5). **Không** dùng `--omit=optional`, vì T202 cần optional deps cho vite.
 - Không dùng embedded trong `globalSetup` của vitest. Vòng đời DB vẫn tách khỏi test như với Docker (up → reset → test → down).
 
 ## 4. Đặc tả phương án B (cho T201)
