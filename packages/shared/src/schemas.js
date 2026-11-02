@@ -10,15 +10,18 @@ export const countWords = (s = '') => s.trim().split(/\s+/).filter(Boolean).leng
 const title = z.string().trim().max(300);
 const objectives = z.string().trim().max(3000);
 const keyword = z.string().trim().min(1).max(60);
-const fieldId = z.string().max(64);
+const fieldId = z.string({ error: 'Chọn lĩnh vực' }).max(64);
+export const SUMMARY_MAX = 5000;
+// Trần cứng của nháp = trần maxKeywords của đợt (API_GD2 §11); kiểm theo đợt ở service và topicSubmitSchema(cfg)
+export const KEYWORDS_HARD_MAX = 10;
 const password = z.string().max(128);
 
 // Lưu nháp: cho phép thiếu trường (FR05)
 export const topicDraftSchema = z.object({
   title: title.optional().default(''),
-  summary: z.string().trim().max(5000).optional().default(''),
+  summary: z.string().trim().max(SUMMARY_MAX).optional().default(''),
   objectives: objectives.optional().default(''),
-  keywords: z.array(keyword).max(C.maxKeywords, `Tối đa ${C.maxKeywords} từ khóa`).optional().default([]),
+  keywords: z.array(keyword).max(KEYWORDS_HARD_MAX, `Tối đa ${KEYWORDS_HARD_MAX} từ khóa`).optional().default([]),
   fieldId: fieldId.optional().nullable(),
 });
 
@@ -26,12 +29,16 @@ export const topicDraftSchema = z.object({
 export const topicSubmitSchema = (cfg = C) => z.object({
   title: title.min(10, 'Tên đề tài tối thiểu 10 ký tự'),
   // abort: không đếm từ trên chuỗi quá dài (QD_ZOD §5.9b)
-  summary: z.string().trim().max(5000, { error: 'Tóm tắt tối đa 5000 ký tự', abort: true })
+  summary: z.string().trim().max(SUMMARY_MAX, { error: `Tóm tắt tối đa ${SUMMARY_MAX} ký tự`, abort: true })
     .refine((s) => countWords(s) >= cfg.minSummaryWords, `Tóm tắt tối thiểu ${cfg.minSummaryWords} từ`),
   objectives: objectives.min(20, 'Mục tiêu tối thiểu 20 ký tự'),
   keywords: z.array(keyword).min(cfg.minKeywords, `Cần ít nhất ${cfg.minKeywords} từ khóa`).max(cfg.maxKeywords, `Tối đa ${cfg.maxKeywords} từ khóa`),
-  fieldId: z.string({ error: 'Chọn lĩnh vực' }).min(1, 'Chọn lĩnh vực').max(64),
+  fieldId: fieldId.min(1, 'Chọn lĩnh vực'),
 });
+
+// API_GD2 §5.1: tạo = nháp + roundId; sửa = nháp + version (PUT thay toàn bộ)
+export const topicCreateSchema = topicDraftSchema.extend({ roundId: z.string().trim().min(1).max(64) });
+export const topicUpdateSchema = topicDraftSchema.extend({ version: z.int().min(0) });
 
 export const loginSchema = z.object({
   identifier: z.string().trim().min(1, 'Nhập mã hoặc email').max(300),
