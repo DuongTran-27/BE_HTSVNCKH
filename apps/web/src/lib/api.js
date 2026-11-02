@@ -1,6 +1,6 @@
 import { auth } from './auth.js';
 import { queryClient } from './queryClient.js';
-import { toast } from './toast.js';
+import { clearToasts, toast } from './toast.js';
 
 // Thông điệp khi server không gửi message (UI §7); bình thường hiện error.message của server
 const FALLBACK_MESSAGES = {
@@ -134,6 +134,19 @@ const clearClientSession = () => {
   auth.clear();
   queryClient.cancelQueries();
   queryClient.clear();
+  clearToasts();
+};
+
+// Báo đăng xuất sang các tab khác (review T301-bao-mat-v2 INFO #3). Tab nhận chỉ xóa phía client, không gọi server.
+let authChannel = null;
+export const startCrossTabSync = () => {
+  if (authChannel || typeof BroadcastChannel === 'undefined') return;
+  authChannel = new BroadcastChannel('nckh-auth');
+  authChannel.onmessage = (e) => {
+    if (e.data !== 'logout' || !auth.get().user) return;
+    clearClientSession();
+    handlers.onLogout();
+  };
 };
 
 // Lỗi trả cho request bị bỏ vì phiên đã kết thúc; toast đã hiện (hoặc người dùng tự đăng xuất) → màn bỏ qua lỗi có cờ này
@@ -210,6 +223,7 @@ export const login = async (values) => {
 export const logout = async () => {
   const pendingRefresh = refreshPromise;
   clearClientSession();
+  authChannel?.postMessage('logout');
   serverLogout = (pendingRefresh ?? Promise.resolve())
     .catch(() => {})
     .then(() => send('/auth/logout', { method: 'POST', keepalive: true }))

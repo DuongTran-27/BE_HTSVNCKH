@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { api, ApiError, bootstrapSession, configureSession, login, logout, parseRetryAfter, refreshSession } from './api.js';
+import { api, ApiError, bootstrapSession, configureSession, login, logout, parseRetryAfter, refreshSession, startCrossTabSync } from './api.js';
 import { auth } from './auth.js';
 import { queryClient } from './queryClient.js';
-import { toastStore } from './toast.js';
+import { toast, toastStore } from './toast.js';
 
 const USER = { id: 'u1', role: 'STUDENT', mustChangePassword: false };
 const json = (status, body, headers = {}) => new Response(body === undefined ? null : JSON.stringify(body), {
@@ -206,13 +206,37 @@ describe('API client – lỗi và body', () => {
     vi.stubGlobal('fetch', fetch);
     const onLogout = vi.fn();
     configureSession({ onExpired, onLogout });
-    const before = toastStore.get().length;
     await logout();
     expect(fetch.mock.calls.map(([u]) => u)).toEqual(['/api/auth/logout']);
     expect(fetch.mock.calls[0][1].keepalive).toBe(true);
     expect(onExpired).not.toHaveBeenCalled();
     expect(onLogout).toHaveBeenCalledTimes(1);
-    expect(toastStore.get().length).toBe(before);
+    expect(toastStore.get().some((t) => t.message.includes('hết hạn'))).toBe(false);
+  });
+
+  it('xóa phiên cũng xóa toast của phiên trước (bao-mat v3 INFO)', async () => {
+    vi.stubGlobal('fetch', fakeServer());
+    toast('Toast phiên cũ');
+    await logout();
+    expect(toastStore.get()).toHaveLength(0);
+  });
+
+  it('đăng xuất ở tab khác (BroadcastChannel): tab này xóa phía client, không gọi server, và phát lại khi tự logout', async () => {
+    const channels = [];
+    class FakeChannel { constructor() { channels.push(this); this.sent = []; } postMessage(m) { this.sent.push(m); } }
+    vi.stubGlobal('BroadcastChannel', FakeChannel);
+    const fetch = fakeServer();
+    vi.stubGlobal('fetch', fetch);
+    const onLogout = vi.fn();
+    configureSession({ onExpired, onLogout });
+    startCrossTabSync();
+    channels[0].onmessage({ data: 'logout' });
+    expect(auth.get().user).toBeNull();
+    expect(onLogout).toHaveBeenCalledTimes(1);
+    expect(fetch).not.toHaveBeenCalled();
+    auth.setSession({ accessToken: 'old', user: USER });
+    await logout();
+    expect(channels[0].sent).toEqual(['logout']);
   });
 
   it('logout khi refresh đang chạy: gửi /auth/logout SAU refresh (mang cookie mới), login chờ logout xong', async () => {

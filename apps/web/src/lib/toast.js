@@ -9,6 +9,12 @@ export const dismissToast = (id) => {
   emit();
 };
 
+// Xóa hết khi xóa phiên: toast của phiên trước không được sang phiên sau
+export const clearToasts = () => {
+  toasts = [];
+  emit();
+};
+
 // type: 'info' | 'success' | 'error'; action: { label, onClick } – vd. 503 → "Thử lại" (UI §7)
 export const toast = (message, { type = 'info', duration = 5000, action } = {}) => {
   const id = nextId++;

@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router/dom';
 import './index.css';
 import { useAuth } from './lib/auth.js';
-import { bootstrapSession, configureSession } from './lib/api.js';
+import { bootstrapSession, configureSession, startCrossTabSync } from './lib/api.js';
 import { queryClient } from './lib/queryClient.js';
 import { router } from './router.jsx';
 import { ToastViewport } from './components/Toast.jsx';
@@ -18,6 +18,8 @@ configureSession({
   },
   onLogout: () => router.navigate('/dang-nhap', { replace: true }),
 });
+
+startCrossTabSync();
 
 // Gọi ngoài effect, có chốt cấp module: StrictMode không sinh refresh thứ hai
 bootstrapSession();
