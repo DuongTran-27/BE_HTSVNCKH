@@ -320,6 +320,7 @@ Mô hình: **nhóm gắn với đề tài** (Prisma không có bảng Group; th�
 **`POST /api/topics`** – STUDENT · transaction · Ghi AuditLog `TOPIC_CREATE`.
 Body `topicCreateSchema` = `topicDraftSchema` + `roundId` (≤64).
 Kiểm: đợt tồn tại; `round.facultyId === user.facultyId` (không thì 403); `now < round.regCloseAt` (không thì 409 `REGISTRATION_CLOSED`; được tạo nháp trước khi mở); `fieldId` (nếu có) phải `isActive`.
+**Ngoại lệ ở `PUT`:** giữ nguyên `fieldId` hiện có thì không kiểm `isActive` (để hồ sơ vẫn lưu được khi lĩnh vực bị ngừng dùng); đổi sang lĩnh vực ngừng dùng vẫn 400.
 Ghi: `Topic` (`status DRAFT`, `facultyId = round.facultyId`, `code = nextTopicCode(tx, round.academicYear)` – sequence, an toàn đồng thời, FR05), `TopicMember { role: LEADER }`.
 201 `{ "topic": TopicDetail }`.
 

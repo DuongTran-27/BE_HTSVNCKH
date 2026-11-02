@@ -52,3 +52,12 @@ export const changePasswordSchema = z.object({
 });
 
 export const reasonSchema = z.object({ reason: z.string().trim().min(5, 'Lý do tối thiểu 5 ký tự').max(2000) });
+
+// API_GD2 §5.3–5.4: lời mời mời theo mã sinh viên; đổi trưởng nhóm kèm version
+export const invitationCreateSchema = z.object({ inviteeCode: z.string().trim().min(1, 'Nhập mã sinh viên').max(64) });
+export const leaderTransferSchema = z.object({ userId: z.string().trim().min(1).max(64), version: z.int().min(0) });
+export const invitationListQuerySchema = z.object({
+  status: z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN']).optional(),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
