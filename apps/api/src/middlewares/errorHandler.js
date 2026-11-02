@@ -1,9 +1,39 @@
 import { AppError } from '../lib/errors.js';
 
+// Lỗi Prisma nhận diện theo hình dạng (name/code), không import lớp để lỗi giả trong test cũng khớp.
+const isPrismaError = (e) => typeof e?.name === 'string' && e.name.startsWith('PrismaClient');
+const isLockContention = (e) =>
+  (e.code === 'P2010' && e.meta?.code === '55P03') ||
+  e.code === 'P2034' ||
+  ((e.code === undefined || e.code === 'P2010') && /55P03|lock timeout/i.test(String(e.message)));
+
+// P2002 -> details { trường-request: 'Đã tồn tại' } nếu MỌI cột trong meta.target ánh xạ được qua req.duplicateFields
+const duplicateDetails = (req, err) => {
+  const target = [].concat(err.meta?.target ?? []);
+  const map = req.duplicateFields;
+  if (!map || !target.length || !target.every((c) => map[c])) return undefined;
+  return Object.fromEntries(target.map((c) => [map[c], 'Đã tồn tại']));
+};
+
 // Định dạng lỗi chuẩn, không lộ stack trace (NFR02)
 export const errorHandler = (logger) => (err, req, res, _next) => {
   if (err instanceof AppError) {
     return res.status(err.status).json({ error: { code: err.code, message: err.message, details: err.details } });
+  }
+  if (isPrismaError(err)) {
+    if (err.code === 'P2002') {
+      return res.status(409).json({ error: { code: 'DUPLICATE', message: 'Dữ liệu đã tồn tại', details: duplicateDetails(req, err) } });
+    }
+    if (err.code === 'P2025') return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy' } });
+    if (err.code === 'P2028') { // transaction hết hạn / hết maxWait: quá tải, không phải xung đột dữ liệu (đã rollback)
+      logger?.warn({ reqId: req.id, code: err.code }, 'Transaction hết hạn');
+      return res.status(503).json({ error: { code: 'SERVICE_BUSY', message: 'Hệ thống đang bận, vui lòng thử lại sau' } });
+    }
+    if (isLockContention(err)) {
+      return res.status(409).json({
+        error: { code: 'CONCURRENT_UPDATE', message: 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại' },
+      });
+    }
   }
   if (err?.type === 'entity.parse.failed') {
     return res.status(400).json({ error: { code: 'BAD_JSON', message: 'JSON không hợp lệ' } });

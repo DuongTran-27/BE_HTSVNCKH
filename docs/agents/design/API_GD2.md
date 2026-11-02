@@ -40,7 +40,7 @@ Chỗ nào ghi **"Giả định – chờ khoa xác nhận"** là giá trị/hà
 ### 1.2 Thứ tự middleware (bắt buộc)
 - JSON: `requireAuth` → `requirePasswordChanged` → [limiter] → `requireRole(...)` → `validate(schema[, 'query'])` → handler (service kiểm quan hệ với đề tài và điều kiện nghiệp vụ).
 - Multipart (chỉ nhập CSV ở GĐ2): `requireAuth` → `requirePasswordChanged` → limiter → `requireRole` + kiểm phạm vi **chỉ từ tham số URL/query** → multer (bọc theo QD §4.2) → kiểm nội dung file (QD §4.3.6) → `validate` → handler. Người chưa đăng nhập/ngoài phạm vi bị 401/403 **trước khi** file được đọc.
-- **Mới – `requirePasswordChanged`** (FR02 "sau reset phải đổi mật khẩu ở lần đăng nhập đầu"): nếu `req.user.mustChangePassword === true` thì 403 `PASSWORD_CHANGE_REQUIRED`. **T206** hiện thực trong `apps/api/src/middlewares/auth.js`. Gắn **một lần** ở `app.js`: `app.use('/api', requireAuth, requirePasswordChanged)` đặt **sau** `/api/auth` và `/api/health`, nên mọi router nghiệp vụ tự có, không task nào phải nhớ gắn. Test 403 thuộc T206. Không cần đổi `requireAuth`, vì `publicUser` đã có `mustChangePassword` và user được nạp lại mỗi request. Vì vậy hai bước đầu của chuỗi dưới đây đã chạy sẵn ở mức app.
+- **Mới – `requirePasswordChanged`** (FR02 "sau reset phải đổi mật khẩu ở lần đăng nhập đầu"): nếu `req.user.mustChangePassword === true` thì 403 `PASSWORD_CHANGE_REQUIRED`. **T206** hiện thực trong `apps/api/src/middlewares/auth.js`. Mỗi router nghiệp vụ nhận `guard = [requireAuth, requirePasswordChanged]` và tạo qua `businessRouter(guard)` (`lib/router.js`): guard là câu đầu của router nên không thể quên; router mount ở tiền tố riêng `/api/<tiền tố>` nên đường dẫn lạ chưa đăng nhập vẫn 404 (test GĐ1). Test T206 kiểm mọi tiền tố 401/403 và cấm `routes.js` (trừ auth) tự tạo `Router`. Test 403 thuộc T206. Không cần đổi `requireAuth`, vì `publicUser` đã có `mustChangePassword` và user được nạp lại mỗi request. Vì vậy hai bước đầu của chuỗi dưới đây đã chạy sẵn ở mức app.
 - Limiter chỉ tạo qua `createLimiter` (QD §4.2), không gọi `rateLimit()` trực tiếp.
 
 ### 1.3 Định dạng phản hồi
@@ -105,10 +105,9 @@ Chỗ nào ghi **"Giả định – chờ khoa xác nhận"** là giá trị/hà
   - `set_config(…, true)` tương đương `SET LOCAL` nhưng nhận tham số bind (`SET` thì không). Chỉ có hiệu lực trong transaction nên không rò sang phiên khác của pooler.
   - **Quy tắc: `lock_timeout` < `timeout` của transaction.** Nếu bằng hoặc lớn hơn, bộ đếm của Prisma (tính từ đầu transaction) hết trước, lỗi thành `P2028` thay vì `55P03`. 3 s chờ khóa cho phép vài câu khóa nối tiếp mà vẫn dưới 15 s.
   - Mọi transaction có khóa ở §5.3, §5.4, §5.5, §6 chạy qua `withLockTx`. `applyTransition` đổi `prisma.$transaction(fn)` thành `withLockTx(prisma, fn)`, để `lock_timeout` có hiệu lực **trước** `updateMany` (câu lấy khóa Topic, tranh chấp nhiều nhất ở REQUEST_ADVISOR và ACCEPT_ADVISING). Đặt trong `extra` là quá muộn.
-- **Lỗi khi hết thời gian/tranh chấp → 409 `CONCURRENT_UPDATE`** (errorHandler, T206). Prisma trả các dạng sau, phải nhận đủ:
+- **Lỗi khi hết thời gian/tranh chấp → 409 `CONCURRENT_UPDATE`**; **`P2028` (transaction hết hạn/hết `maxWait`) → 503 `SERVICE_BUSY`** kèm `logger.warn` (reviewer T200 v3 MINOR 1; errorHandler, T206). Prisma trả các dạng 409 sau, phải nhận đủ:
   - `PrismaClientKnownRequestError` `P2010` với `meta.code === '55P03'` (từ `$queryRaw`/`$executeRaw`);
   - `P2034` (deadlock, xung đột ghi);
-  - `P2028` (transaction hết hạn/đã đóng – lưới an toàn nếu quy tắc trên bị vi phạm);
   - dự phòng: lỗi Prisma (kể cả `PrismaClientUnknownRequestError`, không có `code`) có `message` chứa `55P03` hoặc `lock timeout` – dạng lỗi của truy vấn thường như `updateMany` khi hết `lock_timeout` chưa xác minh được.
   - Dữ liệu an toàn vì transaction đã rollback; client tải lại rồi thử lại.
   - Test: T206 unit test errorHandler với lỗi giả cho từng dạng trên. T210 integration test **trên DB thật** (không mock được hình dạng lỗi): tx A giữ khóa một Topic, tx B `applyTransition` cùng Topic nhận 409 `CONCURRENT_UPDATE` sau ~3 s, không phải 500.
@@ -138,7 +137,7 @@ Thông điệp là mặc định; service có thể cụ thể hơn nhưng giữ
 | 403 | `PASSWORD_CHANGE_REQUIRED` | Bạn cần đổi mật khẩu trước khi tiếp tục | Mới, §1.2 |
 | 404 | `NOT_FOUND` | Không tìm thấy | ID không tồn tại |
 | 409 | `INVALID_TRANSITION` | Không thể thực hiện thao tác này khi đề tài đang ở trạng thái hiện tại | Đã có |
-| 409 | `CONCURRENT_UPDATE` | Đề tài vừa được người khác cập nhật, vui lòng tải lại | Đã có; lệch `version`; hết thời gian chờ khóa, deadlock, transaction hết hạn (§1.8) |
+| 409 | `CONCURRENT_UPDATE` | Dữ liệu vừa được người khác cập nhật, vui lòng tải lại | Đã có; lệch `version`; hết thời gian chờ khóa (`55P03`), deadlock/xung đột ghi (`P2034`) (§1.8) |
 | 409 | `SIMILARITY_NOT_CHECKED` | Chưa kiểm tra được trùng lặp, vui lòng thử lại | Đã có; FR06 lỗi |
 | 409 | `TOPIC_NOT_EDITABLE` | Chỉ sửa được hồ sơ ở trạng thái Nháp hoặc Cần chỉnh sửa | FR05 |
 | 409 | `REGISTRATION_CLOSED` | Ngoài thời gian đăng ký của đợt | FR05, FR16.5 |
@@ -154,6 +153,7 @@ Thông điệp là mặc định; service có thể cụ thể hơn nhưng giữ
 | 413 | `PAYLOAD_TOO_LARGE` | Dữ liệu gửi lên quá lớn / File vượt quá dung lượng cho phép | QD §4.2 |
 | 429 | `RATE_LIMITED` | Thao tác quá nhiều lần, vui lòng thử lại sau | QD §4.2, §4.6. Factory `createLimiter` giữ `standardHeaders`, nên response có header `RateLimit-*` và `Retry-After` (giây). Frontend hiện "thử lại sau N phút"; không có header thì chỉ hiện thông điệp. T215 xác minh header |
 | 429 | `TEMP_LOCKED` | Đăng nhập sai quá nhiều lần, vui lòng thử lại sau | Đã có |
+| 503 | `SERVICE_BUSY` | Hệ thống đang bận, vui lòng thử lại sau | Prisma `P2028`: transaction hết hạn / hết `maxWait` (quá tải, không phải xung đột dữ liệu; đã rollback). `errorHandler` ghi `logger.warn`. Client thử lại như 409 |
 | 500 | `INTERNAL` | Lỗi hệ thống, vui lòng thử lại | Đã có, kèm `requestId` |
 
 Quy ước 403 hay 404: ID không tồn tại → 404; tồn tại nhưng ngoài phạm vi → 403 (khớp ca test "người ngoài nhận 403", NFR02). ID là cuid nên không dò được. Quyền xem được kiểm **trước** mọi điều kiện trạng thái, nên người ngoài luôn nhận 403, không nhận 409 (§8.1).
@@ -727,7 +727,7 @@ CREATE TRIGGER similarity_check_immutable BEFORE UPDATE OR DELETE ON "Similarity
 | Thay đổi | Task |
 |---|---|
 | `conflict(code, msg, details)` trong `lib/errors.js` (thêm tham số, không phá chỗ gọi cũ) | T206 |
-| `errorHandler`: Prisma `P2002` → 409 `DUPLICATE`. `details` lấy từ `err.meta.target`, **đổi tên cột sang tên trường request** qua bảng ánh xạ của từng module; không ánh xạ được thì không trả `details`. Prisma `P2025` (không tìm thấy khi update) → 404 `NOT_FOUND`. Tranh chấp khóa → 409 `CONCURRENT_UPDATE`, nhận đủ các dạng ở §1.8: `P2010` + `meta.code === '55P03'`, `P2034`, `P2028`, dự phòng `message` chứa `55P03`/`lock timeout`. Unit test bằng lỗi giả cho từng dạng | T206 |
+| `errorHandler`: Prisma `P2002` → 409 `DUPLICATE`. `details` lấy từ `err.meta.target`, **đổi tên cột sang tên trường request** qua bảng ánh xạ của từng module; không ánh xạ được thì không trả `details`. Prisma `P2025` (không tìm thấy khi update) → 404 `NOT_FOUND`. Tranh chấp khóa → 409 `CONCURRENT_UPDATE`, nhận đủ các dạng ở §1.8: `P2010` + `meta.code === '55P03'`, `P2034`, dự phòng `message` chứa `55P03`/`lock timeout`. `P2028` → 503 `SERVICE_BUSY` + `logger.warn`. Unit test bằng lỗi giả cho từng dạng. Cơ chế `details` của `DUPLICATE`: route đặt `req.duplicateFields = { cột: trườngRequest }` | T206 |
 | Helper `withLockTx` + hằng `LOCK_TIMEOUT`, `LOCK_TX_OPTIONS` (`lib/tx.js`, §1.8); dùng cho lời mời, chấp nhận lời mời, đổi trưởng nhóm | T208 |
 | `applyTransition` chạy qua `withLockTx` (đặt `lock_timeout` trước `updateMany`; `timeout` 15 s > `lock_timeout` 3 s). Integration test trên DB thật: hai tx cùng khóa một Topic, tx sau nhận 409 chứ không 500 | T210 |
 | `requirePasswordChanged` + gắn ở `app.js` (§1.2) | T206 |

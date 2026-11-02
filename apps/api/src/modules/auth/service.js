@@ -98,4 +98,5 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
 export const publicUser = (u) => ({
   id: u.id, code: u.code, email: u.email, fullName: u.fullName, role: u.role,
   facultyId: u.facultyId ?? null, mustChangePassword: u.mustChangePassword,
+  staffFacultyIds: u.role === 'STAFF' ? (u.staffScopes ?? []).map((s) => s.facultyId) : [],
 });

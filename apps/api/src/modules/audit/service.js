@@ -1,19 +1,19 @@
 // Lịch sử thao tác (FR15): AuditLog + StatusHistory chỉ thêm. `db` là prisma hoặc tx của $transaction, để ghi
 // trong CÙNG transaction với thao tác nghiệp vụ (API_GD2 §1).
 
-// before/after không bao giờ chứa mật khẩu, hash, token (API_GD2 §1) – lọc theo tên khóa ở mọi độ sâu.
-const SECRET_KEY = /password|token|secret|hash$/i;
+// before/after không bao giờ chứa mật khẩu, hash, token, khóa API... (API_GD2 §1) – lọc theo tên khóa ở mọi độ sâu.
+const SECRET_KEY = /password|token|secret|hash$|key$|authorization|cookie|credential|otp|salt/i;
+const isPlainObject = (v) => v !== null && typeof v === 'object' && [Object.prototype, null].includes(Object.getPrototypeOf(v));
 export const redact = (v) => {
   if (Array.isArray(v)) return v.map(redact);
   if (v instanceof Date) return v.toISOString();
-  if (v && typeof v === 'object') {
-    return Object.fromEntries(
-      Object.entries(v)
-        .filter(([k]) => !SECRET_KEY.test(k))
-        .map(([k, x]) => [k, redact(x)]),
-    );
-  }
-  return v;
+  // Decimal/Buffer/BigInt... giữ nguyên, không biến thành object rỗng hay mảng byte
+  if (!isPlainObject(v)) return v;
+  return Object.fromEntries(
+    Object.entries(v)
+      .filter(([k]) => !SECRET_KEY.test(k))
+      .map(([k, x]) => [k, redact(x)]),
+  );
 };
 
 const toRow = ({ actorId = null, action, entityType, entityId, before, after, ip = null }) => ({

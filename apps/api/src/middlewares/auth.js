@@ -1,4 +1,4 @@
-import { unauthorized, forbidden } from '../lib/errors.js';
+import { unauthorized, forbidden, AppError } from '../lib/errors.js';
 import { verifyAccessToken } from '../lib/tokens.js';
 import { publicUser } from '../modules/auth/service.js';
 
@@ -18,5 +18,13 @@ export const createRequireAuth = ({ env, loadUser }) => async (req, _res, next) 
 // Phân quyền theo vai trò; quyền theo quan hệ đề tài kiểm tra trong service (FR25)
 export const requireRole = (...roles) => (req, _res, next) => {
   if (!req.user || !roles.includes(req.user.role)) throw forbidden();
+  next();
+};
+
+// FR02: sau reset phải đổi mật khẩu ở lần đăng nhập đầu. Gắn một lần ở app.js, sau requireAuth.
+export const requirePasswordChanged = (req, _res, next) => {
+  if (req.user?.mustChangePassword) {
+    throw new AppError(403, 'PASSWORD_CHANGE_REQUIRED', 'Bạn cần đổi mật khẩu trước khi tiếp tục');
+  }
   next();
 };
