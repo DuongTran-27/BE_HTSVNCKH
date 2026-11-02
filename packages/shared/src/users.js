@@ -47,3 +47,23 @@ export const userListQuerySchema = paginationQuery.extend({
   isLocked: z.enum(['true', 'false']).optional(),
   q: z.string().trim().max(200).optional(),
 });
+
+// T207b: nhập CSV tài khoản (API_GD2 §3.2, QD_ZOD §4.4). Backend và frontend dùng chung để kiểm trước khi upload.
+export const USER_IMPORT_HEADERS = Object.freeze(['code', 'email', 'fullName', 'role', 'classCode']);
+export const USER_IMPORT_MAX_ROWS = 2000;
+export const USER_IMPORT_MAX_BYTES = 1024 * 1024;
+
+// Một dòng CSV (ô trống ở classCode -> không có lớp). Lỗi theo trường để báo `errors[].field`.
+export const userImportRowSchema = z
+  .object({
+    code: catalogCodeSchema,
+    email: emailSchema,
+    fullName: fullNameSchema,
+    role: z.enum([ROLES.STUDENT, ROLES.LECTURER]),
+    classCode: z.string().trim().max(64).optional().transform((v) => v || undefined),
+  })
+  .superRefine((v, ctx) => {
+    const add = (message) => ctx.addIssue({ code: 'custom', path: ['classCode'], message });
+    if (v.role === ROLES.STUDENT && !v.classCode) add('Sinh viên cần mã lớp');
+    if (v.role === ROLES.LECTURER && v.classCode) add('Chỉ sinh viên mới có lớp');
+  });

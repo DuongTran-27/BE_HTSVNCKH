@@ -95,7 +95,8 @@ describe('thu hồi phiên không bỏ sót token đang được cấp', () => {
     await g.isPaused;
     const lock = createAccountService({ repo: createAccountRepo(prisma), hasher: fakeHasher })
       .setLocked({ id: admin.id, role: 'ADMIN', staffFacultyIds: [] }, victim.id, true, null);
-    expect(await waitBlocked('SELECT%"User"%FOR NO KEY UPDATE%')).toBe(true);
+    // Chờ khóa chỉ để lệnh khóa kịp tới điểm chặn; KHÔNG khẳng định chặn: hậu quả (không còn token sống) mới là điều cần đúng
+    await waitBlocked('SELECT%"User"%FOR NO KEY UPDATE%');
     g.release();
     await refresh;
     await lock;

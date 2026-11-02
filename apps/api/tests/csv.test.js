@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toCsv, escapeCell } from '../src/lib/csv.js';
+import { toCsv, escapeCell } from '@nckh/shared';
 
 describe('Xuất CSV (FR14)', () => {
   it('có BOM UTF-8 để Excel hiển thị tiếng Việt', () => {

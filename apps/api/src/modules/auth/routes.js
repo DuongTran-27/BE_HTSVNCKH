@@ -32,7 +32,8 @@ export const authRouter = ({ authService, requireAuth, env }) => {
     try {
       send(res, await authService.refresh({ refreshToken: req.cookies?.[REFRESH_COOKIE], userAgent: req.get('user-agent') }));
     } catch (e) {
-      res.clearCookie(REFRESH_COOKIE, { path: cookieOpts.path });
+      // Chỉ phiên không hợp lệ (401) mới xóa cookie; 409 hết lock_timeout giữ nguyên phiên để client thử lại
+      if (e?.status === 401) res.clearCookie(REFRESH_COOKIE, { path: cookieOpts.path });
       throw e;
     }
   });

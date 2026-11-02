@@ -1,4 +1,4 @@
-import { recordAudit } from '../audit/service.js';
+import { recordAudit, recordAuditMany } from '../audit/service.js';
 import { conflict } from '../../lib/errors.js';
 
 const withScopes = { staffScopes: { select: { facultyId: true } } };
@@ -46,6 +46,30 @@ export const createAccountRepo = (prisma) => ({
       for (const a of buildAudits(created)) await recordAudit(tx, a);
       return created;
     }),
+
+  // Nhập CSV (T207b): mã không phân biệt hoa thường khớp unique lower(code); email đã lưu chữ thường
+  findExisting: ({ codes, emails }) =>
+    prisma.$queryRaw`SELECT code, email FROM "User" WHERE lower(code) = ANY(${codes}) OR email = ANY(${emails})`,
+  findClassesByCodes: (facultyId, codes) =>
+    prisma.class.findMany({ where: { code: { in: codes }, isActive: true, major: { facultyId } }, select: { id: true, code: true } }),
+  // Ghi tất cả user + AuditLog trong MỘT transaction; va chạm unique do người khác tạo cùng lúc -> rollback, 409
+  importUsers: async (data, buildAudits) => {
+    try {
+      return await prisma.$transaction(
+        async (tx) => {
+          const created = await tx.user.createManyAndReturn({ data });
+          await recordAuditMany(tx, buildAudits(created));
+          return created.length;
+        },
+        { timeout: 20000, maxWait: 5000 },
+      );
+    } catch (e) {
+      if (e?.code === 'P2002') {
+        throw conflict('DUPLICATE', 'Dữ liệu đã tồn tại', { file: 'Có mã hoặc email vừa được tạo bởi người khác, hãy xem trước lại' });
+      }
+      throw e;
+    }
+  },
 
   // Khóa dòng user, đọc bản mới nhất; compute(before) kiểm tra và trả { data, scopeIds?, revokeTokens?, buildAudits(after) }.
   updateLocked: (id, compute) =>
