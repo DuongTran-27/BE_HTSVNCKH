@@ -1,6 +1,8 @@
 import { createBrowserRouter, Outlet } from 'react-router';
 import { useAuth } from './lib/auth.js';
 import { logout } from './lib/api.js';
+import { LoginPage } from './pages/LoginPage.jsx';
+import { ChangePasswordPage } from './pages/ChangePasswordPage.jsx';
 
 // Placeholder đến khi T302 (R1, R2), T303 (layout, guard, 403/404) thay thế
 function Placeholder({ title }) {
@@ -24,8 +26,8 @@ export const router = createBrowserRouter([
     element: <Outlet />,
     children: [
       { path: '/', element: <Placeholder title="Trang chủ" /> },
-      { path: '/dang-nhap', element: <Placeholder title="Đăng nhập" /> },
-      { path: '/doi-mat-khau', element: <Placeholder title="Đổi mật khẩu" /> },
+      { path: '/dang-nhap', element: <LoginPage /> },
+      { path: '/doi-mat-khau', element: <ChangePasswordPage /> },
       { path: '*', element: <Placeholder title="Không tìm thấy trang" /> },
     ],
   },
