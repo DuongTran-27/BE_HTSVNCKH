@@ -13,8 +13,11 @@ export const createMemoryAuthRepo = (users = []) => {
   const u = new Map(users.map((x) => [x.id, { failedLogins: 0, lockedUntil: null, isLocked: false, mustChangePassword: false, ...x }]));
   const tokens = new Map();
   let seq = 0;
-  return {
+  const repo = {
     users: u, tokens,
+    withFamilyLock: (_family, fn) => fn(repo), // một luồng: không cần khóa
+    transaction: (fn) => fn(repo),
+    lockUser: async () => {},
     findUserByIdentifier: async (id) => [...u.values()].find((x) => x.email === id || x.code.toLowerCase() === id) ?? null,
     findUserById: async (id) => u.get(id) ?? null,
     updateUser: async (id, data) => { const x = { ...u.get(id), ...data }; u.set(id, x); return x; },
@@ -31,6 +34,7 @@ export const createMemoryAuthRepo = (users = []) => {
       for (const t of tokens.values()) if (t.userId === userId && !t.revokedAt && t.family !== except) t.revokedAt = at;
     },
   };
+  return repo;
 };
 
 export const student = { id: 'u1', code: 'SV001', email: 'sv001@st.edu.vn', fullName: 'Nguyễn Văn A', role: 'STUDENT', passwordHash: 'h:Matkhau123' };

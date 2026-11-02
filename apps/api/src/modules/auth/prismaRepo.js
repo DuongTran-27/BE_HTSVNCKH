@@ -1,7 +1,24 @@
 // staffScopes nạp kèm để publicUser trả staffFacultyIds (API_GD2 §1.1, T206)
 const withScopes = { staffScopes: { select: { facultyId: true } } };
 
+// `prisma` có thể là tx của $transaction (withFamilyLock tạo repo trên tx, không lồng transaction)
 export const createAuthRepo = (prisma) => ({
+  // Transaction: repo trên tx (không lồng transaction)
+  transaction: (fn) => prisma.$transaction((tx) => fn(createAuthRepo(tx))),
+  // Khóa dòng User trong transaction: cấp token (refresh/login) lấy SHARE, đổi mật khẩu lấy NO KEY UPDATE. Hai khóa xung đột
+  // với nhau (và với khóa của reset/lock tài khoản), nên thu hồi phiên không bỏ sót token đang được cấp (T207a MAJOR).
+  lockUser: async (id, share) => {
+    if (share) await prisma.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR SHARE`;
+    else await prisma.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR NO KEY UPDATE`;
+  },
+  // Khóa tư vấn theo họ phiên, giữ tới hết transaction: refresh/logout cùng họ chạy tuần tự (T205 MINOR).
+  // lock_timeout ngắn: kẻ bắn nhiều refresh cùng họ không giữ connection của pool lâu (lỗi 55P03 -> 409, errorHandler).
+  withFamilyLock: (family, fn) =>
+    prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SET LOCAL lock_timeout = '3s'`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${family}))`;
+      return fn(createAuthRepo(tx));
+    }),
   findUserByIdentifier: (id) => prisma.user.findFirst({
     where: { OR: [{ email: id }, { code: { equals: id, mode: 'insensitive' } }] }, include: withScopes,
   }),

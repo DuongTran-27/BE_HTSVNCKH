@@ -11,12 +11,13 @@ import { authRouter } from './modules/auth/routes.js';
 import { notFound } from './lib/errors.js';
 import { catalogRouters } from './modules/catalog/routes.js';
 import { roundsRouter } from './modules/rounds/routes.js';
+import { accountsRouter } from './modules/accounts/routes.js';
 
 /**
  * Tạo ứng dụng với phụ thuộc được tiêm vào để test không cần database thật.
- * deps: { env, logger, authRepo, hasher, catalogRepo, roundRepo, checkDb }
+ * deps: { env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, checkDb }
  */
-export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRepo, checkDb = async () => true }) => {
+export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, genPassword, checkDb = async () => true }) => {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // sau proxy của Vercel/Render
@@ -41,6 +42,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     for (const [prefix, router] of Object.entries(catalogRouters({ repo: catalogRepo, guard }))) app.use(`/api/${prefix}`, router);
   }
   if (roundRepo) app.use('/api/rounds', roundsRouter({ repo: roundRepo, guard }));
+  if (accountRepo) app.use('/api/users', accountsRouter({ repo: accountRepo, hasher, guard, genPassword }));
 
   app.use((_req, _res) => { throw notFound('Không tìm thấy đường dẫn'); });
   app.use(errorHandler(logger));

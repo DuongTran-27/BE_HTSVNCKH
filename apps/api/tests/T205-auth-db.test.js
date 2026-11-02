@@ -172,16 +172,18 @@ describe('FR01 trên Postgres – logout đồng thời với refresh', () => {
   const lockWaiters = async () =>
     (
       await prisma.$queryRaw`
-    SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'`
+    SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'
+        AND query ILIKE '%pg_advisory_xact_lock%'`
     )[0].n;
 
-  it('UPDATE thu hồi họ của logout lấy snapshot trước khi token mới N commit → N vẫn bị thu hồi', async () => {
+  it('logout chờ khóa họ của refresh đang chạy, rồi thu hồi cả token mới N', async () => {
     const { refreshToken, refreshRecord: o } = await svc.login({ identifier: 'SV900', password: PASSWORD });
     let logout;
     let blocked = false;
-    // Giữ một "refresh" chưa commit: tạo N rồi CAS token cũ O (đang khóa dòng O)
+    // Giữ một "refresh" chưa commit (đang giữ khóa tư vấn của họ như refresh thật): tạo N rồi CAS token cũ O
     await prisma.$transaction(
       async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${o.family}))`;
         await tx.refreshToken.create({
           data: {
             userId: user.id,
@@ -192,7 +194,7 @@ describe('FR01 trên Postgres – logout đồng thời với refresh', () => {
         });
         await tx.refreshToken.updateMany({ where: { id: o.id, revokedAt: null }, data: { revokedAt: new Date() } });
         logout = svc.logout({ refreshToken });
-        // Chờ tới khi UPDATE đầu của logout đã lấy snapshot (không thấy N) và đứng chờ khóa dòng O
+        // Logout phải đứng chờ khóa tư vấn của họ cho tới khi refresh commit
         for (let i = 0; i < 100 && !blocked; i++) {
           blocked = (await lockWaiters()) > 0;
           if (!blocked) await new Promise((r) => setTimeout(r, 20));
@@ -205,39 +207,44 @@ describe('FR01 trên Postgres – logout đồng thời với refresh', () => {
     expect(await liveCount({ family: o.family })).toBe(0);
   });
 
-  // Chen logout vào giữa các bước refresh (repo Prisma thật): CAS trên DB trả false → refresh thu hồi cả họ
+  // Logout bắt đầu giữa các bước refresh (hook trong khóa họ): logout phải chờ refresh commit rồi thu hồi cả họ,
+  // không deadlock, không còn token sống (trước đây refresh bị 401; nay hai việc tuần tự).
   it.each(['beforeCreate', 'beforeRotate'])(
-    'logout chen giữa refresh (%s) → refresh 401, không còn token sống',
+    'logout chen giữa refresh (%s) → chờ khóa họ, sau cùng không còn token sống',
     async (at) => {
       const { refreshToken, refreshRecord } = await svc.login({ identifier: 'SV900', password: PASSWORD });
-      let fired = false;
-      const fire = async () => {
-        if (!fired) {
-          fired = true;
-          await svc.logout({ refreshToken });
-        }
+      let logout = null;
+      const fire = () => {
+        logout ??= svc.logout({ refreshToken });
       };
       const hooked = createAuthService({
         hasher: passwordHasher,
         env: testEnv,
         repo: {
           ...repo,
-          createRefreshToken: async (d) => {
-            if (at === 'beforeCreate') await fire();
-            return repo.createRefreshToken(d);
-          },
-          revokeToken: async (...a) => {
-            if (at === 'beforeRotate') await fire();
-            return repo.revokeToken(...a);
-          },
+          withFamilyLock: (family, fn) =>
+            repo.withFamilyLock(family, (r) =>
+              fn({
+                ...r,
+                createRefreshToken: async (d) => {
+                  if (at === 'beforeCreate') fire();
+                  return r.createRefreshToken(d);
+                },
+                revokeToken: async (...a) => {
+                  if (at === 'beforeRotate') fire();
+                  return r.revokeToken(...a);
+                },
+              }),
+            ),
         },
       });
       const result = await hooked.refresh({ refreshToken }).then(
         () => 'ok',
         (e) => e.status,
       );
-      expect(fired).toBe(true);
-      expect(result).toBe(401);
+      expect(logout).not.toBeNull();
+      expect(result).toBe('ok'); // logout chờ refresh xong nên refresh không bị thu hồi giữa chừng
+      await logout;
       expect(await liveCount({ family: refreshRecord.family })).toBe(0);
     },
   );

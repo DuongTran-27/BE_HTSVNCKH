@@ -38,6 +38,7 @@ describe('§11b – index và trigger viết bằng SQL thô', () => {
       expect(def[name], `thiếu index ${name}`).toMatch(/^CREATE UNIQUE INDEX .* WHERE /);
       for (const p of parts) expect(def[name]).toContain(p);
     }
+    expect(def.User_code_lower_key).toMatch(/^CREATE UNIQUE INDEX .* ON public\."User" USING btree \(lower\(code\)\)/);
     expect(def.topic_title_trgm_idx).toMatch(/USING gin .*immutable_unaccent\(title\).*gin_trgm_ops/);
   });
 

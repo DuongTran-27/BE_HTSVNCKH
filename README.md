@@ -90,11 +90,25 @@ CI (`.github/workflows/ci.yml`) chạy mỗi PR: lint + format + build web (Node
    cd apps/api
    npx prisma migrate deploy   # áp prisma/migrations (init + search_and_security = prisma/sql/after_init.sql)
    ```
-   Tạo quản trị viên đầu tiên trên production **chưa có cách an toàn** (chưa có task; không dùng seed cho việc này).
+   Tạo quản trị viên đầu tiên trên production: **không dùng seed** (mật khẩu công khai), dùng lệnh một lần ở mục "Tạo quản trị viên đầu tiên" bên dưới.
    - Đổi schema: `npx prisma migrate dev --create-only --name <tên>`, đọc `migration.sql` trước khi áp. **Migration tự sinh có `DROP INDEX`/`DROP TRIGGER` cho các đối tượng trong `after_init.sql` (`topic_title_trgm_idx`, 5 partial unique index, 5 trigger chỉ-thêm) → xóa dòng đó trước khi commit.** (Prisma 5.22 đã thử ở T203: không sinh, nhưng phiên bản sau có thể khác; `tests/T203-schema.test.js` đỏ nếu đối tượng nào bị xóa.)
    - Bảng mới: migration phải có `ALTER TABLE "<Bảng>" ENABLE ROW LEVEL SECURITY;` (NFR03 – chặn Data API Supabase); `tests/T203-schema.test.js` đỏ nếu bảng nào trong schema `public` chưa bật RLS. View phải `security_invoker = true`, không dùng materialized view trong `public` (cùng test).
    - Index/trigger SQL thô mới: viết vào migration mới tạo bằng `--create-only`, thêm vào danh sách kiểm trong `tests/T203-schema.test.js`.
 4. `npm run dev -w @nckh/api` → http://localhost:4000/api/health
+
+## Tạo quản trị viên đầu tiên (production, Supabase)
+
+Không có tự đăng ký và seed không được chạy trên production, nên tài khoản đầu tiên tạo bằng CLI, chạy tay một lần trên máy
+của người quản trị (cần `DATABASE_URL` trỏ tới DB đích và `JWT_ACCESS_SECRET` trong `apps/api/.env`; không commit file này):
+```bash
+cd apps/api
+node --env-file=.env scripts/create-admin.js --code QT001 --email quantri@khoa.edu.vn --name "Nguyễn Văn A"
+```
+- Lệnh **sinh mật khẩu tạm ngẫu nhiên** (14 ký tự) và in ra **đúng một lần**; không nhận mật khẩu từ tham số hay biến môi trường,
+  DB chỉ lưu hash Argon2id, AuditLog không chứa mật khẩu. Lưu ngay vào nơi an toàn; tài khoản bị buộc đổi mật khẩu ở lần đăng nhập đầu.
+- Từ chối nếu DB đã có quản trị viên (tránh chạy lại nhầm). `--force` chỉ dùng khi mất hết quản trị viên.
+- Sau đó quản trị viên tạo mọi tài khoản khác (cán bộ, giảng viên, sinh viên) qua `POST /api/users`; không ai tự đăng ký.
+- Đừng dán mật khẩu in ra vào chat, ticket hay log CI. Chạy xong, xóa lịch sử terminal nếu máy dùng chung.
 
 ## Dữ liệu mẫu (chỉ DB dev/demo)
 

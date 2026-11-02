@@ -5,6 +5,7 @@ import { prisma } from './lib/prisma.js';
 import { createAuthRepo } from './modules/auth/prismaRepo.js';
 import { createCatalogRepo } from './modules/catalog/prismaRepo.js';
 import { createRoundRepo } from './modules/rounds/prismaRepo.js';
+import { createAccountRepo } from './modules/accounts/prismaRepo.js';
 import { passwordHasher } from './lib/password.js';
 
 const env = loadEnv();
@@ -17,6 +18,7 @@ const app = createApp({
   hasher: passwordHasher,
   catalogRepo: createCatalogRepo(prisma),
   roundRepo: createRoundRepo(prisma),
+  accountRepo: createAccountRepo(prisma),
   checkDb: () => prisma.$queryRaw`SELECT 1`.then(() => true),
 });
 

@@ -7,9 +7,9 @@ export const MAX_FAILED_LOGINS = 5;
 export const LOCK_MINUTES = 15;
 
 export const createAuthService = ({ repo, hasher, env, now = () => new Date() }) => {
-  const issueTokens = async (user, { family = randomUUID(), userAgent } = {}) => {
+  const issueTokens = async (user, { family = randomUUID(), userAgent } = {}, r = repo) => {
     const refreshToken = newOpaqueToken();
-    const record = await repo.createRefreshToken({
+    const record = await r.createRefreshToken({
       userId: user.id,
       tokenHash: sha256(refreshToken),
       family,
@@ -41,43 +41,59 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
         throw generic;
       }
       if (user.failedLogins || user.lockedUntil) await repo.updateUser(user.id, { failedLogins: 0, lockedUntil: null });
-      return issueTokens(user, { userAgent });
+      // Cấp token dưới khóa SHARE dòng User và kiểm lại: reset/khóa/đổi mật khẩu commit trong lúc băm Argon2 thì từ chối
+      const issued = await repo.transaction(async (r) => {
+        await r.lockUser(user.id, true);
+        const fresh = await r.findUserById(user.id);
+        if (!fresh || fresh.isLocked || fresh.passwordHash !== user.passwordHash) return null;
+        return issueTokens(fresh, { userAgent }, r);
+      });
+      if (!issued) throw generic;
+      return issued;
     },
 
+    // Refresh và logout cùng họ phiên chạy TUẦN TỰ nhờ khóa tư vấn theo họ (repo.withFamilyLock): đóng khe hai lần xoay
+    // xen kẽ (T205). Việc thu hồi họ phải COMMIT trước khi từ chối, nên trong khóa chỉ trả `deny`, ném lỗi sau khi commit.
     async refresh({ refreshToken, userAgent }) {
       if (!refreshToken) throw unauthorized();
-      const record = await repo.findRefreshTokenByHash(sha256(refreshToken));
-      if (!record) throw unauthorized();
-      if (record.revokedAt) {
-        // Token đã dùng/thu hồi bị đem dùng lại → nghi bị đánh cắp: thu hồi cả họ phiên
-        await repo.revokeFamily(record.family, now());
-        throw unauthorized('Phiên đã bị thu hồi, vui lòng đăng nhập lại');
-      }
-      if (record.expiresAt <= now()) throw unauthorized('Phiên đã hết hạn');
-      const user = await repo.findUserById(record.userId);
-      if (!user || user.isLocked) {
-        await repo.revokeFamily(record.family, now());
-        throw unauthorized();
-      }
-      // Tạo token mới TRƯỚC rồi mới xoay token cũ có điều kiện (revokedAt còn null): nếu logout/refresh khác
-      // đã thu hồi token cũ trong lúc này thì thu hồi cả họ (gồm token vừa tạo) – tránh phiên hồi sinh sau logout (BUG-002).
-      const issued = await issueTokens(user, { family: record.family, userAgent });
-      if (!(await repo.revokeToken(record.id, now(), issued.refreshRecord.id))) {
-        await repo.revokeFamily(record.family, now());
-        throw unauthorized('Phiên đã bị thu hồi, vui lòng đăng nhập lại');
-      }
-      return issued;
+      const hash = sha256(refreshToken);
+      const first = await repo.findRefreshTokenByHash(hash);
+      if (!first) throw unauthorized();
+      const out = await repo.withFamilyLock(first.family, async (r) => {
+        const record = await r.findRefreshTokenByHash(hash); // đọc lại dưới khóa
+        if (!record) return { deny: 'Phiên đăng nhập không hợp lệ' };
+        if (record.revokedAt) {
+          // Token đã dùng/thu hồi bị đem dùng lại → nghi bị đánh cắp: thu hồi cả họ phiên
+          await r.revokeFamily(record.family, now());
+          return { deny: 'Phiên đã bị thu hồi, vui lòng đăng nhập lại' };
+        }
+        if (record.expiresAt <= now()) return { deny: 'Phiên đã hết hạn' };
+        await r.lockUser(record.userId, true); // chặn reset/khóa/đổi mật khẩu thu hồi hụt token đang cấp
+        const user = await r.findUserById(record.userId);
+        if (!user || user.isLocked) {
+          await r.revokeFamily(record.family, now());
+          return { deny: 'Phiên đăng nhập không hợp lệ' };
+        }
+        // Tạo token mới rồi xoay token cũ có điều kiện (revokedAt còn null); thất bại (vd khóa tài khoản thu hồi
+        // giữa chừng) thì thu hồi cả họ, kể cả token vừa tạo (BUG-002).
+        const issued = await issueTokens(user, { family: record.family, userAgent }, r);
+        if (!(await r.revokeToken(record.id, now(), issued.refreshRecord.id))) {
+          await r.revokeFamily(record.family, now());
+          return { deny: 'Phiên đã bị thu hồi, vui lòng đăng nhập lại' };
+        }
+        return { issued };
+      });
+      if (out.deny) throw unauthorized(out.deny);
+      return out.issued;
     },
 
     async logout({ refreshToken }) {
       if (!refreshToken) return;
       const record = await repo.findRefreshTokenByHash(sha256(refreshToken));
       if (!record) return;
-      // Kể cả token đã xoay vòng: thu hồi cả họ để token mới hơn (refresh chạy song song) cũng chết (BUG-002).
-      // Gọi hai lần (T205): lệnh UPDATE đầu lấy snapshot trước khi refresh song song commit token mới N, chờ khóa
-      // dòng token cũ rồi bỏ qua nó (CAS đã thu hồi) và không thấy N; lệnh thứ hai có snapshot mới nên thấy N.
-      await repo.revokeFamily(record.family, now());
-      await repo.revokeFamily(record.family, now());
+      // Kể cả token đã xoay vòng: thu hồi cả họ để token mới hơn cũng chết (BUG-002). Dưới khóa họ, mọi lần xoay
+      // đã commit trước hoặc chờ sau, nên một UPDATE đủ.
+      await repo.withFamilyLock(record.family, (r) => r.revokeFamily(record.family, now()));
     },
 
     async changePassword({ userId, currentPassword, newPassword, refreshToken }) {
@@ -87,10 +103,18 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
         throw badRequest('WRONG_PASSWORD', 'Mật khẩu hiện tại không đúng');
       }
       if (currentPassword === newPassword) throw badRequest('SAME_PASSWORD', 'Mật khẩu mới phải khác mật khẩu cũ');
-      await repo.updateUser(userId, { passwordHash: await hasher.hash(newPassword), mustChangePassword: false });
-      // Thu hồi mọi phiên khác, giữ phiên hiện tại
+      const newHash = await hasher.hash(newPassword);
       const current = refreshToken ? await repo.findRefreshTokenByHash(sha256(refreshToken)) : null;
-      await repo.revokeAllForUser(userId, now(), current?.family ?? null);
+      // Cập nhật + thu hồi phiên khác trong một transaction khóa dòng User: refresh đang cấp token phải xong trước
+      const changed = await repo.transaction(async (r) => {
+        await r.lockUser(userId, false);
+        const fresh = await r.findUserById(userId);
+        if (!fresh || fresh.passwordHash !== user.passwordHash) return false; // mật khẩu vừa bị đổi/reset song song
+        await r.updateUser(userId, { passwordHash: newHash, mustChangePassword: false });
+        await r.revokeAllForUser(userId, now(), current?.family ?? null); // giữ phiên hiện tại
+        return true;
+      });
+      if (!changed) throw badRequest('WRONG_PASSWORD', 'Mật khẩu hiện tại không đúng');
     },
   };
 };
