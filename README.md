@@ -16,6 +16,21 @@ npm install
 npm test                  # chạy toàn bộ test – cần DB test đang chạy (mục "Database test" bên dưới)
 ```
 
+## Chạy cục bộ (DB dev, không cần Docker)
+
+```bash
+npx -w @nckh/api prisma generate
+npm run db:dev:up         # embedded-postgres localhost:54330, DB nckh_dev, dữ liệu ở ~/.nckh-db-dev (giữ lại giữa các lần)
+```
+Tạo `apps/api/.env` (không commit) với `DATABASE_URL` và `DIRECT_URL` = `postgresql://postgres:postgres@localhost:54330/nckh_dev`,
+`JWT_ACCESS_SECRET` ≥ 32 ký tự ngẫu nhiên, `CORS_ORIGIN=http://localhost:5173`. Rồi:
+```bash
+cd apps/api && npx prisma migrate deploy && npx prisma db seed && cd ../..
+npm run dev:api           # http://localhost:4000/api/health (tự nạp apps/api/.env)
+npm run dev:web           # http://localhost:5173 (proxy /api → 4000)
+npm run db:dev:down       # dừng DB dev
+```
+
 ## Database test
 
 DB test tách khỏi DB dev: Postgres 16 ở `localhost:54329`, DB `nckh_test`, có sẵn `pg_trgm`, `unaccent`, `TimeZone=Asia/Ho_Chi_Minh`;
@@ -24,7 +39,7 @@ chuỗi kết nối nằm trong `apps/api/.env.test` (chỉ trỏ localhost, đ�
 ```bash
 npx -w @nckh/api prisma generate   # lần đầu sau khi clone / npm ci (db-test.js dùng @prisma/client)
 npm run db:test:up        # bật DB + in bảng kiểm tra K1–K7; gọi lại khi đang chạy → "DB test đã chạy."
-npm run db:test:reset     # xóa sạch và dựng lại schema (+ after_init.sql); chỉ chạy với DB *_test ở localhost
+npm run db:test:reset     # xóa sạch và áp lại mọi migration (prisma migrate reset); chỉ chạy với DB *_test ở localhost
 npm test
 npm run db:test:down
 ```
@@ -50,7 +65,7 @@ Gặp lỗi "Từ chối …" thì bỏ biến đã export trong shell (`unset D
 
 Quy ước test integration (`apps/api`):
 - File test chạy **tuần tự** (`fileParallelism: false`) vì mọi file dùng chung `nckh_test`.
-- Dọn dữ liệu bằng `resetData(prisma)` trong `apps/api/tests/db.js` (vd. `beforeEach`): `TRUNCATE` mọi bảng `RESTART IDENTITY CASCADE` + `ALTER SEQUENCE topic_code_seq RESTART`. Không dùng `deleteMany` cho `AuditLog`/`StatusHistory` (trigger chỉ-thêm chặn DELETE).
+- Mọi file test chèn dữ liệu phải gọi `resetData(prisma)` (`apps/api/tests/db.js`) ở `beforeAll` **trước** lần chèn đầu tiên (thêm `beforeEach` nếu cần): `TRUNCATE` mọi bảng `RESTART IDENTITY CASCADE` + `ALTER SEQUENCE topic_code_seq RESTART`; hàm này tự kiểm DB `*_test` trước khi xóa. Không dùng `deleteMany` cho `AuditLog`, `StatusHistory`, `Submission`, `ReviewDecision`, `SimilarityCheck` (trigger chỉ-thêm chặn UPDATE/DELETE).
 
 ## Lint, định dạng, độ phủ, CI
 
@@ -73,12 +88,35 @@ CI (`.github/workflows/ci.yml`) chạy mỗi PR: lint + format + build web (Node
 3. Tạo bảng:
    ```bash
    cd apps/api
-   npx prisma migrate dev --name init
-   npx prisma migrate dev --create-only --name search_and_security
-   # dán nội dung prisma/sql/after_init.sql vào migration vừa tạo, rồi:
-   npx prisma migrate dev
+   npx prisma migrate deploy   # áp prisma/migrations (init + search_and_security = prisma/sql/after_init.sql)
    ```
+   Tạo quản trị viên đầu tiên trên production **chưa có cách an toàn** (chưa có task; không dùng seed cho việc này).
+   - Đổi schema: `npx prisma migrate dev --create-only --name <tên>`, đọc `migration.sql` trước khi áp. **Migration tự sinh có `DROP INDEX`/`DROP TRIGGER` cho các đối tượng trong `after_init.sql` (`topic_title_trgm_idx`, 5 partial unique index, 5 trigger chỉ-thêm) → xóa dòng đó trước khi commit.** (Prisma 5.22 đã thử ở T203: không sinh, nhưng phiên bản sau có thể khác; `tests/T203-schema.test.js` đỏ nếu đối tượng nào bị xóa.)
+   - Bảng mới: migration phải có `ALTER TABLE "<Bảng>" ENABLE ROW LEVEL SECURITY;` (NFR03 – chặn Data API Supabase); `tests/T203-schema.test.js` đỏ nếu bảng nào trong schema `public` chưa bật RLS.
+   - Index/trigger SQL thô mới: viết vào migration mới tạo bằng `--create-only`, thêm vào danh sách kiểm trong `tests/T203-schema.test.js`.
 4. `npm run dev -w @nckh/api` → http://localhost:4000/api/health
+
+## Dữ liệu mẫu (chỉ DB dev/demo)
+
+**Không bao giờ chạy trên production.** Mọi tài khoản mẫu, kể cả quản trị `QT001`, dùng chung mật khẩu công khai dưới đây;
+`mustChangePassword` không bảo vệ được: ai đăng nhập trước sẽ tự đặt mật khẩu và chiếm tài khoản.
+Lỡ chạy trên DB không phải dev/demo: xóa toàn bộ tài khoản mẫu (email `@nckh.example`) và dữ liệu mẫu ngay.
+
+Seed chỉ chạy trên database đã được **bật cờ cho phép dữ liệu mẫu** (gắn với chính DB đích, nên URL trỏ nhầm sang
+production vẫn bị từ chối – production không có cờ). Bật một lần trên DB dev/demo, **không bao giờ chạy lệnh này trên production**:
+```sql
+ALTER DATABASE postgres SET nckh.seed_allowed = 'on';   -- Supabase: SQL Editor của project demo; DB cục bộ: thay "postgres" bằng tên DB dev
+```
+```bash
+cd apps/api
+npx prisma db seed
+```
+Seed in database/host đích, rồi từ chối nếu `NODE_ENV=production`, nếu DB chưa bật cờ (DB test cục bộ `*_test` được miễn,
+cùng chốt NFR08 của test), hoặc nếu DB đã có người dùng (nạp lại: `prisma migrate reset` trên DB dev).
+Nội dung: khoa CNTT, 3 ngành, 6 lĩnh vực, một đợt luôn đang mở đăng ký (mốc tính từ lúc chạy seed: mở từ 60 ngày trước,
+đóng sau 90 ngày), từ điển đồng nghĩa, 30 đề tài (3 mỗi trạng thái, kết quả FR06 chạy thuật toán thật).
+Tài khoản `QT001` (quản trị), `CB001–CB002` (cán bộ), `GV001–GV008`, `SV22001–SV22040`; email `<mã viết thường>@nckh.example`;
+mật khẩu chung `Nckh@2026-dev`, phải đổi ở lần đăng nhập đầu.
 
 ## Trạng thái hiện tại
 

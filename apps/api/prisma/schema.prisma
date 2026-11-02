@@ -158,6 +158,11 @@ model User {
   memberships        TopicMember[]
   advisings          Advising[]
   notifications      Notification[]
+  invitationsReceived Invitation[]     @relation("InvitationInvitee")
+  advisorRequests     AdvisorRequest[] @relation("AdvisorRequestLecturer")
+  submissionsCreated  Submission[]     @relation("SubmissionCreatedBy")
+  reviewDecisions     ReviewDecision[] @relation("ReviewDecisionDecidedBy")
+  statusChanges       StatusHistory[]  @relation("StatusHistoryActor")
 }
 
 model StaffScope {
@@ -215,6 +220,7 @@ model Topic {
   similarityChecks  SimilarityCheck[]
   changeRequests    ChangeRequest[]
   @@index([roundId, status])
+  @@index([facultyId, status])
   @@index([fieldId])
 }
 
@@ -239,6 +245,9 @@ model Invitation {
   createdAt   DateTime      @default(now()) @db.Timestamptz(6)
   respondedAt DateTime?     @db.Timestamptz(6)
   topic       Topic         @relation(fields: [topicId], references: [id])
+  invitee     User          @relation("InvitationInvitee", fields: [inviteeId], references: [id])
+  @@index([inviteeId, status])
+  @@index([topicId, status])
 }
 
 model AdvisorRequest {
@@ -251,7 +260,9 @@ model AdvisorRequest {
   createdAt   DateTime      @default(now()) @db.Timestamptz(6)
   respondedAt DateTime?     @db.Timestamptz(6)
   topic       Topic         @relation(fields: [topicId], references: [id])
+  lecturer    User          @relation("AdvisorRequestLecturer", fields: [lecturerId], references: [id])
   @@index([lecturerId, status])
+  @@index([topicId, status])
 }
 
 // Quan hệ hướng dẫn có thời hạn – endAt != null nghĩa là đã thay (FR19)
@@ -276,6 +287,7 @@ model Submission {
   createdAt         DateTime        @default(now()) @db.Timestamptz(6)
   similarityCheckId String?         @unique
   topic             Topic           @relation(fields: [topicId], references: [id])
+  createdBy         User            @relation("SubmissionCreatedBy", fields: [createdById], references: [id])
   similarityCheck   SimilarityCheck? @relation(fields: [similarityCheckId], references: [id])
   decision          ReviewDecision?
   @@unique([topicId, seq])
@@ -289,6 +301,7 @@ model ReviewDecision {
   decidedById  String
   decidedAt    DateTime   @default(now()) @db.Timestamptz(6)
   submission   Submission @relation(fields: [submissionId], references: [id])
+  decidedBy    User       @relation("ReviewDecisionDecidedBy", fields: [decidedById], references: [id])
 }
 
 // ---------- Thực hiện (FR09–FR12, FR22) ----------
@@ -386,13 +399,16 @@ model SimilarityCheck {
   contentHash      String
   corpusSize       Int
   level            SimilarityLevel?
-  matches          Json            // [{topicId, code, titleScore, contentScore, visible}]
+  // API_GD2 §7.2 – giá trị lúc kiểm, bất biến:
+  // [{topicId, code, title, academicYear, fieldName, status, titleScore, contentScore, level, matchedKeywords}]
+  matches          Json
   justification    String?
   status           CheckStatus
   errorMessage     String?
   createdAt        DateTime        @default(now()) @db.Timestamptz(6)
   topic            Topic           @relation(fields: [topicId], references: [id])
   submission       Submission?
+  @@index([topicId, createdAt])
 }
 
 model Synonym {
@@ -442,6 +458,7 @@ model StatusHistory {
   reason  String?
   at      DateTime     @default(now()) @db.Timestamptz(6)
   topic   Topic        @relation(fields: [topicId], references: [id])
+  actor   User         @relation("StatusHistoryActor", fields: [actorId], references: [id])
   @@index([topicId, at])
 }
 

@@ -4,8 +4,8 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js",
+    "dev": "node --env-file-if-exists=.env --watch src/server.js",
+    "start": "node --env-file-if-exists=.env src/server.js",
     "test": "vitest run",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
@@ -30,5 +30,8 @@
     "prisma": "^5.22.0",
     "supertest": "^7.0.0",
     "vitest": "^4.1.12"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
