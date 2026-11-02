@@ -101,6 +101,13 @@ const doRefresh = async (gen) => {
   const session = await res.json();
   // Đã đăng xuất trong lúc chờ: không hồi sinh phiên (logout gửi sau refresh để server thu hồi cookie mới)
   if (gen !== generation) return false;
+  // Cookie đã đổi sang người khác (đăng nhập tài khoản khác ở tab khác): bỏ cache và phiên của người cũ (INFO i1 T303)
+  const prev = auth.get().user;
+  if (prev && prev.id !== session.user.id) {
+    clearClientSession();
+    handlers.onLogout();
+    return false;
+  }
   auth.setSession(session);
   return true;
 };
@@ -143,7 +150,7 @@ export const startCrossTabSync = () => {
   if (authChannel || typeof BroadcastChannel === 'undefined') return;
   authChannel = new BroadcastChannel('nckh-auth');
   authChannel.onmessage = (e) => {
-    if (e.data !== 'logout' || !auth.get().user) return;
+    if ((e.data !== 'logout' && e.data !== 'login') || !auth.get().user) return;
     clearClientSession();
     handlers.onLogout();
   };
@@ -213,6 +220,7 @@ export const login = async (values) => {
   // Chờ logout trước gửi xong, tránh nó thu hồi/ghi đè cookie của phiên mới
   await serverLogout;
   auth.setSession(await api('/auth/login', { method: 'POST', body: values }));
+  authChannel?.postMessage('login'); // tab khác đang giữ phiên người cũ thì xóa (INFO i1 T303)
   return auth.get().user;
 };
 

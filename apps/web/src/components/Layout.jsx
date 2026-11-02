@@ -1,7 +1,8 @@
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router';
 import { logout } from '../lib/api.js';
 import { useAuth } from '../lib/auth.js';
-import { MENU, ROLE_LABEL } from '../lib/nav.js';
+import { ROLE_LABEL } from '@nckh/shared';
+import { MENU } from '../lib/nav.js';
 
 const linkClass = ({ isActive }) => `inline-flex min-h-11 items-center rounded-md px-3 text-sm ${isActive ? 'bg-blue-800 font-semibold' : 'hover:bg-blue-800'}`;
 

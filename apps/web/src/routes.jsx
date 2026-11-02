@@ -7,6 +7,13 @@ import { LoginPage } from './pages/LoginPage.jsx';
 import { ChangePasswordPage } from './pages/ChangePasswordPage.jsx';
 import { Placeholder } from './pages/Placeholder.jsx';
 import { Forbidden, NotFound } from './pages/ErrorPages.jsx';
+import { UsersPage } from './pages/admin/UsersPage.jsx';
+import { UserCreatePage } from './pages/admin/UserCreatePage.jsx';
+import { UserDetailPage } from './pages/admin/UserDetailPage.jsx';
+import { UserImportPage } from './pages/admin/UserImportPage.jsx';
+import { CatalogPage } from './pages/admin/CatalogPage.jsx';
+import { RoundsPage } from './pages/admin/RoundsPage.jsx';
+import { RoundFormPage } from './pages/admin/RoundFormPage.jsx';
 
 // Loader chạy ngay khi tạo router, trước khi phiên khởi động xong → phải chờ bootstrapSession trước khi đọc auth
 // (review T301-reviewer-v3 i1). Guard chỉ để dẫn đường; backend kiểm quyền thật (FR25).
@@ -66,6 +73,22 @@ const SCREENS = [
   ['kho/:code', [S, L, F, A], 'Chi tiết kho đề tài'],
 ];
 
+// Màn đã làm (T304); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
+const SCREEN_ELEMENT = {
+  'quan-ly/tai-khoan': <UsersPage />,
+  'quan-ly/tai-khoan/moi': <UserCreatePage />,
+  'quan-ly/tai-khoan/nhap-csv': <UserImportPage />,
+  'quan-ly/tai-khoan/:id': <UserDetailPage />,
+  'quan-ly/danh-muc/khoa': <CatalogPage key="khoa" kind="khoa" />,
+  'quan-ly/danh-muc/nganh': <CatalogPage key="nganh" kind="nganh" />,
+  'quan-ly/danh-muc/lop': <CatalogPage key="lop" kind="lop" />,
+  'quan-ly/danh-muc/linh-vuc': <CatalogPage key="linh-vuc" kind="linh-vuc" />,
+  'quan-ly/danh-muc/dong-nghia': <CatalogPage key="dong-nghia" kind="dong-nghia" />,
+  'quan-ly/dot': <RoundsPage />,
+  'quan-ly/dot/moi': <RoundFormPage create />,
+  'quan-ly/dot/:id': <RoundFormPage />,
+};
+
 function HomeRedirect() {
   const { user } = useAuth();
   return <Navigate to={homePath(user?.role)} replace />;
@@ -83,7 +106,7 @@ export const routes = [
       { path: '/403', element: <Forbidden /> },
       ...SCREENS.map(([path, roles, title]) => ({
         path: `/${path}`,
-        element: <RequireRole roles={roles}><Placeholder title={title} /></RequireRole>,
+        element: <RequireRole roles={roles}>{SCREEN_ELEMENT[path] ?? <Placeholder title={title} />}</RequireRole>,
       })),
       { path: '*', element: <NotFound /> },
     ],

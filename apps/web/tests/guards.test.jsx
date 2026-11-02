@@ -82,8 +82,8 @@ describe('guard', () => {
     expect(await screen.findByText('Bạn không có quyền truy cập trang này')).toBeTruthy();
   });
   it('vai trò hợp lệ thấy trang tạm trong layout (không 404)', async () => {
-    await open('/quan-ly/danh-muc/khoa', U('ADMIN'));
-    expect(await screen.findByRole('heading', { name: 'Danh mục khoa' })).toBeTruthy();
+    await open('/kho', U('ADMIN'));
+    expect(await screen.findByRole('heading', { name: 'Kho đề tài' })).toBeTruthy();
   });
   it('URL lạ → 404 trong layout, có nút Về trang chủ', async () => {
     await open('/khong-co', U('LECTURER'));

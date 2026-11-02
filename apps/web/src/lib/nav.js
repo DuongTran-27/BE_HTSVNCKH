@@ -9,9 +9,6 @@ export const safeNext = (next) => {
   return next;
 };
 
-// Chờ ROLE_LABEL của shared (T206); đổi sang import khi có
-export const ROLE_LABEL = { STUDENT: 'Sinh viên', LECTURER: 'Giảng viên', STAFF: 'Cán bộ khoa', ADMIN: 'Quản trị viên' };
-
 // Menu theo vai trò (UI §2). Chỉ để dẫn đường, backend vẫn kiểm quyền (FR25)
 const KHO = { to: '/kho', label: 'Kho đề tài' };
 export const MENU = {
