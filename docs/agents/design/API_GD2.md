@@ -433,6 +433,7 @@ Chuyển trạng thái dùng endpoint chung `POST /api/topics/:id/actions` (§8.
 | `DECLINE_ADVISING` (→ DRAFT) | GV được đề nghị | `reason` 5..2000 | `AdvisorRequest → DECLINED, reason, respondedAt` |
 | `WITHDRAW_ADVISOR_REQUEST` (→ DRAFT) | Trưởng nhóm | Luôn được rút (đề nghị không tự hết hạn, FR16.4) | `AdvisorRequest → WITHDRAWN, respondedAt` |
 
+- Response `DECLINE_ADVISING` là tóm lược (§8.1). Trong `GET /api/advisor-requests`, với GV, đề nghị đã `DECLINED`/`WITHDRAWN` chỉ trả `topic.{id, code, round}` (ẩn `title`, `status`, `version` của đề tài đã về Nháp).
 - Mỗi thời điểm chỉ một đề nghị `PENDING`: bảo đảm bởi trạng thái (chỉ gửi được từ DRAFT).
 - Hạn mức **không** kiểm lúc gửi đề nghị (đặc tả: kiểm tại thời điểm nhận); danh sách GV (§6.2) cho biết GV đã đầy để nhóm tự chọn.
 - ACCEPT sau khi đóng đăng ký: được (đặc tả không cấm), nhưng nhóm sẽ không gửi xét duyệt được (FR16.5). Cán bộ thấy danh sách đề tài kẹt bằng `GET /api/topics?status=WAITING_ADVISOR&roundId=…` (item có `round.regCloseAt`, `round.registrationOpen`).
@@ -524,7 +525,7 @@ Xử lý chung, theo thứ tự:
 6. `applyTransition` (qua `withLockTx`, §1.8): một transaction, ghi `StatusHistory { from, to, action, actorId, reason }`, tăng `version`.
 
 Response 200:
-- Mọi action: `{ "topic": TopicDetail }`.
+- Mọi action: `{ "topic": TopicDetail }`, **trừ `DECLINE_ADVISING`**: `{ "topic": { "id", "code", "status", "version" } }` (tóm lược, không có `title/summary`). Lý do: đề tài về Nháp nên GV hết quan hệ và `GET /api/topics/:id` trả 403 cho GV (§5.1); FE không đọc `topic.title` từ response này.
 - SUBMIT_FOR_REVIEW, RESUBMIT: `{ "topic": TopicDetail, "submission": { "id", "seq", "createdAt" }, "similarityCheck": SimilarityCheckView }`. Ba khóa nằm **cùng cấp**, không lồng vào `topic`.
 
 ### 8.2 SUBMIT_FOR_REVIEW (HAS_ADVISOR → UNDER_REVIEW) và RESUBMIT (NEEDS_REVISION → UNDER_REVIEW)

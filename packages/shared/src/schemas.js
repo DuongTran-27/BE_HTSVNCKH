@@ -61,3 +61,16 @@ export const invitationListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).max(10000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
+
+// API_GD2 §6, §8.1. T210 tạo union với nhánh FR16; T212a thêm nhánh gửi/gửi lại/xét duyệt.
+const version = z.int().min(0);
+export const topicActionSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('REQUEST_ADVISOR'), version, lecturerId: z.string().trim().min(1).max(64) }),
+  z.object({ action: z.literal('ACCEPT_ADVISING'), version }),
+  z.object({ action: z.literal('WITHDRAW_ADVISOR_REQUEST'), version }),
+  reasonSchema.extend({ action: z.literal('DECLINE_ADVISING'), version }),
+]);
+const reqStatus = z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN']);
+const pageQuery = { page: z.coerce.number().int().min(1).max(10000).default(1), pageSize: z.coerce.number().int().min(1).max(100).default(20) };
+export const advisorRequestListQuerySchema = z.object({ status: reqStatus.optional(), roundId: z.string().max(64).optional(), ...pageQuery });
+export const lecturerListQuerySchema = z.object({ roundId: z.string().trim().min(1).max(64), q: z.string().trim().max(200).optional(), ...pageQuery });

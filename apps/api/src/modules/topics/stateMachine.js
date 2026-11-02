@@ -2,6 +2,7 @@
 import { findTransition, countWords, DEFAULT_ROUND_CONFIG } from '@nckh/shared';
 import { AppError, forbidden, badRequest, conflict } from '../../lib/errors.js';
 import { recordStatus } from '../audit/service.js';
+import { withLockTx } from '../../lib/tx.js';
 
 /**
  * ctx (do service tính sẵn từ DB):
@@ -48,7 +49,7 @@ export const checkTransition = ({ topic, action, actor, reason, justification, c
  * để hai người bấm cùng lúc không ghi đè nhau. Ghi lịch sử (FR15).
  */
 export const applyTransition = async (prisma, { topic, transition, actor, reason, extra }) =>
-  prisma.$transaction(async (tx) => {
+  withLockTx(prisma, async (tx) => { // lock_timeout đặt TRƯỚC updateMany (API_GD2 §1.8)
     const updated = await tx.topic.updateMany({
       where: { id: topic.id, version: topic.version, status: transition.from },
       data: { status: transition.to, version: { increment: 1 } },

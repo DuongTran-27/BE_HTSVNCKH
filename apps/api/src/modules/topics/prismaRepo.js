@@ -1,6 +1,7 @@
 import { recordAudit } from '../audit/service.js';
 import { nextTopicCode } from './code.js';
 import { createGroupRepo } from './groupRepo.js';
+import { createAdvisorRepo } from './advisorRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const DETAIL_INCLUDE = {
@@ -16,6 +17,7 @@ const DETAIL_INCLUDE = {
 
 export const createTopicRepo = (prisma) => ({
   ...createGroupRepo(prisma),
+  ...createAdvisorRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, isActive: true } }),
   findDetail: (id) => prisma.topic.findUnique({ where: { id }, include: DETAIL_INCLUDE }),

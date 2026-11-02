@@ -20,19 +20,20 @@ const snapshot = (t) => ({
 });
 const fail = (details) => badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', details);
 
-export const createTopicService = ({ repo, now = () => new Date() }) => {
-  const relations = (t, user) => {
-    const me = t.members.find((m) => m.userId === user.id);
-    return {
-      isMember: !!me,
-      isLeader: me?.role === 'LEADER',
-      isCurrentAdvisor: t.advisings.some((a) => a.lecturerId === user.id),
-      isRequestedLecturer: t.advisorRequests.some((r) => r.lecturerId === user.id),
-      inStaffScope: user.role === 'STAFF' && !!user.staffFacultyIds?.includes(t.facultyId),
-    };
+export const relations = (t, user) => {
+  const me = t.members.find((m) => m.userId === user.id);
+  return {
+    isMember: !!me,
+    isLeader: me?.role === 'LEADER',
+    isCurrentAdvisor: t.advisings.some((a) => a.lecturerId === user.id),
+    isRequestedLecturer: t.advisorRequests.some((r) => r.lecturerId === user.id),
+    inStaffScope: user.role === 'STAFF' && !!user.staffFacultyIds?.includes(t.facultyId),
   };
-  const canView = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isRequestedLecturer || (rel.inStaffScope && t.status !== 'DRAFT');
+};
+export const canView = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isRequestedLecturer || (rel.inStaffScope && t.status !== 'DRAFT');
 
+
+export const createTopicService = ({ repo, now = () => new Date() }) => {
   const present = (t, user, rel) => {
     const n = now();
     const round = t.round;

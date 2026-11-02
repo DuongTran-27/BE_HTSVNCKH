@@ -6,7 +6,7 @@ import { withLockTx } from '../../lib/tx.js';
 const person = { select: { id: true, code: true, fullName: true } };
 const LIVE = { leftAt: null };
 
-const ops = (db) => ({
+export const groupOps = (db) => ({
   // Khóa Topic mức NO KEY UPDATE; trả null nếu không có
   lockTopic: async (id) => (await db.$queryRaw`SELECT id, status FROM "Topic" WHERE id = ${id} FOR NO KEY UPDATE`)[0] ?? null,
   // updateMany có điều kiện = câu khóa đồng thời tăng version; trả true nếu khớp
@@ -33,9 +33,9 @@ const ops = (db) => ({
 });
 
 export const createGroupRepo = (prisma) => ({
-  lockTx: (fn) => withLockTx(prisma, (tx) => fn(ops(tx))),
-  tx: (fn) => prisma.$transaction((tx) => fn(ops(tx))),
-  read: ops(prisma),
+  lockTx: (fn) => withLockTx(prisma, (tx) => fn(groupOps(tx))),
+  tx: (fn) => prisma.$transaction((tx) => fn(groupOps(tx))),
+  read: groupOps(prisma),
   findInvitation: (id) => prisma.invitation.findUnique({
     where: { id },
     include: { invitee: person, topic: { select: { id: true, code: true, title: true, status: true, members: { where: { ...LIVE, role: 'LEADER' }, select: { userId: true } } } } },
