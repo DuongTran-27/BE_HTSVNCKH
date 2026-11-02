@@ -16,7 +16,11 @@
     "format:check": "prettier --check eslint.config.js vitest.config.js .prettierrc.json .github",
     "db:test:up": "node apps/api/scripts/db-test.js up",
     "db:test:reset": "npm run db:test:reset -w @nckh/api",
-    "db:test:down": "node apps/api/scripts/db-test.js down"
+    "db:test:down": "node apps/api/scripts/db-test.js down",
+    "db:dev:up": "node apps/api/scripts/db-dev.js up",
+    "db:dev:down": "node apps/api/scripts/db-dev.js down",
+    "dev:api": "npm run dev -w @nckh/api",
+    "dev:web": "npm run dev -w @nckh/web"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
