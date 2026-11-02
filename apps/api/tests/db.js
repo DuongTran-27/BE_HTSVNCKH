@@ -10,6 +10,12 @@ export async function resetData(prisma) {
     "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'",
   );
   const tables = rows.map((r) => `public."${r.tablename.replaceAll('"', '""')}"`);
-  if (tables.length) await prisma.$executeRawUnsafe(`TRUNCATE ${tables.join(', ')} RESTART IDENTITY CASCADE`);
+  // Bảng chỉ-thêm chặn TRUNCATE bằng trigger (T204); replica tắt trigger thường, chỉ trong transaction này (cần superuser – DB test có).
+  if (tables.length) {
+    await prisma.$transaction([
+      prisma.$executeRawUnsafe('SET LOCAL session_replication_role = replica'),
+      prisma.$executeRawUnsafe(`TRUNCATE ${tables.join(', ')} RESTART IDENTITY CASCADE`),
+    ]);
+  }
   await prisma.$executeRawUnsafe('ALTER SEQUENCE topic_code_seq RESTART');
 }

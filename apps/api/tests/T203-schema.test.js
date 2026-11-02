@@ -232,6 +232,16 @@ describe('Dữ liệu mẫu (seed)', () => {
         await expect(seed(c)).rejects.toThrow(/chưa bật cờ cho phép dữ liệu mẫu.*nckh\.seed_allowed/);
         expect(await c.user.count()).toBe(0);
       });
+      // Phiên tự đặt cờ qua `options` trên URL: DB chưa ALTER DATABASE thì vẫn bị từ chối.
+      const c2 = new PrismaClient({ datasourceUrl: `${url}?options=${encodeURIComponent('-c nckh.seed_allowed=on')}` });
+      try {
+        const [{ v }] = await c2.$queryRaw`SELECT current_setting('nckh.seed_allowed', true) AS v`;
+        expect(v, 'options phải có hiệu lực ở phiên, nếu không test này vô nghĩa').toBe('on');
+        await expect(seed(c2)).rejects.toThrow(/chưa bật cờ/);
+        expect(await c2.user.count()).toBe(0);
+      } finally {
+        await c2.$disconnect();
+      }
       await withDb('postgres', (c) => c.$executeRawUnsafe(`ALTER DATABASE ${GUARD_DB} SET nckh.seed_allowed = 'on'`));
       await withDb(GUARD_DB, async (c) => {
         await seed(c);
@@ -289,5 +299,13 @@ describe('Dữ liệu mẫu (seed)', () => {
       SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') AND NOT c.relrowsecurity`;
     expect(rows.map((r) => r.relname)).toEqual([]);
+  });
+
+  it('không có materialized view; view phải security_invoker (bỏ qua RLS, lộ qua Data API – review bao-mat T203 v2 #2)', async () => {
+    const rows = await prisma.$queryRaw`
+      SELECT c.relname, c.relkind::text AS kind, c.reloptions FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relkind IN ('v', 'm')`;
+    const bad = rows.filter((r) => r.kind === 'm' || !(r.reloptions ?? []).includes('security_invoker=true'));
+    expect(bad.map((r) => r.relname)).toEqual([]);
   });
 });

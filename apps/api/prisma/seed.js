@@ -168,9 +168,13 @@ const nameOf = (i) => `${FAMILY[i % 10]} ${MIDDLE[(i * 3) % 8]} ${GIVEN[(i * 7) 
 // biệt được demo với production. Chỉ chạy khi DB đã được bật cờ nckh.seed_allowed (làm một lần trên DB dev/demo)
 // hoặc là DB test cục bộ "*_test" (DB_LEVEL_CHECK_SQL, cùng chốt NFR08 của test).
 async function assertSeedAllowedDb(prisma) {
-  const [{ db, allowed }] =
-    await prisma.$queryRaw`SELECT current_database() AS db, current_setting('nckh.seed_allowed', true) AS allowed`;
-  if (allowed === 'on') return;
+  // Đọc cờ ở mức database trong pg_db_role_setting (setrole = 0): phiên không ghi đè được bằng SET hay `options` trên URL.
+  const [{ db, allowed }] = await prisma.$queryRaw`
+    SELECT current_database() AS db, EXISTS (
+      SELECT 1 FROM pg_db_role_setting s JOIN pg_database d ON d.oid = s.setdatabase
+      WHERE d.datname = current_database() AND s.setrole = 0 AND 'nckh.seed_allowed=on' = ANY (s.setconfig)
+    ) AS allowed`;
+  if (allowed) return;
   try {
     await prisma.$executeRawUnsafe(DB_LEVEL_CHECK_SQL); // hằng số, không chứa dữ liệu người dùng
   } catch {

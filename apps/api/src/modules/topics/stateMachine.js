@@ -1,6 +1,7 @@
 // Kiểm tra một thao tác chuyển trạng thái có hợp lệ không (mục 5 đặc tả). Hàm thuần, không đụng DB.
 import { findTransition, countWords, DEFAULT_ROUND_CONFIG } from '@nckh/shared';
 import { AppError, forbidden, badRequest, conflict } from '../../lib/errors.js';
+import { recordStatus } from '../audit/service.js';
 
 /**
  * ctx (do service tính sẵn từ DB):
@@ -53,9 +54,7 @@ export const applyTransition = async (prisma, { topic, transition, actor, reason
       data: { status: transition.to, version: { increment: 1 } },
     });
     if (updated.count !== 1) throw conflict('CONCURRENT_UPDATE', 'Đề tài vừa được người khác cập nhật, vui lòng tải lại');
-    await tx.statusHistory.create({
-      data: { topicId: topic.id, from: transition.from, to: transition.to, action: transition.action, actorId: actor.id, reason: reason ?? null },
-    });
+    await recordStatus(tx, { topicId: topic.id, from: transition.from, to: transition.to, action: transition.action, actorId: actor.id, reason });
     if (extra) await extra(tx);
     return tx.topic.findUnique({ where: { id: topic.id } });
   });

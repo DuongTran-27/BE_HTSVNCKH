@@ -92,7 +92,7 @@ CI (`.github/workflows/ci.yml`) chạy mỗi PR: lint + format + build web (Node
    ```
    Tạo quản trị viên đầu tiên trên production **chưa có cách an toàn** (chưa có task; không dùng seed cho việc này).
    - Đổi schema: `npx prisma migrate dev --create-only --name <tên>`, đọc `migration.sql` trước khi áp. **Migration tự sinh có `DROP INDEX`/`DROP TRIGGER` cho các đối tượng trong `after_init.sql` (`topic_title_trgm_idx`, 5 partial unique index, 5 trigger chỉ-thêm) → xóa dòng đó trước khi commit.** (Prisma 5.22 đã thử ở T203: không sinh, nhưng phiên bản sau có thể khác; `tests/T203-schema.test.js` đỏ nếu đối tượng nào bị xóa.)
-   - Bảng mới: migration phải có `ALTER TABLE "<Bảng>" ENABLE ROW LEVEL SECURITY;` (NFR03 – chặn Data API Supabase); `tests/T203-schema.test.js` đỏ nếu bảng nào trong schema `public` chưa bật RLS.
+   - Bảng mới: migration phải có `ALTER TABLE "<Bảng>" ENABLE ROW LEVEL SECURITY;` (NFR03 – chặn Data API Supabase); `tests/T203-schema.test.js` đỏ nếu bảng nào trong schema `public` chưa bật RLS. View phải `security_invoker = true`, không dùng materialized view trong `public` (cùng test).
    - Index/trigger SQL thô mới: viết vào migration mới tạo bằng `--create-only`, thêm vào danh sách kiểm trong `tests/T203-schema.test.js`.
 4. `npm run dev -w @nckh/api` → http://localhost:4000/api/health
 
