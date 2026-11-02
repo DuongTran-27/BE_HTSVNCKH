@@ -72,8 +72,12 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
     async logout({ refreshToken }) {
       if (!refreshToken) return;
       const record = await repo.findRefreshTokenByHash(sha256(refreshToken));
-      // Kể cả token đã xoay vòng: thu hồi cả họ để token mới hơn (refresh chạy song song) cũng chết (BUG-002)
-      if (record) await repo.revokeFamily(record.family, now());
+      if (!record) return;
+      // Kể cả token đã xoay vòng: thu hồi cả họ để token mới hơn (refresh chạy song song) cũng chết (BUG-002).
+      // Gọi hai lần (T205): lệnh UPDATE đầu lấy snapshot trước khi refresh song song commit token mới N, chờ khóa
+      // dòng token cũ rồi bỏ qua nó (CAS đã thu hồi) và không thấy N; lệnh thứ hai có snapshot mới nên thấy N.
+      await repo.revokeFamily(record.family, now());
+      await repo.revokeFamily(record.family, now());
     },
 
     async changePassword({ userId, currentPassword, newPassword, refreshToken }) {

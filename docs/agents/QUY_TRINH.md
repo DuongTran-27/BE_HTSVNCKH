@@ -31,6 +31,14 @@ TODO → DOING → REVIEW → (CHANGES → DOING → REVIEW)* → DONE
    - Sau **3 vòng** vẫn chưa đạt, hoặc cần quyết định của con người → BLOCKED, ghi câu hỏi vào `docs/agents/CAU_HOI.md`.
 6. **Hồi quy**: sau mỗi task DONE, chạy `npm test`. Đỏ → mở task sửa lỗi `BUG-xxx` ưu tiên cao nhất.
 
+## Chế độ tiết kiệm quota (người dùng chọn 2026-11-02, áp dụng từ T302 trở đi, ghi đè bước 4–5)
+- Mỗi task **một reviewer**: `bao-mat` nếu cột Review có BM (auth, quyền, upload, dữ liệu cá nhân, CSV), ngược lại `reviewer`. Bỏ review của FE/BE/KTS/QA.
+- Tối đa **2 vòng** sửa; vòng 2 vẫn chưa đạt → BLOCKED.
+- MINOR không chặn DONE: agent chủ trì sửa luôn nếu nhỏ, còn lại ghi vào task sau.
+- Agent làm và `reviewer` chạy model Sonnet; `bao-mat` giữ model mặc định.
+- Có thể gộp các task liền nhau cùng agent chủ trì và cùng file vào một lượt (một báo cáo ghi rõ các ID).
+- Giữ nguyên: test bắt buộc, bằng chứng chạy lệnh, hồi quy `npm test` sau mỗi task, `/kiem-tra-cuoi`.
+
 ## Mức độ vấn đề trong review
 - **BLOCKER**: sai đặc tả, lỗ hổng bảo mật, mất dữ liệu, test đỏ, test bị làm yếu. Bắt buộc sửa.
 - **MAJOR**: thiếu điều kiện đạt, thiếu test cho nhánh quan trọng, lỗi tiềm ẩn đồng thời. Bắt buộc sửa.
