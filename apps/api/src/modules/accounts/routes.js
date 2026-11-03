@@ -6,7 +6,7 @@ import { createLimiter } from '../../middlewares/rateLimit.js';
 import { notFound } from '../../lib/errors.js';
 import { businessRouter } from '../../lib/router.js';
 import { badRequest, forbidden } from '../../lib/errors.js';
-import { singleFileUpload } from '../../lib/multipart.js';
+import { singleFileUpload, drainThen } from '../../lib/multipart.js';
 import { createAccountService } from './service.js';
 import { createImportService } from './importService.js';
 
@@ -32,7 +32,7 @@ export const accountsRouter = ({ repo, hasher, guard, genPassword }) => {
   // Nhập CSV (API_GD2 §3.2): guard -> limiter -> vai trò -> phạm vi (chỉ từ query) -> multer -> service (nội dung file)
   const importLimiter = () => createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'user' });
   const importScope = (req, _res, next) => {
-    if (req.user.role === 'STAFF' && !req.user.staffFacultyIds.includes(req.validated.facultyId)) throw forbidden();
+    if (req.user.role === 'STAFF' && !req.user.staffFacultyIds.includes(req.validated.facultyId)) return drainThen(req, next, forbidden());
     next();
   };
   const upload = singleFileUpload({ fileSize: USER_IMPORT_MAX_BYTES, maxParts: 7, fieldSize: 1024 });

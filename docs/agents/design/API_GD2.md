@@ -489,6 +489,7 @@ Kiểm tra bắt buộc khi gửi: trong `SUBMIT_FOR_REVIEW`/`RESUBMIT` (§8.2).
   - T211 đổi `presentMatches(matches, corpusById, viewerRole)` thành `presentMatches(matches, viewerRole)` và bỏ `corpusById`. `compare`/service ghép các trường mô tả từ `loadCorpus` (đã có `title`, `academicYear`, `fieldName`, `status`, `keywords`) trước khi lưu.
 - `matchedKeywords`:
   - Là các từ khóa **gốc của hồ sơ đang kiểm** (giữ nguyên chữ người dùng nhập), lấy những từ có dạng chuẩn hóa trùng với dạng chuẩn hóa của một từ khóa của đề tài khớp. Chuẩn hóa = chữ thường, trim, quy đồng nghĩa.
+  - Khử trùng theo dạng chuẩn hóa/nhóm đồng nghĩa: mỗi nhóm chỉ một từ, giữ dạng xuất hiện đầu tiên trong hồ sơ đang kiểm (ví dụ "AI" và "trí tuệ nhân tạo" cùng nhóm thì chỉ trả từ đứng trước).
   - Tối đa 5 phần tử. Không cần truy vấn thêm.
 - Ẩn/hiện xét theo **`status` đã lưu lúc kiểm** và vai trò người xem:
   - Đề tài khớp ở trạng thái đã duyệt trở đi (IN_PROGRESS, WAITING_CLOSE, CLOSED): mọi người xem thấy `code, title, academicYear, field, status, titleScore, contentScore, level, matchedKeywords`.

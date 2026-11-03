@@ -7,6 +7,26 @@ const bad = (msg = 'Dữ liệu tải lên không hợp lệ') => new AppError(4
 const tooBig = () => new AppError(413, 'PAYLOAD_TOO_LARGE', 'File vượt quá dung lượng cho phép');
 const SLACK = 8 * 1024; // phần đầu/biên của các part
 
+// BUG-008: trả lỗi sớm (403) khi client còn đang gửi thân lớn làm kết nối bị reset (ECONNRESET/EPIPE).
+// Bỏ dữ liệu ngay khi đến (không giữ vào RAM) tới khi hết thân, rồi mới trả lỗi. Chặn DoS: quá maxBytes hoặc quá timeoutMs thì trả lỗi luôn.
+export const drainThen = (req, next, err, { maxBytes = 32 * 1024 * 1024, timeoutMs = 10000 } = {}) => {
+  let size = 0;
+  let fired = false;
+  const fire = () => {
+    if (fired) return;
+    fired = true;
+    clearTimeout(timer);
+    req.removeAllListeners('data');
+    next(err);
+  };
+  const timer = setTimeout(fire, timeoutMs);
+  req.on('data', (c) => { size += c.length; if (size > maxBytes) fire(); });
+  req.on('end', fire);
+  req.on('error', fire);
+  req.on('aborted', fire);
+  req.resume();
+};
+
 export const singleFileUpload = ({ field = 'file', fileSize, maxParts = 7, fieldSize = 1024 }) => (req, _res, next) => {
   const boundary = /^multipart\/form-data;.*boundary=(?:"([^"]{1,70})"|([^;\s"]{1,70}))/i.exec(req.headers['content-type'] ?? '');
   if (!boundary) return next(bad('Cần gửi file bằng multipart/form-data'));

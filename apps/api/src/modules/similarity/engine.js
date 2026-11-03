@@ -76,7 +76,11 @@ export const compare = ({ candidate, corpus, thresholds, synonyms = [], topK = 5
       academicYear: d.academicYear,
       fieldName: d.fieldName ?? null,
       status: d.status,
-      matchedKeywords: candKeywords.filter(([, c]) => c && theirs.has(c)).map(([k]) => k).slice(0, 5),
+      // mỗi dạng chuẩn hóa/nhóm đồng nghĩa chỉ một từ (giữ dạng xuất hiện đầu tiên trong hồ sơ đang kiểm)
+      matchedKeywords: candKeywords
+        .filter(([, c], j) => c && theirs.has(c) && candKeywords.findIndex(([, x]) => x === c) === j)
+        .map(([k]) => k)
+        .slice(0, 5),
       titleScore: round3(titleScore),
       contentScore: round3(contentScore),
       level: levelOf(titleScore, contentScore, thresholds),

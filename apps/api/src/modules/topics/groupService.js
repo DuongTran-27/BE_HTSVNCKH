@@ -73,6 +73,8 @@ export const createGroupService = ({ repo, getTopic, now = () => new Date() }) =
         // 2) cập nhật có điều kiện PENDING, trước khi tạo TopicMember
         if (!(await o.closeInvitation(id, 'ACCEPTED', now()))) throw closed();
         const g = await o.findGroup(pre.topicId);
+        // BUG-006: người được mời có thể đã đổi khoa sau khi được mời -> 403 FORBIDDEN (ngoài khoa của đợt), rollback cả tx
+        if ((await o.findUserFaculty(user.id))?.facultyId !== g.round.facultyId) throw forbidden();
         const cfg = effectiveRoundConfig(g.round.config);
         // 3) đếm sau khóa, bằng câu riêng
         if ((await o.countMembers(pre.topicId)) >= cfg.maxMembers) throw conflict('GROUP_FULL', `Nhóm đã đủ số thành viên tối đa (${cfg.maxMembers})`);

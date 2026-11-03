@@ -13,6 +13,7 @@ export const groupOps = (db) => ({
   bumpTopic: async (where) => (await db.topic.updateMany({ where, data: { version: { increment: 1 } } })).count === 1,
   findGroup: (id) => db.topic.findUnique({ where: { id }, select: { id: true, status: true, version: true, code: true, title: true, round: true, members: { where: LIVE, select: { userId: true, role: true } } } }),
   findStudentByCode: (code) => db.user.findFirst({ where: { code: { equals: code, mode: 'insensitive' } }, select: { id: true, code: true, fullName: true, role: true, isLocked: true, facultyId: true } }),
+  findUserFaculty: (id) => db.user.findUnique({ where: { id }, select: { facultyId: true } }),
   countMembers: (topicId) => db.topicMember.count({ where: { topicId, ...LIVE } }),
   countPendingInvitations: (topicId) => db.invitation.count({ where: { topicId, status: 'PENDING' } }),
   hasPendingInvitation: async (topicId, inviteeId) => !!(await db.invitation.findFirst({ where: { topicId, inviteeId, status: 'PENDING' }, select: { id: true } })),
