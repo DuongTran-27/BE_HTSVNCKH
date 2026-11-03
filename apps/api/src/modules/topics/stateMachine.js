@@ -9,7 +9,7 @@ import { withLockTx } from '../../lib/tx.js';
  *  isLeader, isRequestedLecturer, isCurrentAdvisor, inStaffScope,
  *  similarity: {status, level} | null, requiredMilestonesPassed, hasFinalResult, cfg
  */
-export const checkTransition = ({ topic, action, actor, reason, justification, ctx = {} }) => {
+export const checkTransition = ({ topic, action, actor, reason, justification, ctx = {}, skipSimilarity = false }) => {
   const t = findTransition(action);
   if (!t) throw badRequest('UNKNOWN_ACTION', 'Thao tác không tồn tại');
   if (topic.status !== t.from) {
@@ -24,7 +24,7 @@ export const checkTransition = ({ topic, action, actor, reason, justification, c
     throw badRequest('REASON_REQUIRED', 'Thao tác này bắt buộc nhập lý do');
   }
 
-  if (t.needsSimilarity) {
+  if (t.needsSimilarity && !skipSimilarity) { // skipSimilarity: bước kiểm rẻ trước khi chạy thuật toán (API_GD2 §8.2)
     const cfg = ctx.cfg ?? DEFAULT_ROUND_CONFIG;
     const sim = ctx.similarity;
     // Lỗi kiểm tra không bao giờ được coi là "không trùng" (FR06)

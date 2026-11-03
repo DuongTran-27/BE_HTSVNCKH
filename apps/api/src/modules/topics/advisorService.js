@@ -6,18 +6,22 @@ import { relations, canView } from './service.js';
 
 const iso = (d) => d?.toISOString() ?? null;
 
+// Đủ trường bắt buộc theo cấu hình đợt (FR05) – dùng chung với gửi xét duyệt
+export const assertTopicComplete = (t) => {
+  const cfg = effectiveRoundConfig(t.round.config);
+  const parsed = topicSubmitSchema(cfg).safeParse({ title: t.title, summary: t.summary, objectives: t.objectives, keywords: t.keywords, fieldId: t.fieldId ?? '' });
+  if (parsed.success) return;
+  const details = {};
+  for (const i of parsed.error.issues) details[i.path[0] ?? '_'] ??= i.message;
+  throw badRequest('TOPIC_INCOMPLETE', 'Hồ sơ chưa đủ thông tin bắt buộc', details);
+};
+
 export const createAdvisorService = ({ repo, getTopic, now = () => new Date() }) => {
   // Điều kiện không cần khóa của REQUEST_ADVISOR (§6); trả lecturerId đã kiểm
   const precheckRequest = async (t, body) => {
     const n = now();
     if (!(t.round.regOpenAt <= n && n < t.round.regCloseAt)) throw conflict('REGISTRATION_CLOSED', 'Ngoài thời gian đăng ký của đợt');
-    const cfg = effectiveRoundConfig(t.round.config);
-    const parsed = topicSubmitSchema(cfg).safeParse({ title: t.title, summary: t.summary, objectives: t.objectives, keywords: t.keywords, fieldId: t.fieldId ?? '' });
-    if (!parsed.success) {
-      const details = {};
-      for (const i of parsed.error.issues) details[i.path[0] ?? '_'] ??= i.message;
-      throw badRequest('TOPIC_INCOMPLETE', 'Hồ sơ chưa đủ thông tin bắt buộc', details);
-    }
+    assertTopicComplete(t);
     const lec = await repo.findUser(body.lecturerId);
     if (!lec || lec.role !== 'LECTURER' || lec.isLocked || lec.facultyId !== t.round.facultyId) {
       throw badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', { lecturerId: 'Không tìm thấy giảng viên phù hợp' });

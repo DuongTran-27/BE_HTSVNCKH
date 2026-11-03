@@ -1,4 +1,4 @@
-import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, topicActionSchema, idSchema } from '@nckh/shared';
+import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, topicActionSchema, emptyBodySchema, idSchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { notFound } from '../../lib/errors.js';
@@ -6,6 +6,7 @@ import { businessRouter } from '../../lib/router.js';
 import { createTopicService } from './service.js';
 import { createLimiter } from '../../middlewares/rateLimit.js';
 import { createAdvisorService } from './advisorService.js';
+import { createReviewService, REVIEW_ACTIONS } from './reviewService.js';
 import { createGroupService } from './groupService.js';
 import { createSimilarityService } from './similarityService.js';
 
@@ -13,6 +14,7 @@ import { createSimilarityService } from './similarityService.js';
 export const topicsRouter = ({ repo, now, guard }) => {
   const svc = createTopicService({ repo, now });
   const advisor = createAdvisorService({ repo, now, getTopic: svc.get });
+  const review = createReviewService({ repo, now, getTopic: svc.get });
   const actionLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 30, keyBy: 'user' });
   const group = createGroupService({ repo, now, getTopic: svc.get });
   const similarity = createSimilarityService({ repo });
@@ -37,10 +39,11 @@ export const topicsRouter = ({ repo, now, guard }) => {
     res.json(await group.transferLeader(req.user, req.params.id, req.body, req.ip));
   });
   r.get('/:id/similarity-checks/latest', requireRole('STAFF', 'LECTURER', 'STUDENT'), async (req, res) => res.json(await similarity.latest(req.user, req.params.id)));
-  r.post('/:id/similarity-checks', student, similarityLimiter, async (req, res) => res.json(await similarity.check(req.user, req.params.id, req.ip)));
-  // Endpoint chuyển trạng thái chung (§8.1); T210: nhánh FR16, T212a mở rộng union. Vai trò kiểm bằng TRANSITIONS.
-  r.post('/:id/actions', requireRole('STUDENT', 'LECTURER'), actionLimiter, validate(topicActionSchema), async (req, res) => {
-    res.json(await advisor.act(req.user, req.params.id, req.body, req.ip));
+  r.post('/:id/similarity-checks', student, similarityLimiter, validate(emptyBodySchema), async (req, res) => res.json(await similarity.check(req.user, req.params.id, req.ip)));
+  // Endpoint chuyển trạng thái chung (§8.1); T210: nhánh FR16, T212a: gửi/xét duyệt. Vai trò kiểm bằng TRANSITIONS.
+  r.post('/:id/actions', requireRole('STUDENT', 'LECTURER', 'STAFF'), actionLimiter, validate(topicActionSchema), async (req, res) => {
+    const svcFor = REVIEW_ACTIONS.includes(req.body.action) ? review : advisor;
+    res.json(await svcFor.act(req.user, req.params.id, req.body, req.ip));
   });
   return r;
 };

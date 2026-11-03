@@ -69,7 +69,13 @@ export const topicActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('ACCEPT_ADVISING'), version }),
   z.object({ action: z.literal('WITHDRAW_ADVISOR_REQUEST'), version }),
   reasonSchema.extend({ action: z.literal('DECLINE_ADVISING'), version }),
+  // T212a (§8.1): gửi/gửi lại kèm giải trình tùy chọn; quyết định xét duyệt gắn đúng snapshot
+  ...['SUBMIT_FOR_REVIEW', 'RESUBMIT'].map((a) => z.object({ action: z.literal(a), version, justification: z.string().trim().max(5000, 'Giải trình tối đa 5000 ký tự').optional() })),
+  ...['REQUEST_REVISION', 'REJECT'].map((a) => reasonSchema.extend({ action: z.literal(a), version, submissionId: z.string().trim().min(1).max(64) })),
+  z.object({ action: z.literal('APPROVE'), version, submissionId: z.string().trim().min(1).max(64) }),
 ]);
+// Body rỗng (POST similarity-checks): thiếu body coi như {}, trường thừa bị từ chối
+export const emptyBodySchema = z.preprocess((v) => v ?? {}, z.strictObject({}));
 const reqStatus = z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN']);
 const pageQuery = { page: z.coerce.number().int().min(1).max(10000).default(1), pageSize: z.coerce.number().int().min(1).max(100).default(20) };
 export const advisorRequestListQuerySchema = z.object({ status: reqStatus.optional(), roundId: z.string().max(64).optional(), ...pageQuery });

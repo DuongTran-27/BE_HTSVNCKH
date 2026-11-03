@@ -153,13 +153,11 @@ describe('GET /api/topics/:id/similarity-checks/latest', () => {
     expect(c).toMatchObject({ status: 'OK', isStale: false });
     expect(c.matches.some((m) => m.hidden)).toBe(true);
 
-    const staff = await prisma.user.findUnique({ where: { id: U.staff.id } });
     // STAFF trong phạm vi: xem hồ sơ NEEDS_REVISION được và thấy đầy đủ hồ sơ chờ
     const sv = (await get('staff', `/api/topics/${mine.id}/similarity-checks/latest`));
     expect(sv.status).toBe(200);
     expect(sv.body.similarityCheck.matches.every((m) => !m.hidden)).toBe(true);
     expect(sv.body.similarityCheck.matches.find((m) => m.status === 'HAS_ADVISOR')).toHaveProperty('topicId');
-    expect(staff).toBeTruthy();
 
     // đổi tên đề tài khớp đã đóng: kết quả cũ vẫn hiển thị tên lúc kiểm
     await prisma.topic.updateMany({ where: { status: 'CLOSED' }, data: { title: 'Tên đã đổi sau đó' } });
