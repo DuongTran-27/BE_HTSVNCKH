@@ -11,6 +11,10 @@ const STALE = () => conflict('STALE_SUBMISSION', 'Hồ sơ đã có phiên bản
 const CONCURRENT = () => conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
 
 export const createReviewService = ({ repo, getTopic, now = () => new Date() }) => {
+  // Tx đã commit: nếu đọc lại lỗi vẫn trả kết quả tối thiểu thay vì báo lỗi cho việc đã xong (T212a MINOR 1)
+  const readAfter = (user, t, transition, body) =>
+    getTopic(user, t.id).catch(() => ({ topic: { id: t.id, status: transition.to, version: body.version + 1 } }));
+
   const submit = async (t, rel, user, body, ip) => {
     // 1. quyền xem (403) đã kiểm ở act; kiểm rẻ trước, không chạy thuật toán nếu sai trạng thái/vai trò
     const args = { topic: t, action: body.action, actor: user, ctx: rel };
@@ -46,7 +50,7 @@ export const createReviewService = ({ repo, getTopic, now = () => new Date() }) 
       });
       await o.audit({ actorId: user.id, action: 'TOPIC_SUBMIT', entityType: 'Submission', entityId: submission.id, before: { status: t.status }, after: { topicId: t.id, seq: submission.seq, action: body.action }, ip });
     });
-    return { ...(await getTopic(user, t.id)), submission: { id: submission.id, seq: submission.seq, createdAt: submission.createdAt.toISOString() }, similarityCheck: view };
+    return { ...(await readAfter(user, t, transition, body)), submission: { id: submission.id, seq: submission.seq, createdAt: submission.createdAt.toISOString() }, similarityCheck: view };
   };
 
   const decide = async (t, rel, user, body, ip) => {
@@ -58,7 +62,7 @@ export const createReviewService = ({ repo, getTopic, now = () => new Date() }) 
       await o.createDecision({ submissionId: latest.id, action: body.action, reason: body.reason ?? null, decidedById: user.id, decidedAt: now() });
       await o.audit({ actorId: user.id, action: `REVIEW_${body.action}`, entityType: 'Submission', entityId: latest.id, before: { status: t.status }, after: { topicId: t.id, seq: latest.seq, reason: body.reason ?? null }, ip });
     });
-    return getTopic(user, t.id);
+    return readAfter(user, t, transition, body);
   };
 
   return {

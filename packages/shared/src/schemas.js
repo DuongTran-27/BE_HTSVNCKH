@@ -76,6 +76,10 @@ export const topicActionSchema = z.discriminatedUnion('action', [
 ]);
 // Body rỗng (POST similarity-checks): thiếu body coi như {}, trường thừa bị từ chối
 export const emptyBodySchema = z.preprocess((v) => v ?? {}, z.strictObject({}));
+// FR17: số thứ tự snapshot và so sánh hai snapshot (API_GD2 §8.4)
+export const submissionSeqSchema = z.coerce.number().int().min(1).max(10000);
+export const submissionDiffQuerySchema = z.object({ from: submissionSeqSchema, to: submissionSeqSchema })
+  .refine((v) => v.from !== v.to, { message: 'Hai phiên bản phải khác nhau', path: ['to'] });
 const reqStatus = z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN']);
 const pageQuery = { page: z.coerce.number().int().min(1).max(10000).default(1), pageSize: z.coerce.number().int().min(1).max(100).default(20) };
 export const advisorRequestListQuerySchema = z.object({ status: reqStatus.optional(), roundId: z.string().max(64).optional(), ...pageQuery });

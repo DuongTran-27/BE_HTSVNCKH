@@ -1,4 +1,4 @@
-import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, topicActionSchema, emptyBodySchema, idSchema } from '@nckh/shared';
+import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { notFound } from '../../lib/errors.js';
@@ -8,6 +8,7 @@ import { createLimiter } from '../../middlewares/rateLimit.js';
 import { createAdvisorService } from './advisorService.js';
 import { createReviewService, REVIEW_ACTIONS } from './reviewService.js';
 import { createGroupService } from './groupService.js';
+import { createSnapshotService } from './snapshotService.js';
 import { createSimilarityService } from './similarityService.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
@@ -17,6 +18,7 @@ export const topicsRouter = ({ repo, now, guard }) => {
   const review = createReviewService({ repo, now, getTopic: svc.get });
   const actionLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 30, keyBy: 'user' });
   const group = createGroupService({ repo, now, getTopic: svc.get });
+  const snapshots = createSnapshotService({ repo });
   const similarity = createSimilarityService({ repo });
   const similarityLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'user' });
   const r = businessRouter(guard);
@@ -29,6 +31,16 @@ export const topicsRouter = ({ repo, now, guard }) => {
     res.status(201).json(await svc.create(req.user, req.body, req.ip));
   });
   r.get('/:id', requireRole('STAFF', 'LECTURER', 'STUDENT'), async (req, res) => res.json(await svc.get(req.user, req.params.id)));
+  const reader = requireRole('STAFF', 'LECTURER', 'STUDENT');
+  // FR17: đọc snapshot / lịch sử; quyền theo quan hệ ở service
+  r.get('/:id/submissions', reader, async (req, res) => res.json(await snapshots.list(req.user, req.params.id)));
+  r.get('/:id/submissions/:seq', reader, async (req, res) => {
+    const seq = submissionSeqSchema.safeParse(req.params.seq);
+    if (!seq.success) throw notFound();
+    res.json(await snapshots.get(req.user, req.params.id, seq.data));
+  });
+  r.get('/:id/submission-diff', reader, validate(submissionDiffQuerySchema, 'query'), async (req, res) => res.json(await snapshots.diff(req.user, req.params.id, req.validated)));
+  r.get('/:id/status-history', reader, async (req, res) => res.json(await snapshots.history(req.user, req.params.id)));
   r.put('/:id', student, validate(topicUpdateSchema), async (req, res) => {
     res.json(await svc.update(req.user, req.params.id, req.body, req.ip));
   });
