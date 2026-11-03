@@ -11,6 +11,7 @@ import { createGroupService } from './groupService.js';
 import { createSnapshotService } from './snapshotService.js';
 import { createListService } from './listService.js';
 import { createSimilarityService } from './similarityService.js';
+import { mountTopicMilestoneRoutes } from '../execution/routes.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
 export const topicsRouter = ({ repo, now, guard, logger }) => {
@@ -60,5 +61,6 @@ export const topicsRouter = ({ repo, now, guard, logger }) => {
     const svcFor = REVIEW_ACTIONS.includes(req.body.action) ? review : advisor;
     res.json(await svcFor.act(req.user, req.params.id, req.body, req.ip));
   });
+  mountTopicMilestoneRoutes(r, { repo, now });
   return r;
 };

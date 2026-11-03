@@ -44,3 +44,6 @@ export const ACTION_LABEL = Object.freeze({
   CONFIRM_CLOSE: 'Xác nhận đóng đề tài',
   CLOSE_EXPIRED: 'Đóng do quá hạn',
 });
+
+export const MILESTONE_EVAL_LABEL = Object.freeze({ PENDING: 'Chưa đánh giá', PASSED: 'Đạt', NEEDS_WORK: 'Cần bổ sung' });
+export const DOCUMENT_STAGE_LABEL = Object.freeze({ PROPOSAL: 'Đề cương', MIDTERM: 'Giữa kỳ', FINAL: 'Cuối kỳ', OTHER: 'Khác' });

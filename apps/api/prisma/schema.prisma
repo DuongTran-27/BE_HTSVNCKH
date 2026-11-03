@@ -75,32 +75,32 @@ enum FileStatus {
 }
 
 enum ChangeType {
-  TOPIC_CHANGE    // FR18
-  ADVISOR_CHANGE  // FR19
-  CANCEL          // FR20
-  LEAVE_GROUP     // FR21
+  TOPIC_CHANGE // FR18
+  ADVISOR_CHANGE // FR19
+  CANCEL // FR20
+  LEAVE_GROUP // FR21
 }
 
 // ---------- Danh mục (FR04) ----------
 model Faculty {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  name      String
-  isActive  Boolean  @default(true)
-  majors    Major[]
-  users     User[]
-  rounds    Round[]
-  topics    Topic[]
-  staff     StaffScope[]
+  id       String       @id @default(cuid())
+  code     String       @unique
+  name     String
+  isActive Boolean      @default(true)
+  majors   Major[]
+  users    User[]
+  rounds   Round[]
+  topics   Topic[]
+  staff    StaffScope[]
 }
 
 model Major {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   facultyId String
-  code      String   @unique
+  code      String  @unique
   name      String
-  isActive  Boolean  @default(true)
-  faculty   Faculty  @relation(fields: [facultyId], references: [id])
+  isActive  Boolean @default(true)
+  faculty   Faculty @relation(fields: [facultyId], references: [id])
   classes   Class[]
 }
 
@@ -130,7 +130,7 @@ model Round {
   regCloseAt     DateTime @db.Timestamptz(6)
   reviewDeadline DateTime @db.Timestamptz(6)
   endAt          DateTime @db.Timestamptz(6)
-  config         Json     // ghi đè DEFAULT_ROUND_CONFIG
+  config         Json // ghi đè DEFAULT_ROUND_CONFIG
   createdAt      DateTime @default(now()) @db.Timestamptz(6)
   faculty        Faculty  @relation(fields: [facultyId], references: [id])
   topics         Topic[]
@@ -138,31 +138,37 @@ model Round {
 
 // ---------- Người dùng, phiên (FR01, FR02, FR25) ----------
 model User {
-  id                 String    @id @default(cuid())
-  code               String    @unique
-  email              String    @unique
-  fullName           String
-  passwordHash       String
-  role               Role
-  facultyId          String?
-  classId            String?
-  isLocked           Boolean   @default(false)
-  mustChangePassword Boolean   @default(true)
-  failedLogins       Int       @default(0)
-  lockedUntil        DateTime? @db.Timestamptz(6)
-  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
-  faculty            Faculty?  @relation(fields: [facultyId], references: [id])
-  class              Class?    @relation(fields: [classId], references: [id])
-  refreshTokens      RefreshToken[]
-  staffScopes        StaffScope[]
-  memberships        TopicMember[]
-  advisings          Advising[]
-  notifications      Notification[]
-  invitationsReceived Invitation[]     @relation("InvitationInvitee")
-  advisorRequests     AdvisorRequest[] @relation("AdvisorRequestLecturer")
-  submissionsCreated  Submission[]     @relation("SubmissionCreatedBy")
-  reviewDecisions     ReviewDecision[] @relation("ReviewDecisionDecidedBy")
-  statusChanges       StatusHistory[]  @relation("StatusHistoryActor")
+  id                  String               @id @default(cuid())
+  code                String               @unique
+  email               String               @unique
+  fullName            String
+  passwordHash        String
+  role                Role
+  facultyId           String?
+  classId             String?
+  isLocked            Boolean              @default(false)
+  mustChangePassword  Boolean              @default(true)
+  failedLogins        Int                  @default(0)
+  lockedUntil         DateTime?            @db.Timestamptz(6)
+  createdAt           DateTime             @default(now()) @db.Timestamptz(6)
+  faculty             Faculty?             @relation(fields: [facultyId], references: [id])
+  class               Class?               @relation(fields: [classId], references: [id])
+  refreshTokens       RefreshToken[]
+  staffScopes         StaffScope[]
+  memberships         TopicMember[]
+  advisings           Advising[]
+  notifications       Notification[]
+  invitationsReceived Invitation[]         @relation("InvitationInvitee")
+  advisorRequests     AdvisorRequest[]     @relation("AdvisorRequestLecturer")
+  submissionsCreated  Submission[]         @relation("SubmissionCreatedBy")
+  reviewDecisions     ReviewDecision[]     @relation("ReviewDecisionDecidedBy")
+  statusChanges       StatusHistory[]      @relation("StatusHistoryActor")
+  milestonesCreated   Milestone[]          @relation("MilestoneCreatedBy")
+  dueChangesMade      MilestoneDueChange[] @relation("DueChangeBy")
+  progressUpdates     ProgressUpdate[]     @relation("ProgressAuthor")
+  documentsUploaded   Document[]           @relation("DocumentUploadedBy")
+  feedbacksWritten    Feedback[]           @relation("FeedbackLecturer")
+  resultsCreated      ResultVersion[]      @relation("ResultCreatedBy")
 }
 
 model StaffScope {
@@ -170,6 +176,7 @@ model StaffScope {
   facultyId String
   user      User    @relation(fields: [userId], references: [id])
   faculty   Faculty @relation(fields: [facultyId], references: [id])
+
   @@id([userId, facultyId])
 }
 
@@ -184,41 +191,43 @@ model RefreshToken {
   userAgent  String?
   createdAt  DateTime  @default(now()) @db.Timestamptz(6)
   user       User      @relation(fields: [userId], references: [id])
+
   @@index([userId])
   @@index([family])
 }
 
 // ---------- Đề tài (FR03, FR05, FR16, FR17) ----------
 model Topic {
-  id                String       @id @default(cuid())
-  code              String       @unique
-  roundId           String
-  facultyId         String
-  fieldId           String?
-  title             String       @default("")
-  summary           String       @default("")
-  objectives        String       @default("")
-  keywords          String[]
-  status            TopicStatus  @default(DRAFT)
-  version           Int          @default(0) // khóa lạc quan
-  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime     @updatedAt @db.Timestamptz(6)
-  round             Round        @relation(fields: [roundId], references: [id])
-  faculty           Faculty      @relation(fields: [facultyId], references: [id])
-  field             Field?       @relation(fields: [fieldId], references: [id])
-  members           TopicMember[]
-  invitations       Invitation[]
-  advisorRequests   AdvisorRequest[]
-  advisings         Advising[]
-  submissions       Submission[]
-  milestones        Milestone[]
-  progressUpdates   ProgressUpdate[]
-  documents         Document[]
-  feedbacks         Feedback[]
-  results           ResultVersion[]
-  statusHistory     StatusHistory[]
-  similarityChecks  SimilarityCheck[]
-  changeRequests    ChangeRequest[]
+  id               String            @id @default(cuid())
+  code             String            @unique
+  roundId          String
+  facultyId        String
+  fieldId          String?
+  title            String            @default("")
+  summary          String            @default("")
+  objectives       String            @default("")
+  keywords         String[]
+  status           TopicStatus       @default(DRAFT)
+  version          Int               @default(0) // khóa lạc quan
+  createdAt        DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime          @updatedAt @db.Timestamptz(6)
+  round            Round             @relation(fields: [roundId], references: [id])
+  faculty          Faculty           @relation(fields: [facultyId], references: [id])
+  field            Field?            @relation(fields: [fieldId], references: [id])
+  members          TopicMember[]
+  invitations      Invitation[]
+  advisorRequests  AdvisorRequest[]
+  advisings        Advising[]
+  submissions      Submission[]
+  milestones       Milestone[]
+  progressUpdates  ProgressUpdate[]
+  documents        Document[]
+  feedbacks        Feedback[]
+  results          ResultVersion[]
+  statusHistory    StatusHistory[]
+  similarityChecks SimilarityCheck[]
+  changeRequests   ChangeRequest[]
+
   @@index([roundId, status])
   @@index([facultyId, status])
   @@index([fieldId])
@@ -233,6 +242,7 @@ model TopicMember {
   leftAt   DateTime?  @db.Timestamptz(6)
   topic    Topic      @relation(fields: [topicId], references: [id])
   user     User       @relation(fields: [userId], references: [id])
+
   @@index([userId])
   @@index([topicId])
 }
@@ -246,6 +256,7 @@ model Invitation {
   respondedAt DateTime?     @db.Timestamptz(6)
   topic       Topic         @relation(fields: [topicId], references: [id])
   invitee     User          @relation("InvitationInvitee", fields: [inviteeId], references: [id])
+
   @@index([inviteeId, status])
   @@index([topicId, status])
 }
@@ -261,6 +272,7 @@ model AdvisorRequest {
   respondedAt DateTime?     @db.Timestamptz(6)
   topic       Topic         @relation(fields: [topicId], references: [id])
   lecturer    User          @relation("AdvisorRequestLecturer", fields: [lecturerId], references: [id])
+
   @@index([lecturerId, status])
   @@index([topicId, status])
 }
@@ -274,29 +286,31 @@ model Advising {
   endAt      DateTime? @db.Timestamptz(6)
   topic      Topic     @relation(fields: [topicId], references: [id])
   lecturer   User      @relation(fields: [lecturerId], references: [id])
+
   @@index([lecturerId, endAt])
 }
 
 // Snapshot bất biến của hồ sơ mỗi lần gửi (FR17)
 model Submission {
-  id                String          @id @default(cuid())
+  id                String           @id @default(cuid())
   topicId           String
   seq               Int
-  payload           Json            // title, summary, objectives, keywords, fieldId, documentIds
+  payload           Json // title, summary, objectives, keywords, fieldId, documentIds
   createdById       String
-  createdAt         DateTime        @default(now()) @db.Timestamptz(6)
-  similarityCheckId String?         @unique
-  topic             Topic           @relation(fields: [topicId], references: [id])
-  createdBy         User            @relation("SubmissionCreatedBy", fields: [createdById], references: [id])
+  createdAt         DateTime         @default(now()) @db.Timestamptz(6)
+  similarityCheckId String?          @unique
+  topic             Topic            @relation(fields: [topicId], references: [id])
+  createdBy         User             @relation("SubmissionCreatedBy", fields: [createdById], references: [id])
   similarityCheck   SimilarityCheck? @relation(fields: [similarityCheckId], references: [id])
   decision          ReviewDecision?
+
   @@unique([topicId, seq])
 }
 
 model ReviewDecision {
   id           String     @id @default(cuid())
   submissionId String     @unique
-  action       String     // APPROVE | REQUEST_REVISION | REJECT
+  action       String // APPROVE | REQUEST_REVISION | REJECT
   reason       String?
   decidedById  String
   decidedAt    DateTime   @default(now()) @db.Timestamptz(6)
@@ -306,17 +320,27 @@ model ReviewDecision {
 
 // ---------- Thực hiện (FR09–FR12, FR22) ----------
 model Milestone {
-  id          String          @id @default(cuid())
-  topicId     String
-  order       Int
-  name        String
-  output      String
-  dueAt       DateTime        @db.Timestamptz(6)
-  required    Boolean         @default(true)
-  evaluation  MilestoneEval   @default(PENDING)
-  topic       Topic           @relation(fields: [topicId], references: [id])
-  dueChanges  MilestoneDueChange[]
-  documents   Document[]
+  id                String               @id @default(cuid())
+  topicId           String
+  order             Int
+  name              String
+  output            String
+  dueAt             DateTime             @db.Timestamptz(6)
+  required          Boolean              @default(true)
+  evaluation        MilestoneEval        @default(PENDING)
+  version           Int                  @default(0) // khóa lạc quan của mốc (API_GD45 §3)
+  requiredRemovedAt DateTime?            @db.Timestamptz(6) // bỏ cờ bắt buộc khi chưa Đạt (m3); đếm có index thay đọc AuditLog
+  createdById       String
+  createdAt         DateTime             @default(now()) @db.Timestamptz(6)
+  topic             Topic                @relation(fields: [topicId], references: [id])
+  createdBy         User                 @relation("MilestoneCreatedBy", fields: [createdById], references: [id])
+  dueChanges        MilestoneDueChange[]
+  documents         Document[]
+  feedbacks         Feedback[]
+
+  @@index([topicId, order])
+  @@index([dueAt])
+  @@index([topicId, requiredRemovedAt])
 }
 
 model MilestoneDueChange {
@@ -328,51 +352,70 @@ model MilestoneDueChange {
   changedById String
   changedAt   DateTime  @default(now()) @db.Timestamptz(6)
   milestone   Milestone @relation(fields: [milestoneId], references: [id])
+  changedBy   User      @relation("DueChangeBy", fields: [changedById], references: [id])
 }
 
 model ProgressUpdate {
-  id          String   @id @default(cuid())
-  topicId     String
-  authorId    String
-  done        String
-  issues      String
-  nextPlan    String
-  percent     Int      // tự khai 0–100
-  lockedAt    DateTime? @db.Timestamptz(6) // khóa khi GVHD nhận xét
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  topic       Topic    @relation(fields: [topicId], references: [id])
+  id        String     @id @default(cuid())
+  topicId   String
+  authorId  String
+  done      String
+  issues    String
+  nextPlan  String
+  percent   Int // tự khai 0–100
+  lockedAt  DateTime?  @db.Timestamptz(6) // khóa khi GVHD nhận xét
+  createdAt DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime   @updatedAt @db.Timestamptz(6)
+  topic     Topic      @relation(fields: [topicId], references: [id])
+  author    User       @relation("ProgressAuthor", fields: [authorId], references: [id])
+  feedbacks Feedback[]
+
+  @@index([topicId, createdAt])
 }
 
 model Document {
   id           String     @id @default(cuid())
   topicId      String
   milestoneId  String?
-  stage        String     // PROPOSAL | MIDTERM | FINAL | OTHER
+  stage        String // PROPOSAL | MIDTERM | FINAL | OTHER
+  kind         String     @default("FILE") // FILE | LINK
   version      Int
   fileName     String
   mimeType     String?
   sizeBytes    Int?
   publicId     String?    @unique // Cloudinary raw/authenticated
-  externalUrl  String?    // link GitHub/Drive cho sản phẩm lớn
+  externalUrl  String? // link GitHub/Drive cho sản phẩm lớn
   status       FileStatus @default(UPLOADING)
   isLate       Boolean    @default(false)
   uploadedById String
   uploadedAt   DateTime   @default(now()) @db.Timestamptz(6)
   topic        Topic      @relation(fields: [topicId], references: [id])
   milestone    Milestone? @relation(fields: [milestoneId], references: [id])
+  uploadedBy   User       @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
   feedbacks    Feedback[]
+
   @@index([topicId, stage])
+  @@index([milestoneId, version])
 }
 
 model Feedback {
-  id          String    @id @default(cuid())
-  topicId     String
-  documentId  String?
-  lecturerId  String
-  content     String
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
-  topic       Topic     @relation(fields: [topicId], references: [id])
-  document    Document? @relation(fields: [documentId], references: [id])
+  id               String          @id @default(cuid())
+  topicId          String
+  documentId       String?
+  milestoneId      String?
+  progressUpdateId String?
+  evaluation       MilestoneEval?
+  lecturerId       String
+  content          String
+  createdAt        DateTime        @default(now()) @db.Timestamptz(6)
+  topic            Topic           @relation(fields: [topicId], references: [id])
+  document         Document?       @relation(fields: [documentId], references: [id])
+  milestone        Milestone?      @relation(fields: [milestoneId], references: [id])
+  progressUpdate   ProgressUpdate? @relation(fields: [progressUpdateId], references: [id])
+  lecturer         User            @relation("FeedbackLecturer", fields: [lecturerId], references: [id])
+
+  @@index([topicId, createdAt])
+  @@index([progressUpdateId])
 }
 
 // Kết quả có phiên bản – sửa sai tạo bản mới (FR12, FR23)
@@ -387,12 +430,15 @@ model ResultVersion {
   createdById String
   createdAt   DateTime    @default(now()) @db.Timestamptz(6)
   topic       Topic       @relation(fields: [topicId], references: [id])
+  createdBy   User        @relation("ResultCreatedBy", fields: [createdById], references: [id])
+
   @@unique([topicId, version])
+  @@index([topicId, isCurrent])
 }
 
 // ---------- Kiểm tra tương tự (FR06) ----------
 model SimilarityCheck {
-  id               String          @id @default(cuid())
+  id               String           @id @default(cuid())
   topicId          String
   algorithmVersion String
   thresholds       Json
@@ -405,9 +451,10 @@ model SimilarityCheck {
   justification    String?
   status           CheckStatus
   errorMessage     String?
-  createdAt        DateTime        @default(now()) @db.Timestamptz(6)
-  topic            Topic           @relation(fields: [topicId], references: [id])
+  createdAt        DateTime         @default(now()) @db.Timestamptz(6)
+  topic            Topic            @relation(fields: [topicId], references: [id])
   submission       Submission?
+
   @@index([topicId, createdAt])
 }
 
@@ -419,18 +466,18 @@ model Synonym {
 
 // ---------- Yêu cầu thay đổi (FR18–FR21) ----------
 model ChangeRequest {
-  id          String        @id @default(cuid())
-  topicId     String
-  type        ChangeType
-  payload     Json          // trước/sau, giảng viên mới, người rời…
-  reason      String
-  status      RequestStatus @default(PENDING)
-  createdById String
-  decidedById String?
+  id           String        @id @default(cuid())
+  topicId      String
+  type         ChangeType
+  payload      Json // trước/sau, giảng viên mới, người rời…
+  reason       String
+  status       RequestStatus @default(PENDING)
+  createdById  String
+  decidedById  String?
   decisionNote String?
-  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
-  decidedAt   DateTime?     @db.Timestamptz(6)
-  topic       Topic         @relation(fields: [topicId], references: [id])
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
+  decidedAt    DateTime?     @db.Timestamptz(6)
+  topic        Topic         @relation(fields: [topicId], references: [id])
 }
 
 // ---------- Thông báo, lịch sử (FR13, FR15) ----------
@@ -444,6 +491,7 @@ model Notification {
   readAt    DateTime? @db.Timestamptz(6)
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
   user      User      @relation(fields: [userId], references: [id])
+
   @@unique([userId, dedupeKey])
   @@index([userId, readAt])
 }
@@ -459,6 +507,7 @@ model StatusHistory {
   at      DateTime     @default(now()) @db.Timestamptz(6)
   topic   Topic        @relation(fields: [topicId], references: [id])
   actor   User         @relation("StatusHistoryActor", fields: [actorId], references: [id])
+
   @@index([topicId, at])
 }
 
@@ -472,5 +521,6 @@ model AuditLog {
   after      Json?
   ip         String?
   at         DateTime @default(now()) @db.Timestamptz(6)
+
   @@index([entityType, entityId])
 }

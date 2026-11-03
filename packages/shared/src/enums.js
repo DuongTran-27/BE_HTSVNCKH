@@ -63,3 +63,16 @@ export const DEFAULT_ROUND_CONFIG = Object.freeze({
   allowedFileTypes: ['pdf', 'docx', 'pptx', 'xlsx'],
   similarity: { titleReview: 0.5, titleHigh: 0.7, contentReview: 0.35, contentHigh: 0.55, minJustificationWords: 50 },
 });
+
+// GĐ4 (API_GD45 §1.4, §3)
+export const MILESTONE_MAX_PER_TOPIC = 20;
+export const DOCUMENT_MAX_VERSIONS = 50;
+export const DOCUMENT_STAGES = Object.freeze(['PROPOSAL', 'MIDTERM', 'FINAL', 'OTHER']);
+export const DOCUMENT_FILE_TYPES = Object.freeze({
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+});
+export const DOWNLOAD_URL_TTL_SECONDS = 300;
+export const UPLOAD_HARD_MAX_BYTES = 10 * 1024 * 1024;

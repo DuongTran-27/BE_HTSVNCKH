@@ -5,6 +5,7 @@ import { createAdvisorRepo } from './advisorRepo.js';
 import { createListRepo } from './listRepo.js';
 import { createReviewRepo } from './reviewRepo.js';
 import { createSimilarityRepo } from '../similarity/prismaRepo.js';
+import { createExecutionRepo } from '../execution/prismaRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const DETAIL_INCLUDE = {
@@ -24,6 +25,7 @@ export const createTopicRepo = (prisma) => ({
   ...createReviewRepo(prisma),
   ...createListRepo(prisma),
   ...createSimilarityRepo(prisma),
+  ...createExecutionRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, isActive: true } }),
   findDetail: (id) => prisma.topic.findUnique({ where: { id }, include: DETAIL_INCLUDE }),

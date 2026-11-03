@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isoDateTime } from './catalog.js';
 import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT } from './enums.js';
 
 // Thông điệp mặc định tiếng Việt; có hiệu lực cho cả api vì chỉ có một bản zod (QD_ZOD §2)
@@ -109,3 +110,11 @@ export const repositoryQuerySchema = z.object({
   q: topicListQuerySchema.shape.q,
   ...pageQuery,
 });
+
+// FR09 (API_GD45 §3.2). Sửa mốc không có dueAt: đổi hạn qua milestoneDueChangeSchema để luôn có lịch sử.
+const msName = z.string().trim().min(1, 'Nhập tên mốc').max(300);
+const msOutput = z.string().trim().min(1, 'Nhập đầu ra yêu cầu').max(2000);
+export const milestoneCreateSchema = z.object({ name: msName, output: msOutput, dueAt: isoDateTime, required: z.boolean().default(true) });
+export const milestoneUpdateSchema = z.strictObject({ version, name: msName.optional(), output: msOutput.optional(), required: z.boolean().optional() })
+  .refine((v) => v.name !== undefined || v.output !== undefined || v.required !== undefined, { message: 'Cần ít nhất một trường để sửa', path: ['name'] });
+export const milestoneDueChangeSchema = reasonSchema.extend({ version, newDueAt: isoDateTime });

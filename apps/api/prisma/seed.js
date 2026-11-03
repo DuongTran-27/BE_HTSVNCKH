@@ -396,6 +396,7 @@ export async function seed(prisma, { now = new Date() } = {}) {
                   {
                     topicId: topic.id,
                     order: 1,
+                    createdById: actor.id,
                     name: 'Đề cương chi tiết',
                     output: 'Báo cáo đề cương',
                     dueAt: new Date(nowMs + 150 * DAY),
@@ -403,6 +404,7 @@ export async function seed(prisma, { now = new Date() } = {}) {
                   {
                     topicId: topic.id,
                     order: 2,
+                    createdById: actor.id,
                     name: 'Báo cáo tổng kết',
                     output: 'Báo cáo cuối và mã nguồn',
                     dueAt: new Date(nowMs + 240 * DAY),
