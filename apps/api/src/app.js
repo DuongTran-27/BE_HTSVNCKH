@@ -16,7 +16,7 @@ import { topicsRouter } from './modules/topics/routes.js';
 import { advisorRequestsRouter, lecturersRouter } from './modules/topics/advisorRoutes.js';
 import { invitationsRouter } from './modules/topics/invitationRoutes.js';
 import { repositoryRouter } from './modules/topics/repositoryRoutes.js';
-import { milestonesRouter } from './modules/execution/routes.js';
+import { milestonesRouter, progressRouter } from './modules/execution/routes.js';
 
 /**
  * Tạo ứng dụng với phụ thuộc được tiêm vào để test không cần database thật.
@@ -56,6 +56,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     app.use('/api/invitations', invitationsRouter({ repo: topicRepo, guard }));
     app.use('/api/repository', repositoryRouter({ repo: topicRepo, guard }));
     app.use('/api/milestones', milestonesRouter({ repo: topicRepo, guard }));
+    app.use('/api/progress', progressRouter({ repo: topicRepo, guard }));
   }
 
   app.use((_req, _res) => { throw notFound('Không tìm thấy đường dẫn'); });

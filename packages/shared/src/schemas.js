@@ -118,3 +118,12 @@ export const milestoneCreateSchema = z.object({ name: msName, output: msOutput, 
 export const milestoneUpdateSchema = z.strictObject({ version, name: msName.optional(), output: msOutput.optional(), required: z.boolean().optional() })
   .refine((v) => v.name !== undefined || v.output !== undefined || v.required !== undefined, { message: 'Cần ít nhất một trường để sửa', path: ['name'] });
 export const milestoneDueChangeSchema = reasonSchema.extend({ version, newDueAt: isoDateTime });
+
+// FR10 (API_GD45 §4.2): % tự khai 0–100; sửa = partial, strict, ít nhất một trường
+const pgDone = z.string().trim().min(1, 'Nhập việc đã làm').max(3000);
+const pgIssues = z.string().trim().max(3000);
+const pgNext = z.string().trim().min(1, 'Nhập kế hoạch tiếp theo').max(3000);
+const pgPercent = z.int({ error: 'Phần trăm phải là số nguyên' }).min(0, 'Từ 0 đến 100').max(100, 'Từ 0 đến 100');
+export const progressCreateSchema = z.object({ done: pgDone, issues: pgIssues.default(''), nextPlan: pgNext, percent: pgPercent });
+export const progressUpdateSchema = z.strictObject({ done: pgDone.optional(), issues: pgIssues.optional(), nextPlan: pgNext.optional(), percent: pgPercent.optional() })
+  .refine((v) => Object.values(v).some((x) => x !== undefined), { message: 'Cần ít nhất một trường để sửa', path: ['done'] });
