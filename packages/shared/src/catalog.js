@@ -10,7 +10,7 @@ export const effectiveRoundConfig = (config) => ({
   similarity: { ...DEFAULT_ROUND_CONFIG.similarity, ...(config?.similarity ?? {}) },
 });
 
-export const idSchema = z.string().trim().min(1).max(64);
+export const idSchema = z.string().trim().min(1, 'Vui lòng chọn một mục').max(64, 'Mã không hợp lệ');
 
 export const paginationQuery = z.object({
   page: z.coerce.number().int().min(1).max(10000).default(1),

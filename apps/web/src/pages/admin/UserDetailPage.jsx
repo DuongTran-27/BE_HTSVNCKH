@@ -78,11 +78,16 @@ function UserDetail({ user: target }) {
     }
   };
   const act = useMutation({
-    mutationFn: (kind) => api(`/users/${target.id}/${kind === 'reset' ? 'reset-password' : kind}`, { method: 'POST' }),
+    // Mật khẩu tạm đi thẳng vào state cục bộ, mutation trả null để không nằm trong MutationCache (review T304 m1)
+    mutationFn: async (kind) => {
+      const res = await api(`/users/${target.id}/${kind === 'reset' ? 'reset-password' : kind}`, { method: 'POST' });
+      if (kind !== 'reset') return res;
+      setTempPassword(res.temporaryPassword);
+      return null;
+    },
     onSuccess: (res, kind) => {
       setConfirm(null);
-      if (kind === 'reset') setTempPassword(res.temporaryPassword);
-      else { refresh(res.user); toast(kind === 'lock' ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản', { type: 'success' }); }
+      if (kind !== 'reset') { refresh(res.user); toast(kind === 'lock' ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản', { type: 'success' }); }
     },
     onError: (err) => !err.sessionExpired && setConfirmError(err.message),
   });

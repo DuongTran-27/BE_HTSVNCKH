@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, redirect } from 'react-router';
 import { bootstrapSession } from './lib/api.js';
 import { auth, useAuth } from './lib/auth.js';
@@ -7,13 +8,15 @@ import { LoginPage } from './pages/LoginPage.jsx';
 import { ChangePasswordPage } from './pages/ChangePasswordPage.jsx';
 import { Placeholder } from './pages/Placeholder.jsx';
 import { Forbidden, NotFound } from './pages/ErrorPages.jsx';
-import { UsersPage } from './pages/admin/UsersPage.jsx';
-import { UserCreatePage } from './pages/admin/UserCreatePage.jsx';
-import { UserDetailPage } from './pages/admin/UserDetailPage.jsx';
-import { UserImportPage } from './pages/admin/UserImportPage.jsx';
-import { CatalogPage } from './pages/admin/CatalogPage.jsx';
-import { RoundsPage } from './pages/admin/RoundsPage.jsx';
-import { RoundFormPage } from './pages/admin/RoundFormPage.jsx';
+const TopicDetailPage = lazy(() => import('./pages/topics/TopicDetailPage.jsx').then((m) => ({ default: m.TopicDetailPage })));
+const AdvisorRequestsPage = lazy(() => import('./pages/topics/AdvisorRequestsPage.jsx').then((m) => ({ default: m.AdvisorRequestsPage })));
+const UsersPage = lazy(() => import('./pages/admin/UsersPage.jsx').then((m) => ({ default: m.UsersPage })));
+const UserCreatePage = lazy(() => import('./pages/admin/UserCreatePage.jsx').then((m) => ({ default: m.UserCreatePage })));
+const UserDetailPage = lazy(() => import('./pages/admin/UserDetailPage.jsx').then((m) => ({ default: m.UserDetailPage })));
+const UserImportPage = lazy(() => import('./pages/admin/UserImportPage.jsx').then((m) => ({ default: m.UserImportPage })));
+const CatalogPage = lazy(() => import('./pages/admin/CatalogPage.jsx').then((m) => ({ default: m.CatalogPage })));
+const RoundsPage = lazy(() => import('./pages/admin/RoundsPage.jsx').then((m) => ({ default: m.RoundsPage })));
+const RoundFormPage = lazy(() => import('./pages/admin/RoundFormPage.jsx').then((m) => ({ default: m.RoundFormPage })));
 
 // Loader chạy ngay khi tạo router, trước khi phiên khởi động xong → phải chờ bootstrapSession trước khi đọc auth
 // (review T301-reviewer-v3 i1). Guard chỉ để dẫn đường; backend kiểm quyền thật (FR25).
@@ -73,8 +76,10 @@ const SCREENS = [
   ['kho/:code', [S, L, F, A], 'Chi tiết kho đề tài'],
 ];
 
-// Màn đã làm (T304); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
+// Màn đã làm (T304, T306); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
 const SCREEN_ELEMENT = {
+  'de-tai/:id': <TopicDetailPage />,
+  'de-nghi-huong-dan': <AdvisorRequestsPage />,
   'quan-ly/tai-khoan': <UsersPage />,
   'quan-ly/tai-khoan/moi': <UserCreatePage />,
   'quan-ly/tai-khoan/nhap-csv': <UserImportPage />,
@@ -106,7 +111,7 @@ export const routes = [
       { path: '/403', element: <Forbidden /> },
       ...SCREENS.map(([path, roles, title]) => ({
         path: `/${path}`,
-        element: <RequireRole roles={roles}>{SCREEN_ELEMENT[path] ?? <Placeholder title={title} />}</RequireRole>,
+        element: <RequireRole roles={roles}><Suspense fallback={<p role="status" className="p-4">Đang tải…</p>}>{SCREEN_ELEMENT[path] ?? <Placeholder title={title} />}</Suspense></RequireRole>,
       })),
       { path: '*', element: <NotFound /> },
     ],
