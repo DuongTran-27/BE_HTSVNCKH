@@ -10,10 +10,13 @@ export const REVIEW_ACTIONS = ['SUBMIT_FOR_REVIEW', 'RESUBMIT', 'REQUEST_REVISIO
 const STALE = () => conflict('STALE_SUBMISSION', 'Hồ sơ đã có phiên bản mới hơn hoặc đã được quyết định, vui lòng tải lại');
 const CONCURRENT = () => conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
 
-export const createReviewService = ({ repo, getTopic, now = () => new Date() }) => {
+export const createReviewService = ({ repo, getTopic, logger, now = () => new Date() }) => {
   // Tx đã commit: nếu đọc lại lỗi vẫn trả kết quả tối thiểu thay vì báo lỗi cho việc đã xong (T212a MINOR 1)
   const readAfter = (user, t, transition, body) =>
-    getTopic(user, t.id).catch(() => ({ topic: { id: t.id, status: transition.to, version: body.version + 1 } }));
+    getTopic(user, t.id).catch((e) => {
+      logger?.warn({ err: e, topicId: t.id }, 'Đọc lại đề tài sau khi chuyển trạng thái lỗi; trả kết quả tối thiểu');
+      return { topic: { id: t.id, status: transition.to, version: body.version + 1 } };
+    });
 
   const submit = async (t, rel, user, body, ip) => {
     // 1. quyền xem (403) đã kiểm ở act; kiểm rẻ trước, không chạy thuật toán nếu sai trạng thái/vai trò

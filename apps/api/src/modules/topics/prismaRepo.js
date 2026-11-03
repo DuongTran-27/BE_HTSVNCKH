@@ -2,6 +2,7 @@ import { recordAudit } from '../audit/service.js';
 import { nextTopicCode } from './code.js';
 import { createGroupRepo } from './groupRepo.js';
 import { createAdvisorRepo } from './advisorRepo.js';
+import { createListRepo } from './listRepo.js';
 import { createReviewRepo } from './reviewRepo.js';
 import { createSimilarityRepo } from '../similarity/prismaRepo.js';
 
@@ -21,6 +22,7 @@ export const createTopicRepo = (prisma) => ({
   ...createGroupRepo(prisma),
   ...createAdvisorRepo(prisma),
   ...createReviewRepo(prisma),
+  ...createListRepo(prisma),
   ...createSimilarityRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, isActive: true } }),

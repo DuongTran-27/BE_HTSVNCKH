@@ -21,7 +21,7 @@ export const createSnapshotService = ({ repo }) => {
     const t = await repo.findDetail(id);
     if (!t) throw notFound();
     const rel = relations(t, user);
-    if (!(rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope)) throw forbidden();
+    if (!(rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && t.status !== 'DRAFT'))) throw forbidden(); // như canView
     return t;
   };
   const brief = (s) => ({ seq: s.seq, createdAt: iso(s.createdAt), payload: s.payload });

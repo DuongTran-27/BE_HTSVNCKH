@@ -48,7 +48,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
   if (accountRepo) app.use('/api/users', accountsRouter({ repo: accountRepo, hasher, guard, genPassword }));
 
   if (topicRepo) {
-    app.use('/api/topics', topicsRouter({ repo: topicRepo, guard }));
+    app.use('/api/topics', topicsRouter({ repo: topicRepo, guard, logger }));
     app.use('/api/advisor-requests', advisorRequestsRouter({ repo: topicRepo, guard }));
     app.use('/api/lecturers', lecturersRouter({ repo: topicRepo, guard }));
     app.use('/api/invitations', invitationsRouter({ repo: topicRepo, guard }));

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFAULT_ROUND_CONFIG as C } from './enums.js';
+import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT } from './enums.js';
 
 // Thông điệp mặc định tiếng Việt; có hiệu lực cho cả api vì chỉ có một bản zod (QD_ZOD §2)
 z.config(z.locales.vi());
@@ -84,3 +84,19 @@ const reqStatus = z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN']);
 const pageQuery = { page: z.coerce.number().int().min(1).max(10000).default(1), pageSize: z.coerce.number().int().min(1).max(100).default(20) };
 export const advisorRequestListQuerySchema = z.object({ status: reqStatus.optional(), roundId: z.string().max(64).optional(), ...pageQuery });
 export const lecturerListQuerySchema = z.object({ roundId: z.string().trim().min(1).max(64), q: z.string().trim().max(200).optional(), ...pageQuery });
+
+// FR08: danh sách đề tài theo phạm vi (API_GD2 §9.1). Chuỗi rỗng coi như không lọc.
+const emptyToUndef = (v) => (v === '' ? undefined : v);
+const opt = (s) => z.preprocess(emptyToUndef, s.optional());
+export const TOPIC_SORTS = ['updatedAt_desc', 'updatedAt_asc', 'code_asc', 'title_asc'];
+export const topicListQuerySchema = z.object({
+  roundId: opt(z.string().trim().max(64)),
+  academicYear: opt(z.string().max(9).regex(/^\d{4}-\d{4}$/, 'Năm học dạng 2026-2027')),
+  fieldId: opt(z.string().trim().max(64)),
+  lecturerId: opt(z.string().trim().max(64)),
+  status: opt(z.enum(Object.values(TOPIC_STATUS))),
+  result: opt(z.enum(Object.values(FINAL_RESULT))),
+  q: opt(z.string().trim().max(200)),
+  sort: z.preprocess(emptyToUndef, z.enum(TOPIC_SORTS).default('updatedAt_desc')),
+  ...pageQuery,
+});

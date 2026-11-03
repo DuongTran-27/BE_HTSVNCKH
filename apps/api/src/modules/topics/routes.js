@@ -1,4 +1,4 @@
-import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema } from '@nckh/shared';
+import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { notFound } from '../../lib/errors.js';
@@ -9,13 +9,15 @@ import { createAdvisorService } from './advisorService.js';
 import { createReviewService, REVIEW_ACTIONS } from './reviewService.js';
 import { createGroupService } from './groupService.js';
 import { createSnapshotService } from './snapshotService.js';
+import { createListService } from './listService.js';
 import { createSimilarityService } from './similarityService.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
-export const topicsRouter = ({ repo, now, guard }) => {
+export const topicsRouter = ({ repo, now, guard, logger }) => {
   const svc = createTopicService({ repo, now });
   const advisor = createAdvisorService({ repo, now, getTopic: svc.get });
-  const review = createReviewService({ repo, now, getTopic: svc.get });
+  const review = createReviewService({ repo, now, getTopic: svc.get, logger });
+  const lister = createListService({ repo, now });
   const actionLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 30, keyBy: 'user' });
   const group = createGroupService({ repo, now, getTopic: svc.get });
   const snapshots = createSnapshotService({ repo });
@@ -30,6 +32,7 @@ export const topicsRouter = ({ repo, now, guard }) => {
   r.post('/', student, validate(topicCreateSchema), async (req, res) => {
     res.status(201).json(await svc.create(req.user, req.body, req.ip));
   });
+  r.get('/', requireRole('STAFF', 'LECTURER', 'STUDENT'), validate(topicListQuerySchema, 'query'), async (req, res) => res.json(await lister.list(req.user, req.validated)));
   r.get('/:id', requireRole('STAFF', 'LECTURER', 'STUDENT'), async (req, res) => res.json(await svc.get(req.user, req.params.id)));
   const reader = requireRole('STAFF', 'LECTURER', 'STUDENT');
   // FR17: đọc snapshot / lịch sử; quyền theo quan hệ ở service
