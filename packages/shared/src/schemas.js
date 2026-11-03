@@ -100,3 +100,12 @@ export const topicListQuerySchema = z.object({
   sort: z.preprocess(emptyToUndef, z.enum(TOPIC_SORTS).default('updatedAt_desc')),
   ...pageQuery,
 });
+// FR08: kho chung (API_GD2 §9.2) – chỉ kết quả đạt
+export const REPOSITORY_RESULTS = ['EXCELLENT', 'GOOD', 'PASS'];
+export const repositoryQuerySchema = z.object({
+  academicYear: topicListQuerySchema.shape.academicYear,
+  fieldId: topicListQuerySchema.shape.fieldId,
+  result: opt(z.enum(REPOSITORY_RESULTS)),
+  q: topicListQuerySchema.shape.q,
+  ...pageQuery,
+});

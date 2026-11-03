@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const LIST_INCLUDE = {
-  round: true,
+  round: { select: { id: true, name: true, academicYear: true, regOpenAt: true, regCloseAt: true, reviewDeadline: true } },
   field: { select: { id: true, name: true } },
   members: { where: { leftAt: null }, select: { role: true, user: person } },
   advisings: { where: { endAt: null }, take: 1, include: { lecturer: person } },
@@ -11,6 +11,8 @@ const LIST_INCLUDE = {
   similarityChecks: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1, select: { status: true, level: true } },
   results: { where: { isCurrent: true }, take: 1, select: { result: true } },
 };
+// Kho chung (§9.2): chỉ chọn đúng trường FR08, không include quan hệ nào khác
+const REPO_SELECT = { code: true, title: true, summary: true, field: { select: { name: true } }, round: { select: { academicYear: true } }, results: { where: { isCurrent: true }, take: 1, select: { result: true } } };
 const esc = (s) => s.replace(/[\\%_]/g, '\\$&');
 
 export const createListRepo = (prisma) => ({
@@ -24,6 +26,14 @@ export const createListRepo = (prisma) => ({
          OR EXISTS (SELECT 1 FROM unnest(keywords) k WHERE lower(immutable_unaccent(k)) LIKE lower(immutable_unaccent(${like})))`);
     return rows.map((r) => r.id);
   },
+  listRepository: async ({ where, orderBy, skip, take }) => {
+    const [total, rows] = await prisma.$transaction([
+      prisma.topic.count({ where }),
+      prisma.topic.findMany({ where, orderBy, skip, take, select: REPO_SELECT }),
+    ]);
+    return { total, rows };
+  },
+  findRepositoryItem: (where) => prisma.topic.findFirst({ where, select: REPO_SELECT }),
   list: async ({ where, orderBy, skip, take }) => {
     const [total, rows] = await prisma.$transaction([
       prisma.topic.count({ where }),
