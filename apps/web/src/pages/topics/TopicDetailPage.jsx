@@ -1,27 +1,16 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { SIMILARITY_LEVEL_LABEL, TOPIC_STATUS_LABEL } from '@nckh/shared';
+import { TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { useAuth } from '../../lib/auth.js';
 import { fmtDateTime } from '../../lib/format.js';
 import { Badge, QueryBox, btnGhost } from '../../components/ui.jsx';
+import { useSimilarityLatest } from '../../lib/queries.js';
 import { TopicActionBar } from '../../components/TopicActionBar.jsx';
+import { SimilarityBadge, SimilarityPanel } from '../../components/SimilarityPanel.jsx';
 
 const NOTICE_STATUSES = ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR'];
-const LEVEL_TONE = { NONE: 'green', REVIEW: 'amber', HIGH: 'red' };
-
-// Quy tắc ô mức UI §4.13: null → chưa kiểm; ERROR/level null → chưa kiểm tra được
-function SimilarityBadge({ similarity }) {
-  if (!similarity) return <Badge>Chưa kiểm tra</Badge>;
-  if (similarity.status === 'ERROR' || !similarity.level) return <Badge>Chưa kiểm tra được</Badge>;
-  return (
-    <>
-      <Badge tone={LEVEL_TONE[similarity.level]}>{SIMILARITY_LEVEL_LABEL[similarity.level]}</Badge>
-      {similarity.isStale && <span className="ml-2 text-sm text-amber-900">Kết quả cũ – nội dung đã đổi sau lần kiểm này</span>}
-    </>
-  );
-}
-
 const Block = ({ title, children }) => (
   <div><h2 className="font-bold">{title}</h2><div className="whitespace-pre-wrap break-words text-slate-800">{children}</div></div>
 );
@@ -53,6 +42,8 @@ function TopicDetail({ topic: t }) {
   // UI §5.3 ngoại lệ 2: GV chưa là GVHD không đọc được lịch sử (API §8.4)
   const canHistory = !(user.role === 'LECTURER' && t.advisor?.id !== user.id);
   const max = t.round.effectiveConfig?.maxMembers;
+  const [showSim, setShowSim] = useState(false);
+  const sim = useSimilarityLatest(t.id, showSim);
   return (
     <div className="space-y-4">
       <header>
@@ -103,6 +94,12 @@ function TopicDetail({ topic: t }) {
       <div>
         <h2 className="font-bold">Kiểm tra trùng lặp</h2>
         <SimilarityBadge similarity={t.latestSimilarity} />
+        {t.latestSimilarity && (
+          <button type="button" className="ml-2 min-h-11 text-blue-800 underline" aria-expanded={showSim} onClick={() => setShowSim((v) => !v)}>
+            {showSim ? 'Ẩn chi tiết' : 'Xem chi tiết'}
+          </button>
+        )}
+        {showSim && <div className="mt-2">{sim.isPending ? <p role="status">Đang tải…</p> : sim.isError ? <p role="alert" className="text-red-800">{sim.error.message}</p> : <SimilarityPanel check={sim.data} />}</div>}
       </div>
       <p className="space-x-4">
         {sub && <Link to={`/de-tai/${t.id}/lan-gui/${sub.seq}`} className="text-blue-800 underline">Lần gửi gần nhất (lần {sub.seq})</Link>}

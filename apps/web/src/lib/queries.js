@@ -23,3 +23,16 @@ export const useMyQuota = (roundId, user, enabled = true) => useQuery({
   enabled: enabled && !!roundId && user?.role === 'LECTURER',
   queryFn: async () => (await api(`/lecturers${qs({ roundId, q: user.code, pageSize: 100 })}`)).items.find((l) => l.id === user.id) ?? null,
 });
+
+/** Kết quả kiểm tra tương tự gần nhất (API §7.1): { similarityCheck | null } */
+export const useSimilarityLatest = (id, enabled = true) => useQuery({
+  queryKey: ['similarity-latest', id],
+  enabled,
+  queryFn: async () => (await api(`/topics/${id}/similarity-checks/latest`)).similarityCheck,
+});
+
+/** Invalidate sau mọi lần gọi /actions, kể cả lỗi có ghi dữ liệu (UI §9.2) – dùng ở onSettled */
+export const invalidateAfterAction = (qc, id) => [
+  ['topic', id], ['similarity-latest', id], ['topics'], ['submissions', id], ['submission', id],
+  ['status-history', id], ['advisor-requests'], ['lecturers'], ['invitations'],
+].forEach((queryKey) => qc.invalidateQueries({ queryKey }));

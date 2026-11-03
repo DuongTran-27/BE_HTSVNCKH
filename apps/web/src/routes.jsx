@@ -10,6 +10,12 @@ import { Placeholder } from './pages/Placeholder.jsx';
 import { Forbidden, NotFound } from './pages/ErrorPages.jsx';
 const TopicDetailPage = lazy(() => import('./pages/topics/TopicDetailPage.jsx').then((m) => ({ default: m.TopicDetailPage })));
 const AdvisorRequestsPage = lazy(() => import('./pages/topics/AdvisorRequestsPage.jsx').then((m) => ({ default: m.AdvisorRequestsPage })));
+const TopicCreatePage = lazy(() => import('./pages/topics/TopicCreatePage.jsx').then((m) => ({ default: m.TopicCreatePage })));
+const TopicEditPage = lazy(() => import('./pages/topics/TopicEditPage.jsx').then((m) => ({ default: m.TopicEditPage })));
+const GroupPage = lazy(() => import('./pages/topics/GroupPage.jsx').then((m) => ({ default: m.GroupPage })));
+const AdvisorInvitePage = lazy(() => import('./pages/topics/AdvisorInvitePage.jsx').then((m) => ({ default: m.AdvisorInvitePage })));
+const SubmitPage = lazy(() => import('./pages/topics/SubmitPage.jsx').then((m) => ({ default: m.SubmitPage })));
+const InvitationsPage = lazy(() => import('./pages/topics/InvitationsPage.jsx').then((m) => ({ default: m.InvitationsPage })));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage.jsx').then((m) => ({ default: m.UsersPage })));
 const UserCreatePage = lazy(() => import('./pages/admin/UserCreatePage.jsx').then((m) => ({ default: m.UserCreatePage })));
 const UserDetailPage = lazy(() => import('./pages/admin/UserDetailPage.jsx').then((m) => ({ default: m.UserDetailPage })));
@@ -76,9 +82,15 @@ const SCREENS = [
   ['kho/:code', [S, L, F, A], 'Chi tiết kho đề tài'],
 ];
 
-// Màn đã làm (T304, T306); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
+// Màn đã làm (T304, T305, T306); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
 const SCREEN_ELEMENT = {
+  'de-tai/moi': <TopicCreatePage />,
   'de-tai/:id': <TopicDetailPage />,
+  'de-tai/:id/sua': <TopicEditPage />,
+  'de-tai/:id/nhom': <GroupPage />,
+  'de-tai/:id/moi-gvhd': <AdvisorInvitePage />,
+  'de-tai/:id/gui': <SubmitPage />,
+  'loi-moi': <InvitationsPage />,
   'de-nghi-huong-dan': <AdvisorRequestsPage />,
   'quan-ly/tai-khoan': <UsersPage />,
   'quan-ly/tai-khoan/moi': <UserCreatePage />,
