@@ -38,6 +38,7 @@ TODO → DOING → REVIEW → (CHANGES → DOING → REVIEW)* → DONE
 - Agent làm và `reviewer` chạy model Sonnet; `bao-mat` giữ model mặc định.
 - Có thể gộp các task liền nhau cùng agent chủ trì và cùng file vào một lượt (một báo cáo ghi rõ các ID).
 - Giữ nguyên: test bắt buộc, bằng chứng chạy lệnh, hồi quy `npm test` sau mỗi task, `/kiem-tra-cuoi`.
+- Chạy song song: mỗi agent dùng DB riêng `nckh_<task>_test` trên server test (đặt `DATABASE_URL`/`DIRECT_URL` rồi `npm run db:test:reset`), không dùng chung `nckh_test` – dùng chung gây đỏ ngẫu nhiên (`reports/T211.md`).
 
 ## Mức độ vấn đề trong review
 - **BLOCKER**: sai đặc tả, lỗ hổng bảo mật, mất dữ liệu, test đỏ, test bị làm yếu. Bắt buộc sửa.

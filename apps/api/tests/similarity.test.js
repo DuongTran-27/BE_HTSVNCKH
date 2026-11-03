@@ -102,18 +102,26 @@ describe('Dịch vụ kiểm tra', () => {
     expect(r.status).toBe('ERROR');
     expect(r.level).toBeNull();
   });
-  it('sinh viên không thấy tên/tóm tắt hồ sơ đang chờ của nhóm khác', () => {
-    const corpusById = new Map([
-      ['P', { status: 'UNDER_REVIEW', title: 'Bí mật', academicYear: '2025-2026' }],
-      ['D', { status: 'CLOSED', title: 'Đề tài cũ', academicYear: '2024-2025' }],
-    ]);
-    const matches = [{ topicId: 'P', code: 'C1', titleScore: 0.8, contentScore: 0.6, level: 'HIGH' },
-      { topicId: 'D', code: 'C2', titleScore: 0.5, contentScore: 0.2, level: 'REVIEW' }];
-    const forStudent = presentMatches(matches, corpusById, 'STUDENT');
-    expect(forStudent[0]).not.toHaveProperty('title');
-    expect(forStudent[0]).not.toHaveProperty('code');
-    expect(forStudent[0].hidden).toBe(true);
-    expect(forStudent[1].title).toBe('Đề tài cũ');
-    expect(presentMatches(matches, corpusById, 'STAFF')[0].title).toBe('Bí mật');
+  const stored = [
+    { topicId: 'P', code: 'C1', title: 'Bí mật', academicYear: '2025-2026', fieldName: 'AI', status: 'UNDER_REVIEW', titleScore: 0.8, contentScore: 0.6, level: 'HIGH', matchedKeywords: ['a'] },
+    { topicId: 'D', code: 'C2', title: 'Đề tài cũ', academicYear: '2024-2025', fieldName: 'AI', status: 'CLOSED', titleScore: 0.5, contentScore: 0.2, level: 'REVIEW', matchedKeywords: ['b'] },
+  ];
+  it('mọi vai trò trừ STAFF không thấy tên/mã hồ sơ đang chờ của nhóm khác; dựng từ dữ liệu đã lưu', () => {
+    for (const role of ['STUDENT', 'LECTURER']) {
+      const v = presentMatches(stored, role);
+      expect(v[0]).toEqual({ hidden: true, note: expect.any(String), titleScore: 0.8, contentScore: 0.6, level: 'HIGH' });
+      expect(v[1]).toMatchObject({ hidden: false, code: 'C2', title: 'Đề tài cũ', field: 'AI', status: 'CLOSED', matchedKeywords: ['b'] });
+      expect(v[1]).not.toHaveProperty('topicId');
+    }
+    expect(presentMatches(stored, 'STAFF')[0]).toMatchObject({ hidden: false, topicId: 'P', title: 'Bí mật' });
+  });
+  it('trạng thái thiếu/lạ trong dữ liệu lưu thì ẩn (an toàn)', () => {
+    expect(presentMatches([{ topicId: 'X', titleScore: 0.5, contentScore: 0.5, level: 'REVIEW' }], 'STUDENT')[0].hidden).toBe(true);
+  });
+  it('matchedKeywords: giữ chữ gốc, quy đồng nghĩa, tối đa 5', () => {
+    const cand = { ...base, keywords: ['Deep Learning', 'Điểm danh', 'react', 'khác'] };
+    const m = compare({ candidate: cand, corpus: [{ ...base, status: 'CLOSED' }], thresholds: TH, synonyms: SYN }).matches[0];
+    expect(m.matchedKeywords).toEqual(['Deep Learning', 'Điểm danh']);
+    expect(m.status).toBe('CLOSED');
   });
 });

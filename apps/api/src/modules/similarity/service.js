@@ -7,17 +7,35 @@ export const PUBLIC_CORPUS_STATUSES = ['IN_PROGRESS', 'WAITING_CLOSE', 'CLOSED']
 export const PENDING_SAME_ROUND_STATUSES = ['WAITING_ADVISOR', 'HAS_ADVISOR', 'UNDER_REVIEW', 'NEEDS_REVISION'];
 
 /**
- * Ẩn thông tin hồ sơ đang chờ của nhóm khác khi người xem là sinh viên.
+ * Dựng từ dữ liệu đã lưu lúc kiểm (API_GD2 §7.2). Chỉ hồ sơ đã duyệt trở đi hiện cho mọi người;
+ * mọi trạng thái khác (kể cả thiếu/lạ) chỉ STAFF thấy đầy đủ, vai trò khác chỉ thấy điểm.
  */
-export const presentMatches = (matches, corpusById, viewerRole) =>
+export const presentMatches = (matches, viewerRole) =>
   matches.map((m) => {
-    const t = corpusById.get(m.topicId);
-    const isPending = PENDING_SAME_ROUND_STATUSES.includes(t.status);
-    if (isPending && viewerRole === 'STUDENT') {
-      return { hidden: true, note: 'Có hồ sơ đang chờ duyệt trong đợt có nội dung tương tự', titleScore: m.titleScore, contentScore: m.contentScore, level: m.level };
+    const isPublic = PUBLIC_CORPUS_STATUSES.includes(m.status);
+    if (!isPublic && viewerRole !== 'STAFF') {
+      return { hidden: true, note: 'Có 1 hồ sơ đang chờ duyệt trong đợt có nội dung tương tự', titleScore: m.titleScore, contentScore: m.contentScore, level: m.level };
     }
-    return { ...m, title: t.title, academicYear: t.academicYear, field: t.fieldName, status: t.status, hidden: false };
+    return {
+      hidden: false,
+      ...(isPublic ? {} : { topicId: m.topicId }),
+      code: m.code, title: m.title, academicYear: m.academicYear, field: m.fieldName ?? null, status: m.status,
+      titleScore: m.titleScore, contentScore: m.contentScore, level: m.level, matchedKeywords: m.matchedKeywords ?? [],
+    };
   });
+
+// check: dòng SimilarityCheck. Lỗi KHÔNG bao giờ trả level NONE; errorMessage nội bộ không ra client.
+export const similarityView = (check, viewerRole) => {
+  const head = { id: check.id, status: check.status, createdAt: check.createdAt.toISOString(), algorithmVersion: check.algorithmVersion, corpusSize: check.corpusSize, thresholds: check.thresholds };
+  if (check.status !== 'OK') {
+    return { ...head, level: null, matches: [], justificationRequired: false, justification: null, message: 'Chưa kiểm tra được' };
+  }
+  return {
+    ...head, level: check.level,
+    justificationRequired: check.level === 'HIGH', justification: check.justification ?? null,
+    matches: presentMatches(Array.isArray(check.matches) ? check.matches : [], viewerRole),
+  };
+};
 
 export const needsJustification = (level, justification, cfg = DEFAULT_ROUND_CONFIG) =>
   level === 'HIGH' && countWords(justification ?? '') < cfg.similarity.minJustificationWords;
@@ -26,7 +44,7 @@ export const needsJustification = (level, justification, cfg = DEFAULT_ROUND_CON
  * Chạy kiểm tra. repo cung cấp loadCorpus, loadSynonyms, saveCheck (tách để test được không cần DB).
  * Lỗi KHÔNG bao giờ được coi là "không tương tự": trả status ERROR.
  */
-export const runSimilarityCheck = async ({ repo, topic, cfg = DEFAULT_ROUND_CONFIG, justification = null }) => {
+export const runSimilarityCheck = async ({ repo, topic, cfg = DEFAULT_ROUND_CONFIG, justification = null, audit }) => {
   const thresholds = cfg.similarity;
   const hash = contentHash(topic);
   try {
@@ -36,11 +54,11 @@ export const runSimilarityCheck = async ({ repo, topic, cfg = DEFAULT_ROUND_CONF
       topicId: topic.id, algorithmVersion: ALGORITHM_VERSION, thresholds, contentHash: hash,
       corpusSize: result.corpusSize, level: result.level, matches: result.matches,
       justification, status: 'OK',
-    });
+    }, audit);
   } catch (err) {
     return repo.saveCheck({
       topicId: topic.id, algorithmVersion: ALGORITHM_VERSION, thresholds, contentHash: hash,
       corpusSize: 0, level: null, matches: [], justification, status: 'ERROR', errorMessage: String(err.message ?? err),
-    });
+    }, audit);
   }
 };

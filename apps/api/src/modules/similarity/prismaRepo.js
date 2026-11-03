@@ -1,5 +1,6 @@
 // Truy vấn kho so bằng pg_trgm (điểm tên tính trong database, có index GIN).
 import { Prisma } from '@prisma/client';
+import { recordAudit } from '../audit/service.js';
 import { PUBLIC_CORPUS_STATUSES, PENDING_SAME_ROUND_STATUSES } from './service.js';
 
 export const createSimilarityRepo = (prisma) => ({
@@ -18,5 +19,11 @@ export const createSimilarityRepo = (prisma) => ({
         )`;
   },
   loadSynonyms: () => prisma.synonym.findMany({ select: { term: true, canonical: true } }),
-  saveCheck: (data) => prisma.similarityCheck.create({ data }),
+  // buildAudit(row) tùy chọn: ghi AuditLog cùng transaction
+  saveCheck: (data, buildAudit) =>
+    prisma.$transaction(async (tx) => {
+      const row = await tx.similarityCheck.create({ data });
+      if (buildAudit) await recordAudit(tx, buildAudit(row));
+      return row;
+    }),
 });

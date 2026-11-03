@@ -1,6 +1,6 @@
 // TF-IDF + cosine thuần JavaScript (không cần Python service).
 import { createHash } from 'node:crypto';
-import { tokenize, trigramSimilarity } from './text.js';
+import { tokenize, trigramSimilarity, applySynonyms, normalize } from './text.js';
 
 export const ALGORITHM_VERSION = 'tfidf-bigram-v1+trgm';
 
@@ -61,12 +61,22 @@ export const compare = ({ candidate, corpus, thresholds, synonyms = [], topK = 5
   const { idf } = buildIdf([candTokens, ...corpusTokens]);
   const candVec = vectorize(candTokens, idf);
 
+  // Từ khóa gốc của hồ sơ đang kiểm có dạng chuẩn hóa (kèm đồng nghĩa) trùng từ khóa của đề tài khớp; tối đa 5
+  const canon = (k) => applySynonyms(normalize(k), synonyms);
+  const candKeywords = (candidate.keywords ?? []).map((k) => [k, canon(k)]);
+
   const scored = corpus.map((d, i) => {
     const titleScore = d.titleScore ?? trigramSimilarity(candidate.title, d.title);
     const contentScore = cosine(candVec, vectorize(corpusTokens.at(i), idf));
+    const theirs = new Set((d.keywords ?? []).map(canon));
     return {
       topicId: d.id,
       code: d.code,
+      title: d.title,
+      academicYear: d.academicYear,
+      fieldName: d.fieldName ?? null,
+      status: d.status,
+      matchedKeywords: candKeywords.filter(([, c]) => c && theirs.has(c)).map(([k]) => k).slice(0, 5),
       titleScore: round3(titleScore),
       contentScore: round3(contentScore),
       level: levelOf(titleScore, contentScore, thresholds),
