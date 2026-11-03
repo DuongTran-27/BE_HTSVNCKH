@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Chặn mạng: bootstrapSession chờ được, kiểm thứ tự gọi
 const boot = vi.hoisted(() => ({ gate: null }));
 vi.mock('../src/lib/api.js', () => ({
   bootstrapSession: vi.fn(() => boot.gate ?? Promise.resolve()),
   logout: vi.fn(),
+  api: vi.fn(async () => ({ items: [], total: 0, page: 1, pageSize: 20 })), // T308: /de-tai và /kho là màn thật, gọi API
 }));
 
 import { routes } from '../src/routes.jsx';
@@ -20,7 +22,7 @@ const open = async (url, user) => {
   auth.clear();
   if (user) auth.setSession({ accessToken: 't', user });
   const router = createMemoryRouter(routes, { initialEntries: [url] });
-  render(<RouterProvider router={router} />);
+  render(<QueryClientProvider client={new QueryClient()}><RouterProvider router={router} /></QueryClientProvider>);
   return router;
 };
 
@@ -33,13 +35,13 @@ describe('guard', () => {
     let release;
     boot.gate = new Promise((r) => { release = r; });
     const router = createMemoryRouter(routes, { initialEntries: ['/de-tai'] });
-    render(<RouterProvider router={router} />);
+    render(<QueryClientProvider client={new QueryClient()}><RouterProvider router={router} /></QueryClientProvider>);
     await new Promise((r) => setTimeout(r, 20));
     expect(bootstrapSession).toHaveBeenCalled();
     expect(router.state.location.pathname).toBe('/de-tai'); // chưa chuyển hướng vì chưa boot xong
     auth.setSession({ accessToken: 't', user: U('STUDENT') }); // boot xong → có phiên
     await act(async () => { release(); });
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Đề tài' })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Đề tài của tôi' })).toBeTruthy());
     expect(router.state.location.pathname).toBe('/de-tai');
   });
   it('khách vào route khác → /dang-nhap?next=…', async () => {
@@ -81,7 +83,7 @@ describe('guard', () => {
     await open('/quan-ly/danh-muc/khoa', U('STAFF'));
     expect(await screen.findByText('Bạn không có quyền truy cập trang này')).toBeTruthy();
   });
-  it('vai trò hợp lệ thấy trang tạm trong layout (không 404)', async () => {
+  it('vai trò hợp lệ thấy màn trong layout (không 404)', async () => {
     await open('/kho', U('ADMIN'));
     expect(await screen.findByRole('heading', { name: 'Kho đề tài' })).toBeTruthy();
   });

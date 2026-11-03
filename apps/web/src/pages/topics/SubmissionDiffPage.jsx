@@ -14,7 +14,7 @@ function Diff({ parts, side }) {
   return (
     <p className="whitespace-pre-wrap break-words">
       {parts.filter((p) => p.type !== hide).map((p, i) => (p.type === 'same'
-        ? <span key={i}>{p.text}</span>
+        ? <span key={i}>{side === 'from' ? p.old ?? p.text : p.text}</span>
         : p.type === 'add'
           ? <ins key={i} className="bg-green-100 text-green-900 no-underline" data-testid="diff-add">{p.text}</ins>
           : <del key={i} className="bg-red-100 text-red-900" data-testid="diff-del">{p.text}</del>))}
@@ -40,13 +40,19 @@ function DiffView({ id, from, to }) {
             return (
               <div key={key}>
                 <h2 className="font-bold">{label} {d.changes[key] ? <Badge tone="amber">Có thay đổi</Badge> : <Badge>Không đổi</Badge>}</h2>
-                <div className="grid gap-2 lg:grid-cols-2"><Diff parts={parts} side="from" /><Diff parts={parts} side="to" /></div>
+                <div className="grid gap-2 lg:grid-cols-2">
+                  <div><p className="text-sm font-medium text-slate-700 lg:hidden">Cũ</p><Diff parts={parts} side="from" /></div>
+                  <div><p className="text-sm font-medium text-slate-700 lg:hidden">Mới</p><Diff parts={parts} side="to" /></div>
+                </div>
               </div>
             );
           })}
           <div>
             <h2 className="font-bold">Lĩnh vực {d.changes.fieldId ? <Badge tone="amber">Có thay đổi</Badge> : <Badge>Không đổi</Badge>}</h2>
-            <div className="grid gap-2 lg:grid-cols-2"><p>{d.from.payload.fieldName}</p><p>{d.to.payload.fieldName}</p></div>
+            <div className="grid gap-2 lg:grid-cols-2">
+              <div><p className="text-sm font-medium text-slate-700 lg:hidden">Cũ</p><p>{d.from.payload.fieldName}</p></div>
+              <div><p className="text-sm font-medium text-slate-700 lg:hidden">Mới</p><p>{d.to.payload.fieldName}</p></div>
+            </div>
           </div>
           <div>
             <h2 className="font-bold">Từ khóa</h2>

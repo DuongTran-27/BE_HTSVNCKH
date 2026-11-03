@@ -12,7 +12,7 @@ export function ReviewPage() {
   const topic = useTopic(id);
   const seq = topic.data?.latestSubmission?.seq;
   const sub = useSubmission(id, seq, !!seq);
-  const prev = useSubmission(id, seq - 1, seq > 1);
+  const prev = useSubmission(id, seq ? seq - 1 : undefined, seq > 1);
   const list = useSubmissions(id, !!seq);
   const back = useLocation().state?.from ?? '/xet-duyet';
 

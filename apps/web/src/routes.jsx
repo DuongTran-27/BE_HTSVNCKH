@@ -10,6 +10,9 @@ import { Placeholder } from './pages/Placeholder.jsx';
 import { Forbidden, NotFound } from './pages/ErrorPages.jsx';
 const TopicDetailPage = lazy(() => import('./pages/topics/TopicDetailPage.jsx').then((m) => ({ default: m.TopicDetailPage })));
 const AdvisorRequestsPage = lazy(() => import('./pages/topics/AdvisorRequestsPage.jsx').then((m) => ({ default: m.AdvisorRequestsPage })));
+const TopicListPage = lazy(() => import('./pages/topics/TopicListPage.jsx').then((m) => ({ default: m.TopicListPage })));
+const RepositoryPage = lazy(() => import('./pages/topics/RepositoryPage.jsx').then((m) => ({ default: m.RepositoryPage })));
+const RepositoryDetailPage = lazy(() => import('./pages/topics/RepositoryPage.jsx').then((m) => ({ default: m.RepositoryDetailPage })));
 const TopicCreatePage = lazy(() => import('./pages/topics/TopicCreatePage.jsx').then((m) => ({ default: m.TopicCreatePage })));
 const TopicEditPage = lazy(() => import('./pages/topics/TopicEditPage.jsx').then((m) => ({ default: m.TopicEditPage })));
 const GroupPage = lazy(() => import('./pages/topics/GroupPage.jsx').then((m) => ({ default: m.GroupPage })));
@@ -87,8 +90,11 @@ const SCREENS = [
   ['kho/:code', [S, L, F, A], 'Chi tiết kho đề tài'],
 ];
 
-// Màn đã làm (T304–T307); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
+// Màn đã làm (T304–T308); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
 const SCREEN_ELEMENT = {
+  'de-tai': <TopicListPage />,
+  kho: <RepositoryPage />,
+  'kho/:code': <RepositoryDetailPage />,
   'de-tai/moi': <TopicCreatePage />,
   'de-tai/:id': <TopicDetailPage />,
   'de-tai/:id/sua': <TopicEditPage />,

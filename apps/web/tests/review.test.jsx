@@ -60,7 +60,7 @@ afterEach(() => { cleanup(); clearToasts(); });
 
 describe('Hàng chờ xét duyệt (R16)', () => {
   const item = { id: 't1', code: 'DT-001', title: 'Đề tài A', status: 'UNDER_REVIEW', round: ROUND, leader: { fullName: 'SV A' }, memberCount: 2, advisor: null, latestSubmission: { seq: 2, createdAt: '2026-10-01T03:00:00Z' }, latestSimilarityLevel: null };
-  it('gọi status=UNDER_REVIEW & updatedAt_asc, hiện hàng; mức null là "Chưa kiểm tra được", hạn quá khứ tô đỏ', async () => {
+  it('gọi status=UNDER_REVIEW & updatedAt_asc, hiện hàng; mức null là "—" (không đoán), hạn quá khứ tô đỏ', async () => {
     map['GET /topics'] = { page: 1, pageSize: 20, total: 1, items: [item] };
     map['GET /rounds'] = { items: [ROUND] };
     map['GET /fields'] = { items: [] };
@@ -69,7 +69,7 @@ describe('Hàng chờ xét duyệt (R16)', () => {
     const url = sent('GET', '/topics')[0][0];
     expect(url).toContain('status=UNDER_REVIEW');
     expect(url).toContain('sort=updatedAt_asc');
-    expect(screen.getByText('Chưa kiểm tra được')).toBeTruthy();
+    expect(screen.getByText('Chưa có mức trùng lặp')).toBeTruthy();
     expect(screen.queryByText(/Không trùng/)).toBeNull();
     expect(screen.getByText(/Hạn xét duyệt/).className).toContain('text-red-700');
   });

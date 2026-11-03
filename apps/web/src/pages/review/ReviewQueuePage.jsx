@@ -4,7 +4,7 @@ import { api } from '../../lib/api.js';
 import { fmtDateTime, qs } from '../../lib/format.js';
 import { useCatalog } from '../../lib/queries.js';
 import { inputClass } from '../../components/FormField.jsx';
-import { SimilarityBadge } from '../../components/SimilarityPanel.jsx';
+import { SimilarityLevelCell } from '../../components/SimilarityPanel.jsx';
 import { Options, Pager, QueryBox, btnGhost } from '../../components/ui.jsx';
 
 // R16 – API_GD2 §9.1. Thứ tự đúng như server trả (updatedAt_asc), không sắp phía client
@@ -57,7 +57,7 @@ export function ReviewQueuePage() {
                       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                         <span>Gửi lúc {fmtDateTime(t.latestSubmission?.createdAt)} (lần {t.latestSubmission?.seq})</span>
                         <span className={late ? 'font-medium text-red-700' : ''}>Hạn xét duyệt {fmtDateTime(t.round.reviewDeadline)}</span>
-                        <SimilarityBadge similarity={{ level: t.latestSimilarityLevel }} />
+                        <SimilarityLevelCell level={t.latestSimilarityLevel} />
                       </p>
                     </li>
                   );

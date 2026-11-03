@@ -18,6 +18,12 @@ export function SimilarityBadge({ similarity }) {
   );
 }
 
+/** Ô mức trong danh sách (UI §4.13): danh sách không phân biệt "chưa kiểm" với "kiểm lỗi" nên null → "—", không đoán */
+export function SimilarityLevelCell({ level }) {
+  if (!level) return <span title="Chưa có mức trùng lặp ở danh sách; mở hồ sơ để xem">—<span className="sr-only"> Chưa có mức trùng lặp</span></span>;
+  return <Badge tone={LEVEL_TONE[level]}>{SIMILARITY_LEVEL_LABEL[level]}</Badge>;
+}
+
 const Score = ({ label, value }) => (
   <div className="text-sm">
     <span>{label}: {pct(value)}</span>

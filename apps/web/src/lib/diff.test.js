@@ -10,3 +10,12 @@ describe('wordDiff', () => {
   });
   it('rỗng -> toàn bộ là thêm', () => expect(wordDiff('', 'x')).toEqual([{ type: 'add', text: 'x' }]));
 });
+
+describe('wordDiff khoảng trắng', () => {
+  it('đoạn giữ nguyên: text theo bản mới, old theo bản cũ khi khác nhau', () => {
+    expect(wordDiff('a  b', 'a b')).toEqual([{ type: 'same', text: 'a b', old: 'a  b' }]);
+  });
+  it('bản cũ và mới cùng khoảng trắng thì không có old', () => {
+    expect(wordDiff('a b c', 'a b d').find((p) => p.type === 'same')).toEqual({ type: 'same', text: 'a b ' });
+  });
+});

@@ -101,7 +101,13 @@ function Submit({ topic: t }) {
         <>
           <div className="space-y-2">
             <h2 className="font-bold">2. Kiểm tra trùng lặp</h2>
-            {run.isPending || latest.isPending ? <p role="status">Đang kiểm tra trùng lặp…</p> : <SimilarityPanel check={check} />}
+            {run.isPending || latest.isPending ? <p role="status">Đang kiểm tra trùng lặp…</p>
+              : latest.isError && !fresh ? (
+                <div role="alert" className="rounded-md bg-red-50 p-3 text-red-800">
+                  <p className="break-words">{latest.error.message}</p>
+                  <button type="button" className={`${btnGhost} mt-2`} onClick={() => latest.refetch()}>Thử lại</button>
+                </div>
+              ) : <SimilarityPanel check={check} />}
             <button type="button" className={btnGhost} disabled={run.isPending || cd.active} onClick={() => run.mutate()}>{st.kind === 'error' ? 'Thử lại' : 'Kiểm tra lại'}</button>
             {cd.active && <p role="status" className="text-sm text-amber-900">{cd.message}</p>}
           </div>

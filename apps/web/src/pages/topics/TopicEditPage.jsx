@@ -106,7 +106,7 @@ function EditForm({ topic }) {
       qc.invalidateQueries({ queryKey: ['topics'] });
     } catch (err) {
       if (err.status === 429) cd.start(err.retryAfter);
-      if (err.status && !err.sessionExpired && err.code !== 'CONCURRENT_UPDATE' && err.code !== 'TOPIC_NOT_EDITABLE' && err.code !== 'VALIDATION_ERROR') setFormError(err.message);
+      if (!err.sessionExpired && err.code !== 'CONCURRENT_UPDATE' && err.code !== 'TOPIC_NOT_EDITABLE' && err.code !== 'VALIDATION_ERROR') setFormError(err.message);
     } finally { setBusy(false); }
   });
   const keepMine = async () => { await qc.refetchQueries({ queryKey: ['topic', id] }); setConflict(false); };
