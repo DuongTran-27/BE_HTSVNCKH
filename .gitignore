@@ -7,3 +7,4 @@ dist/
 coverage/
 playwright-report/
 *.zip
+apps/web/e2e/.out/
