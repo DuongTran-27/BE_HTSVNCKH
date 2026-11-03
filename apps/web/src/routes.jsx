@@ -16,6 +16,11 @@ const GroupPage = lazy(() => import('./pages/topics/GroupPage.jsx').then((m) => 
 const AdvisorInvitePage = lazy(() => import('./pages/topics/AdvisorInvitePage.jsx').then((m) => ({ default: m.AdvisorInvitePage })));
 const SubmitPage = lazy(() => import('./pages/topics/SubmitPage.jsx').then((m) => ({ default: m.SubmitPage })));
 const InvitationsPage = lazy(() => import('./pages/topics/InvitationsPage.jsx').then((m) => ({ default: m.InvitationsPage })));
+const SubmissionHistoryPage = lazy(() => import('./pages/topics/SubmissionHistoryPage.jsx').then((m) => ({ default: m.SubmissionHistoryPage })));
+const SubmissionPage = lazy(() => import('./pages/topics/SubmissionPage.jsx').then((m) => ({ default: m.SubmissionPage })));
+const SubmissionDiffPage = lazy(() => import('./pages/topics/SubmissionDiffPage.jsx').then((m) => ({ default: m.SubmissionDiffPage })));
+const ReviewQueuePage = lazy(() => import('./pages/review/ReviewQueuePage.jsx').then((m) => ({ default: m.ReviewQueuePage })));
+const ReviewPage = lazy(() => import('./pages/review/ReviewPage.jsx').then((m) => ({ default: m.ReviewPage })));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage.jsx').then((m) => ({ default: m.UsersPage })));
 const UserCreatePage = lazy(() => import('./pages/admin/UserCreatePage.jsx').then((m) => ({ default: m.UserCreatePage })));
 const UserDetailPage = lazy(() => import('./pages/admin/UserDetailPage.jsx').then((m) => ({ default: m.UserDetailPage })));
@@ -82,7 +87,7 @@ const SCREENS = [
   ['kho/:code', [S, L, F, A], 'Chi tiết kho đề tài'],
 ];
 
-// Màn đã làm (T304, T305, T306); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
+// Màn đã làm (T304–T307); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
 const SCREEN_ELEMENT = {
   'de-tai/moi': <TopicCreatePage />,
   'de-tai/:id': <TopicDetailPage />,
@@ -90,6 +95,11 @@ const SCREEN_ELEMENT = {
   'de-tai/:id/nhom': <GroupPage />,
   'de-tai/:id/moi-gvhd': <AdvisorInvitePage />,
   'de-tai/:id/gui': <SubmitPage />,
+  'de-tai/:id/lich-su': <SubmissionHistoryPage />,
+  'de-tai/:id/lan-gui/:seq': <SubmissionPage />,
+  'de-tai/:id/so-sanh': <SubmissionDiffPage />,
+  'xet-duyet': <ReviewQueuePage />,
+  'xet-duyet/:id': <ReviewPage />,
   'loi-moi': <InvitationsPage />,
   'de-nghi-huong-dan': <AdvisorRequestsPage />,
   'quan-ly/tai-khoan': <UsersPage />,

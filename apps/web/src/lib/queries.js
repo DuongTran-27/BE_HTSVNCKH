@@ -36,3 +36,15 @@ export const invalidateAfterAction = (qc, id) => [
   ['topic', id], ['similarity-latest', id], ['topics'], ['submissions', id], ['submission', id],
   ['status-history', id], ['advisor-requests'], ['lecturers'], ['invitations'],
 ].forEach((queryKey) => qc.invalidateQueries({ queryKey }));
+
+export const useTopic = (id) => useQuery({ queryKey: ['topic', id], queryFn: async () => (await api(`/topics/${id}`)).topic });
+
+/** Danh sách lần gửi (seq giảm dần) – API §8.4 */
+export const useSubmissions = (id, enabled = true) => useQuery({
+  queryKey: ['submissions', id], enabled, queryFn: async () => (await api(`/topics/${id}/submissions`)).items,
+});
+
+/** Một snapshot – API §8.4 */
+export const useSubmission = (id, seq, enabled = true) => useQuery({
+  queryKey: ['submission', id, seq], enabled, queryFn: async () => (await api(`/topics/${id}/submissions/${seq}`)).submission,
+});

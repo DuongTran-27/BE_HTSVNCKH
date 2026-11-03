@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
 import { TOPIC_STATUS_LABEL } from '@nckh/shared';
-import { api } from '../../lib/api.js';
 import { useAuth } from '../../lib/auth.js';
 import { fmtDateTime } from '../../lib/format.js';
 import { Badge, QueryBox, btnGhost } from '../../components/ui.jsx';
-import { useSimilarityLatest } from '../../lib/queries.js';
+import { useSimilarityLatest, useTopic } from '../../lib/queries.js';
 import { TopicActionBar } from '../../components/TopicActionBar.jsx';
 import { SimilarityBadge, SimilarityPanel } from '../../components/SimilarityPanel.jsx';
 
@@ -18,7 +16,7 @@ const Block = ({ title, children }) => (
 // R6 – API_GD2 §5.1
 export function TopicDetailPage() {
   const { id } = useParams();
-  const query = useQuery({ queryKey: ['topic', id], queryFn: async () => (await api(`/topics/${id}`)).topic });
+  const query = useTopic(id);
   const status = query.error?.status;
   return (
     <section>
