@@ -10,7 +10,7 @@ Giới hạn lượt này (nếu có): $ARGUMENTS
 Lặp các bước sau cho đến khi dừng:
 
 1. **Hồi quy trước**: chạy `npm test`. Nếu đỏ và chưa có BUG tương ứng → thêm `BUG-xxx` vào "Lỗi phát sinh" (chủ trì BE/FE theo vị trí lỗi, review RV + QA). BUG luôn được ưu tiên trước task thường.
-2. **Chọn việc**: lấy các task TODO/CHANGES mà mọi phụ thuộc đã DONE, theo thứ tự: BUG → CHANGES → TODO số nhỏ trước. Có thể giao song song tối đa 3 task nếu chúng **không sửa chung file** và khác agent chủ trì (ví dụ BE + DO, hoặc BE + FE khi hợp đồng API đã DONE).
+2. **Chọn việc**: lấy các task TODO/CHANGES mà mọi phụ thuộc đã DONE, theo thứ tự: BUG → CHANGES → TODO số nhỏ trước. Mỗi lượt chỉ **một task nhỏ, một agent** (không giao song song). Task lớn → chia thành các bước nhỏ, làm xong bước này rồi làm bước kế.
 3. **Giao việc**: đổi trạng thái DOING, gọi subagent chủ trì với lời nhắn gồm: ID task, mô tả nguyên văn từ bảng, FR, các báo cáo phụ thuộc cần đọc, và (nếu CHANGES) đường dẫn mọi review có CHANGES_REQUESTED. Yêu cầu nó ghi `docs/agents/reports/<ID>.md` và kết thúc bằng tóm tắt + kết quả test.
 4. **Kiểm báo cáo**: báo cáo thiếu mục bắt buộc hoặc không có bằng chứng chạy lệnh → trả lại agent ngay, không đưa đi review.
 5. **Review chéo**: đổi REVIEW; gọi **từng** reviewer trong cột Review (độc lập, mỗi người một file `reviews/<ID>-<agent>-v<n>.md`). Không gửi kết luận của reviewer này cho reviewer kia.
@@ -18,11 +18,13 @@ Lặp các bước sau cho đến khi dừng:
    - Tất cả APPROVED → DONE (ghi ngày vào ô trạng thái, ví dụ `DONE 2026-11-03`), commit: `git add -A && git commit -m "<ID>: <tên task>"`.
    - Có CHANGES_REQUESTED → CHANGES, quay lại bước 3 với cùng agent chủ trì.
    - Vòng review thứ 3 vẫn chưa đạt, hoặc agent cần quyết định nghiệp vụ / tài khoản / bí mật → BLOCKED, ghi `CAU_HOI.md`, chuyển sang task khác.
-7. **Báo tiến độ** sau mỗi task: 2–3 dòng (task vừa xong, số DONE/tổng, việc tiếp theo).
+7. **Báo tiến độ** sau mỗi task: 2–3 dòng (task vừa xong, số DONE/tổng, việc tiếp theo), rồi **quay lại bước 1 ngay** – không dừng, không hỏi người dùng "có làm tiếp không".
 
-Dừng khi:
+Chạy liên tục đến hết dự án. Chỉ dừng khi:
 - Mọi task DONE trừ T708 → chạy `/kiem-tra-cuoi`.
 - Chỉ còn task BLOCKED → liệt kê câu hỏi trong `CAU_HOI.md` cho người dùng và dừng.
 - Đã xong số task giới hạn trong $ARGUMENTS (nếu có).
+
+Không được dừng vì: vừa xong một task, task tiếp theo khó, cần chọn giữa hai cách hợp lệ (tự chọn cách theo đặc tả, ghi lý do vào báo cáo). Task cần người quyết định → BLOCKED, ghi `CAU_HOI.md`, làm task khác.
 
 Không bao giờ: tự đánh dấu DONE khi thiếu review; bỏ qua test đỏ; sửa test để cho qua; deploy; đọc `.env`.

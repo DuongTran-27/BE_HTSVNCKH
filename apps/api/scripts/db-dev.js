@@ -12,17 +12,26 @@ const DATA_DIR = path.join(os.homedir(), '.nckh-db-dev');
 const url = (db) => `postgresql://postgres:postgres@localhost:${PORT}/${db}`;
 const run = (cmd, args) => spawnSync(cmd, args, { stdio: 'ignore' });
 
-const portOpen = () => new Promise((resolve) => {
-  const s = net.connect({ host: 'localhost', port: PORT }, () => { s.destroy(); resolve(true); });
-  s.on('error', () => resolve(false));
-});
+const portOpen = () =>
+  new Promise((resolve) => {
+    const s = net.connect({ host: 'localhost', port: PORT }, () => {
+      s.destroy();
+      resolve(true);
+    });
+    s.on('error', () => resolve(false));
+  });
 
-const binaries = () => import(`@embedded-postgres/${process.platform === 'win32' ? 'windows' : process.platform}-${process.arch}`);
+const binaries = () =>
+  import(`@embedded-postgres/${process.platform === 'win32' ? 'windows' : process.platform}-${process.arch}`);
 
 async function withClient(db, fn) {
   const { PrismaClient } = await import('@prisma/client');
   const c = new PrismaClient({ datasourceUrl: url(db) });
-  try { return await fn(c); } finally { await c.$disconnect(); }
+  try {
+    return await fn(c);
+  } finally {
+    await c.$disconnect();
+  }
 }
 
 async function up() {
@@ -31,14 +40,31 @@ async function up() {
   if (!existsSync(path.join(DATA_DIR, 'PG_VERSION'))) {
     const pw = path.join(os.tmpdir(), `nckh-db-dev-pw-${process.pid}`);
     writeFileSync(pw, 'postgres');
-    const r = run(initdb, ['-D', DATA_DIR, '--encoding=UTF8', '--locale=C', '--username=postgres', '--auth=scram-sha-256', `--pwfile=${pw}`]);
+    const r = run(initdb, [
+      '-D',
+      DATA_DIR,
+      '--encoding=UTF8',
+      '--locale=C',
+      '--username=postgres',
+      '--auth=scram-sha-256',
+      `--pwfile=${pw}`,
+    ]);
     rmSync(pw, { force: true });
     if (r.status !== 0) throw new Error(`initdb thất bại (mã ${r.status}). Xóa "${DATA_DIR}" rồi chạy lại.`);
   }
   // -l và stdio 'ignore' bắt buộc, thiếu thì lệnh treo (QD_DB_TEST §4.2 bước 5)
-  const r = run(pg_ctl, ['start', '-w', '-D', DATA_DIR, '-l', path.join(DATA_DIR, 'server.log'),
-    '-o', `-p ${PORT} -c listen_addresses=localhost -c timezone=Asia/Ho_Chi_Minh`]);
-  if (r.status !== 0) throw new Error(`pg_ctl start thất bại (mã ${r.status}). Xem ${path.join(DATA_DIR, 'server.log')}`);
+  const r = run(pg_ctl, [
+    'start',
+    '-w',
+    '-D',
+    DATA_DIR,
+    '-l',
+    path.join(DATA_DIR, 'server.log'),
+    '-o',
+    `-p ${PORT} -c listen_addresses=localhost -c timezone=Asia/Ho_Chi_Minh`,
+  ]);
+  if (r.status !== 0)
+    throw new Error(`pg_ctl start thất bại (mã ${r.status}). Xem ${path.join(DATA_DIR, 'server.log')}`);
   await withClient('postgres', async (c) => {
     if ((await c.$queryRawUnsafe("SELECT 1 FROM pg_database WHERE datname = 'nckh_dev'")).length === 0) {
       await c.$executeRawUnsafe('CREATE DATABASE nckh_dev');
@@ -64,6 +90,12 @@ async function down() {
 if (path.resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
   const actions = { up, down };
   const cmd = process.argv[2];
-  if (!actions[cmd]) { console.error('Dùng: node apps/api/scripts/db-dev.js up|down'); process.exit(2); }
-  actions[cmd]().catch((e) => { console.error(`db-dev ${cmd} lỗi: ${e.message}`); process.exitCode = 1; });
+  if (!actions[cmd]) {
+    console.error('Dùng: node apps/api/scripts/db-dev.js up|down');
+    process.exit(2);
+  }
+  actions[cmd]().catch((e) => {
+    console.error(`db-dev ${cmd} lỗi: ${e.message}`);
+    process.exitCode = 1;
+  });
 }

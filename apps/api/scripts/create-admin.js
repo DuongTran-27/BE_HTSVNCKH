@@ -10,7 +10,12 @@ import { createFirstAdmin } from '../src/modules/accounts/bootstrapAdmin.js';
 export async function main(argv, { prisma = new PrismaClient(), log = console.log } = {}) {
   const { values } = parseArgs({
     args: argv,
-    options: { code: { type: 'string' }, email: { type: 'string' }, name: { type: 'string' }, force: { type: 'boolean', default: false } },
+    options: {
+      code: { type: 'string' },
+      email: { type: 'string' },
+      name: { type: 'string' },
+      force: { type: 'boolean', default: false },
+    },
   });
   try {
     const { user, temporaryPassword } = await createFirstAdmin(

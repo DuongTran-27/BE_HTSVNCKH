@@ -17,7 +17,8 @@ const composeFile = path.resolve(apiDir, '../../docker-compose.test.yml');
 // probeDocker trả kết quả kiểu spawnSync; timeout/ENOENT có `error`, status null.
 export function pickDriver(forced, probeDocker) {
   if (forced) {
-    if (!DRIVERS.includes(forced)) throw new Error(`DB_TEST_DRIVER="${forced}" không hợp lệ, chỉ nhận: ${DRIVERS.join(', ')}.`);
+    if (!DRIVERS.includes(forced))
+      throw new Error(`DB_TEST_DRIVER="${forced}" không hợp lệ, chỉ nhận: ${DRIVERS.join(', ')}.`);
     return forced;
   }
   const r = probeDocker();
@@ -29,22 +30,58 @@ const exts = (rows) => rows.map((r) => r.extname).join(',') === 'pg_trgm,unaccen
 const extText = (rows) => rows.map((r) => `${r.extname} ${r.extversion}`).join(', ') || '(không có)';
 // judge(rows) → [đạt?, giá trị in ra]. Bảng K1–K7 ở QĐ §4.4.
 export const CHECKS = [
-  { id: 'K1', label: 'server_version_num', db: 'nckh_test', sql: "SELECT current_setting('server_version_num')::int AS v",
-    judge: (r) => [Number(one(r)) >= 160000 && Number(one(r)) < 170000, one(r)] },
-  { id: 'K2', label: 'TimeZone', db: 'nckh_test', sql: "SELECT current_setting('TimeZone') AS v",
-    judge: (r) => [one(r) === 'Asia/Ho_Chi_Minh', one(r)] },
-  { id: 'K3', label: 'server_encoding', db: 'nckh_test', sql: "SELECT current_setting('server_encoding') AS v",
-    judge: (r) => [one(r) === 'UTF8', one(r)] },
-  ...['nckh_test', 'template1'].map((db) => ({ id: 'K4', label: `extension ${db}`, db,
+  {
+    id: 'K1',
+    label: 'server_version_num',
+    db: 'nckh_test',
+    sql: "SELECT current_setting('server_version_num')::int AS v",
+    judge: (r) => [Number(one(r)) >= 160000 && Number(one(r)) < 170000, one(r)],
+  },
+  {
+    id: 'K2',
+    label: 'TimeZone',
+    db: 'nckh_test',
+    sql: "SELECT current_setting('TimeZone') AS v",
+    judge: (r) => [one(r) === 'Asia/Ho_Chi_Minh', one(r)],
+  },
+  {
+    id: 'K3',
+    label: 'server_encoding',
+    db: 'nckh_test',
+    sql: "SELECT current_setting('server_encoding') AS v",
+    judge: (r) => [one(r) === 'UTF8', one(r)],
+  },
+  ...['nckh_test', 'template1'].map((db) => ({
+    id: 'K4',
+    label: `extension ${db}`,
+    db,
     sql: "SELECT extname::text AS extname, extversion FROM pg_extension WHERE extname IN ('pg_trgm','unaccent') ORDER BY 1",
-    judge: (r) => [exts(r), extText(r)] })),
-  { id: 'K5', label: "unaccent('Đề tài Nghiên cứu')", db: 'nckh_test', sql: "SELECT unaccent('Đề tài Nghiên cứu') AS v",
-    judge: (r) => [one(r) === 'De tai Nghien cuu', one(r)] },
-  { id: 'K6', label: 'similarity', db: 'nckh_test', sql: "SELECT similarity(lower(unaccent('ĐỀ TÀI Quản lý')), 'de tai quan ly') AS v",
-    judge: (r) => [Number(one(r)) === 1, one(r)] },
-  { id: 'K7', label: 'locale (chỉ ghi nhận)', db: 'nckh_test',
+    judge: (r) => [exts(r), extText(r)],
+  })),
+  {
+    id: 'K5',
+    label: "unaccent('Đề tài Nghiên cứu')",
+    db: 'nckh_test',
+    sql: "SELECT unaccent('Đề tài Nghiên cứu') AS v",
+    judge: (r) => [one(r) === 'De tai Nghien cuu', one(r)],
+  },
+  {
+    id: 'K6',
+    label: 'similarity',
+    db: 'nckh_test',
+    sql: "SELECT similarity(lower(unaccent('ĐỀ TÀI Quản lý')), 'de tai quan ly') AS v",
+    judge: (r) => [Number(one(r)) === 1, one(r)],
+  },
+  {
+    id: 'K7',
+    label: 'locale (chỉ ghi nhận)',
+    db: 'nckh_test',
     sql: "SELECT datcollate, datctype, lower('ĐỀ') AS low FROM pg_database WHERE datname = current_database()",
-    judge: (r) => [r.length === 1, r[0] ? `datcollate=${r[0].datcollate} datctype=${r[0].datctype} lower('ĐỀ')=${r[0].low}` : '(rỗng)'] },
+    judge: (r) => [
+      r.length === 1,
+      r[0] ? `datcollate=${r[0].datcollate} datctype=${r[0].datctype} lower('ĐỀ')=${r[0].low}` : '(rỗng)',
+    ],
+  },
 ];
 
 const loadUrl = () => assertTestDbEnv('db-test'); // chung chốt chặn NFR08 với reset/vitest
@@ -53,12 +90,18 @@ export const urlFor = (url, db) => Object.assign(new URL(url), { pathname: `/${d
 async function withClient(url, db, fn) {
   const { PrismaClient } = await import('@prisma/client');
   let client;
-  try { client = new PrismaClient({ datasourceUrl: urlFor(url, db) }); }
-  catch (e) {
-    if (String(e.message).includes('did not initialize yet')) throw new Error('Prisma client chưa generate. Chạy: npx -w @nckh/api prisma generate', { cause: e });
+  try {
+    client = new PrismaClient({ datasourceUrl: urlFor(url, db) });
+  } catch (e) {
+    if (String(e.message).includes('did not initialize yet'))
+      throw new Error('Prisma client chưa generate. Chạy: npx -w @nckh/api prisma generate', { cause: e });
     throw e;
   }
-  try { return await fn(client); } finally { await client.$disconnect(); }
+  try {
+    return await fn(client);
+  } finally {
+    await client.$disconnect();
+  }
 }
 
 // QĐ §4.2 bước 6: mỗi lệnh SQL một lần gọi; CREATE DATABASE ngoài transaction.
@@ -82,22 +125,36 @@ async function verify(url) {
     await withClient(url, db, async (c) => {
       for (const k of CHECKS.filter((x) => x.db === db)) {
         let pass, shown;
-        try { [pass, shown] = k.judge(await c.$queryRawUnsafe(k.sql)); }
-        catch (e) { pass = false; shown = `lỗi: ${e.message.split('\n').filter(Boolean).pop()}`; }
+        try {
+          [pass, shown] = k.judge(await c.$queryRawUnsafe(k.sql));
+        } catch (e) {
+          pass = false;
+          shown = `lỗi: ${e.message.split('\n').filter(Boolean).pop()}`;
+        }
         ok &&= pass;
         console.log(`${k.id} ${k.label} = ${shown} ${pass ? 'OK' : 'SAI'}`);
       }
-    }).catch((e) => { console.log(`Kiểm tra DB test: lỗi kết nối ${db}.`); throw e; });
+    }).catch((e) => {
+      console.log(`Kiểm tra DB test: lỗi kết nối ${db}.`);
+      throw e;
+    });
   }
   console.log(ok ? 'Kiểm tra DB test: tất cả OK.' : 'Kiểm tra DB test: có mục SAI.');
   return ok;
 }
 
-const portOpen = (port) => new Promise((resolve) => {
-  const s = net.connect({ host: 'localhost', port }, () => { s.destroy(); resolve(true); });
-  s.on('error', () => resolve(false));
-  s.setTimeout(2000, () => { s.destroy(); resolve(false); });
-});
+const portOpen = (port) =>
+  new Promise((resolve) => {
+    const s = net.connect({ host: 'localhost', port }, () => {
+      s.destroy();
+      resolve(true);
+    });
+    s.on('error', () => resolve(false));
+    s.setTimeout(2000, () => {
+      s.destroy();
+      resolve(false);
+    });
+  });
 
 async function binaries() {
   const plat = process.platform === 'win32' ? 'windows' : process.platform;
@@ -114,24 +171,51 @@ async function upEmbedded(url) {
     writeFileSync(pwFile, decodeURIComponent(url.password));
     for (const l of ['en-US', 'C']) {
       rmSync(DATA_DIR, { recursive: true, force: true, maxRetries: 5 });
-      const r = run(initdb, ['-D', DATA_DIR, '--encoding=UTF8', `--locale=${l}`, `--username=${decodeURIComponent(url.username)}`,
-        '--auth=scram-sha-256', `--pwfile=${pwFile}`], { stdio: ['ignore', 'ignore', 'pipe'] });
-      if (r.status === 0) { locale = l; break; }
+      const r = run(
+        initdb,
+        [
+          '-D',
+          DATA_DIR,
+          '--encoding=UTF8',
+          `--locale=${l}`,
+          `--username=${decodeURIComponent(url.username)}`,
+          '--auth=scram-sha-256',
+          `--pwfile=${pwFile}`,
+        ],
+        { stdio: ['ignore', 'ignore', 'pipe'] },
+      );
+      if (r.status === 0) {
+        locale = l;
+        break;
+      }
       console.error(`initdb lỗi với --locale=${l}: ${String(r.stderr ?? r.error ?? '').trim()}`);
     }
-  } finally { rmSync(pwFile, { force: true }); }
+  } finally {
+    rmSync(pwFile, { force: true });
+  }
   if (!locale) throw new Error(`initdb thất bại. ${hint}`);
   if (locale === 'C') console.warn('CẢNH BÁO: dùng --locale=C, khác CI ở sắp xếp/hoa thường chữ có dấu (QĐ §4.3).');
   console.log(`initdb xong (UTF8, locale ${locale}) tại ${DATA_DIR}`);
   // -l và stdio 'ignore' bắt buộc: thiếu thì postgres giữ handle của Node và lệnh treo (QĐ §4.2 bước 5).
   const log = path.join(DATA_DIR, 'server.log');
-  const r = run(pg_ctl, ['start', '-w', '-D', DATA_DIR, '-l', log,
-    '-o', `-p ${url.port || 5432} -c listen_addresses=localhost -c timezone=Asia/Ho_Chi_Minh`]);
+  const r = run(pg_ctl, [
+    'start',
+    '-w',
+    '-D',
+    DATA_DIR,
+    '-l',
+    log,
+    '-o',
+    `-p ${url.port || 5432} -c listen_addresses=localhost -c timezone=Asia/Ho_Chi_Minh`,
+  ]);
   if (r.status !== 0) throw new Error(`pg_ctl start thất bại (mã ${r.status}). Xem log: ${log}`);
 }
 
 async function stopEmbedded() {
-  if (!existsSync(DATA_DIR)) { console.log('Embedded: không có DATA_DIR, bỏ qua.'); return; }
+  if (!existsSync(DATA_DIR)) {
+    console.log('Embedded: không có DATA_DIR, bỏ qua.');
+    return;
+  }
   const { pg_ctl } = await binaries();
   const st = run(pg_ctl, ['status', '-D', DATA_DIR]).status;
   if (st === 0) {
@@ -139,7 +223,9 @@ async function stopEmbedded() {
     if (r.status !== 0) throw new Error(`pg_ctl stop thất bại (mã ${r.status}); giữ nguyên ${DATA_DIR}.`);
     console.log('Embedded: đã dừng server.');
   } else if (st !== 3) {
-    throw new Error(`pg_ctl status trả mã ${st}: "${DATA_DIR}" không phải data dir hợp lệ (initdb lỗi giữa chừng?). ${hint}`);
+    throw new Error(
+      `pg_ctl status trả mã ${st}: "${DATA_DIR}" không phải data dir hợp lệ (initdb lỗi giữa chừng?). ${hint}`,
+    );
   }
   rmSync(DATA_DIR, { recursive: true, force: true, maxRetries: 5 });
   console.log(`Embedded: đã xóa ${DATA_DIR}.`);
@@ -156,7 +242,7 @@ async function up() {
   const driver = pickDriver(process.env.DB_TEST_DRIVER, dockerInfo);
   const port = Number(url.port || 5432);
   console.log(`DB test: ${driver === 'embedded' ? 'embedded-postgres 16.14' : driver} tại localhost:${port}`);
-  if (driver === 'embedded' && await portOpen(port)) {
+  if (driver === 'embedded' && (await portOpen(port))) {
     if (!(await verify(url))) throw new Error(`Cổng ${port} đang bận nhưng kiểm tra không qua; không xóa gì.`);
     console.log('DB test đã chạy.');
     return;
@@ -164,7 +250,10 @@ async function up() {
   if (driver === 'docker') compose('up', '-d', '--wait');
   if (driver === 'embedded') await upEmbedded(url);
   await provision(url) // idempotent; với docker init.sql đã làm, chạy lại vô hại
-    .catch((e) => { console.log('Kiểm tra DB test: lỗi kết nối (bước tạo extension/DB).'); throw e; });
+    .catch((e) => {
+      console.log('Kiểm tra DB test: lỗi kết nối (bước tạo extension/DB).');
+      throw e;
+    });
   if (!(await verify(url))) throw new Error('DB test không đạt kiểm tra K1–K7.');
 }
 
@@ -185,6 +274,12 @@ async function down() {
 if (path.resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
   const cmd = process.argv[2];
   const actions = { up, down };
-  if (!actions[cmd]) { console.error('Dùng: node apps/api/scripts/db-test.js up|down'); process.exit(2); }
-  actions[cmd]().catch((e) => { console.error(`db-test ${cmd} lỗi: ${e.message}`); process.exitCode = 1; });
+  if (!actions[cmd]) {
+    console.error('Dùng: node apps/api/scripts/db-test.js up|down');
+    process.exit(2);
+  }
+  actions[cmd]().catch((e) => {
+    console.error(`db-test ${cmd} lỗi: ${e.message}`);
+    process.exitCode = 1;
+  });
 }

@@ -39,6 +39,7 @@ TODO → DOING → REVIEW → (CHANGES → DOING → REVIEW)* → DONE
 - Có thể gộp các task liền nhau cùng agent chủ trì và cùng file vào một lượt (một báo cáo ghi rõ các ID).
 - Giữ nguyên: test bắt buộc, bằng chứng chạy lệnh, hồi quy `npm test` sau mỗi task, `/kiem-tra-cuoi`.
 - Chỉ chạy **một agent tại một thời điểm** (người dùng yêu cầu 2026-11-03), không giao song song.
+- **Làm liên tục từng việc nhỏ đến hết dự án** (người dùng yêu cầu 2026-11-05): xong một task → báo 2–3 dòng → làm ngay task kế, không dừng hỏi. Chỉ dừng khi hết task, chỉ còn BLOCKED, hoặc chạy `/kiem-tra-cuoi`.
 - Chạy song song: mỗi agent dùng DB riêng `nckh_<task>_test` trên server test (đặt `DATABASE_URL`/`DIRECT_URL` rồi `npm run db:test:reset`), không dùng chung `nckh_test` – dùng chung gây đỏ ngẫu nhiên (`reports/T211.md`).
 
 ## Mức độ vấn đề trong review
