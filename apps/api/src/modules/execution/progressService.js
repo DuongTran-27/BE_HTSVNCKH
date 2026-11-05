@@ -52,7 +52,8 @@ export const createProgressService = ({ repo }) => {
       await repo.writeProgress(meta.topicId, async (o) => {
         const before = await o.findProgress(id);
         if (before.lockedAt) throw locked();
-        const data = Object.fromEntries(FIELDS.filter((k) => body[k] !== undefined).map((k) => [k, body[k]]));
+        const data = Object.fromEntries(FIELDS.filter((k) => body[k] !== undefined && body[k] !== before[k]).map((k) => [k, body[k]]));
+        if (!Object.keys(data).length) return; // không đổi giá trị: không ghi, không audit (như PATCH mốc)
         if (!(await o.updateProgressUnlocked(id, data))) throw locked();
         await o.audit({ actorId: user.id, action: 'PROGRESS_UPDATE', entityType: 'ProgressUpdate', entityId: id, before: pick(before), after: pick({ ...before, ...data }), ip });
       });

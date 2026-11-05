@@ -30,7 +30,19 @@ const ops = (tx) => ({
   findProgress: (id) => tx.progressUpdate.findUnique({ where: { id } }),
   // lockedAt: null cùng câu UPDATE với nhận xét (T404) → không có bản sửa sau khi đã nhận xét; count 0 = đã khóa
   updateProgressUnlocked: async (id, data) => (await tx.progressUpdate.updateMany({ where: { id, lockedAt: null }, data })).count === 1,
+  // FR12 §6.2: cùng điều kiện lockedAt IS NULL với sửa tiến độ; SQL thô để không chạm updatedAt (updatedAt = lần sửa nội dung cuối)
+  lockProgress: (id, at) => tx.$executeRaw`UPDATE "ProgressUpdate" SET "lockedAt" = ${at} WHERE id = ${id} AND "lockedAt" IS NULL`,
+  viewProgressTx: (id) => tx.progressUpdate.findUnique({ where: { id }, include: PROGRESS_INCLUDE }),
+  latestDocVersion: async (topicId, milestoneId) => (await tx.document.aggregate({ where: { topicId, milestoneId, status: 'READY' }, _max: { version: true } }))._max.version,
+  createFeedback: (data) => tx.feedback.create({ data, include: FEEDBACK_INCLUDE }),
+  // FR12 §6.4: hạ bản hiện hành TRƯỚC khi tạo bản mới (result_one_current không deferrable)
+  currentResult: (topicId) => tx.resultVersion.findFirst({ where: { topicId, isCurrent: true } }),
+  maxResultVersion: async (topicId) => (await tx.resultVersion.aggregate({ where: { topicId }, _max: { version: true } }))._max.version ?? 0,
+  demoteResult: (id) => tx.resultVersion.updateMany({ where: { id, isCurrent: true }, data: { isCurrent: false } }),
+  createResult: (data) => tx.resultVersion.create({ data, include: { createdBy: person } }),
 });
+
+const FEEDBACK_INCLUDE = { lecturer: { select: { id: true, fullName: true } }, document: { select: { version: true } } };
 
 const PROGRESS_INCLUDE = {
   author: { select: { id: true, code: true, fullName: true } },
@@ -61,10 +73,19 @@ export const createExecutionRepo = (prisma) => {
   countRequiredRemoved: (topicId) => prisma.milestone.count({ where: { topicId, required: false, requiredRemovedAt: { not: null }, evaluation: { not: 'PASSED' } } }),
   writeMilestone: (topicId, fn) => write(topicId, fn),
   writeProgress: (topicId, fn) => write(topicId, fn),
+  writeFeedback: (topicId, fn) => write(topicId, fn),
   // Upload/link: khóa Topic rồi để service kiểm trạng thái theo stage (đề cương: DRAFT/NEEDS_REVISION; mốc: IN_PROGRESS)
   writeDocument: (topicId, fn) => withLockTx(prisma, async (tx) => fn(ops(tx), await lockTopicRow(tx, topicId))),
   findMilestoneBrief: (id) => prisma.milestone.findUnique({ where: { id }, select: { id: true, topicId: true, evaluation: true } }),
-  findDocument: (id) => prisma.document.findUnique({ where: { id }, select: { id: true, topicId: true, stage: true, kind: true, version: true, publicId: true, status: true } }),
+  findDocument: (id) => prisma.document.findUnique({ where: { id }, select: { id: true, topicId: true, milestoneId: true, stage: true, kind: true, version: true, publicId: true, status: true } }),
+  listFeedbacks: async (where, { skip, take }) => {
+    const [items, total] = await Promise.all([
+      prisma.feedback.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip, take, include: FEEDBACK_INCLUDE }),
+      prisma.feedback.count({ where }),
+    ]);
+    return { items, total };
+  },
+  listResults: (topicId) => prisma.resultVersion.findMany({ where: { topicId }, orderBy: { version: 'desc' }, include: { createdBy: person } }),
   auditNow: (entry) => recordAudit(prisma, entry),
   listDocuments: async (topicId, { milestoneId }) => {
     const rows = await prisma.document.findMany({

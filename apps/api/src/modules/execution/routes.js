@@ -1,4 +1,4 @@
-import { milestoneCreateSchema, milestoneUpdateSchema, milestoneDueChangeSchema, progressCreateSchema, progressUpdateSchema, paginationQuery, idSchema, documentUploadFieldsSchema, documentLinkSchema, documentListQuerySchema, emptyBodySchema } from '@nckh/shared';
+import { milestoneCreateSchema, milestoneUpdateSchema, milestoneDueChangeSchema, progressCreateSchema, progressUpdateSchema, paginationQuery, idSchema, documentUploadFieldsSchema, documentLinkSchema, documentListQuerySchema, emptyBodySchema, documentFeedbackSchema, progressFeedbackSchema, feedbackListQuerySchema, finalResultSchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { notFound, badRequest } from '../../lib/errors.js';
@@ -9,6 +9,7 @@ import { createLimiter } from '../../middlewares/rateLimit.js';
 import { createMilestoneService } from './service.js';
 import { createProgressService } from './progressService.js';
 import { createDocumentService } from './documentService.js';
+import { createFeedbackService } from './feedbackService.js';
 
 // ADMIN bị 403 ở requireRole (FR25); STUDENT đọc được, ghi bị 403 ở service (không phải GVHD/cán bộ).
 const roles = requireRole('STAFF', 'LECTURER', 'STUDENT');
@@ -49,6 +50,8 @@ export const progressRouter = ({ repo, guard }) => {
     next();
   });
   r.patch('/:id', roles, createLimiter({ windowMs: 15 * 60e3, limit: 30, keyBy: 'user' }), validate(progressUpdateSchema), async (req, res) => res.json(await svc.update(req.user, req.params.id, req.body, req.ip)));
+  const fb = createFeedbackService({ repo });
+  r.post('/:id/feedbacks', roles, validate(progressFeedbackSchema), async (req, res) => res.status(201).json(await fb.createForProgress(req.user, req.params.id, req.body, req.ip)));
   return r;
 };
 
@@ -92,5 +95,15 @@ export const documentsRouter = ({ repo, storage, folder, now, logger, guard }) =
     res.set('Cache-Control', 'no-store');
     res.json(await svc.downloadUrl(req.user, req.params.id, req.ip));
   });
+  const fb = createFeedbackService({ repo, now });
+  r.post('/:id/feedbacks', roles, validate(documentFeedbackSchema), async (req, res) => res.status(201).json(await fb.createForDocument(req.user, req.params.id, req.body, req.ip)));
   return r;
+};
+
+// FR12 (API_GD45 §6.3, §6.4): route con của /api/topics/:id
+export const mountTopicFeedbackRoutes = (r, { repo, now }) => {
+  const svc = createFeedbackService({ repo, now });
+  r.get('/:id/feedbacks', roles, validate(feedbackListQuerySchema, 'query'), async (req, res) => res.json(await svc.list(req.user, req.params.id, req.validated)));
+  r.get('/:id/results', roles, async (req, res) => res.json(await svc.listResults(req.user, req.params.id)));
+  r.post('/:id/results', roles, validate(finalResultSchema), async (req, res) => res.status(201).json(await svc.createResult(req.user, req.params.id, req.body, req.ip)));
 };

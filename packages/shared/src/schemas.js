@@ -148,3 +148,23 @@ export const documentListQuerySchema = z.object({
   stage: docStage.optional(),
   latestOnly: z.enum(['true', 'false']).default('false'),
 });
+
+// FR12 (API_GD45 §6): nhận xét bản nộp (kèm đánh giá mốc), nhận xét tiến độ, kết quả cuối có phiên bản
+const fbContent = z.string().trim().min(1, 'Nhập nội dung nhận xét').max(2000);
+export const documentFeedbackSchema = z.strictObject({
+  content: fbContent,
+  evaluation: z.enum(['PASSED', 'NEEDS_WORK'], { error: 'Đánh giá là Đạt hoặc Cần bổ sung' }).optional(),
+  milestoneVersion: version.optional(),
+}).refine((v) => v.evaluation === undefined || v.milestoneVersion !== undefined, { message: 'Thiếu phiên bản mốc', path: ['milestoneVersion'] });
+export const progressFeedbackSchema = z.strictObject({ content: fbContent });
+export const feedbackListQuerySchema = z.object({
+  documentId: idSchema.optional(),
+  milestoneId: idSchema.optional(),
+  progressUpdateId: idSchema.optional(),
+  ...pageQuery,
+});
+export const finalResultSchema = z.strictObject({
+  result: z.enum(Object.values(FINAL_RESULT), { error: 'Chọn kết quả theo thang của khoa' }),
+  summary: z.string().trim().min(20, 'Nhận xét tổng kết tối thiểu 20 ký tự').max(5000),
+  expectedVersion: version,
+});
