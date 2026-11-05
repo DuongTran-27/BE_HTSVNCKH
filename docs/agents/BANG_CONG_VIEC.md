@@ -56,8 +56,8 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 | T403 | Upload Cloudinary raw/authenticated qua backend (multer, loại + dung lượng), phiên bản, nhãn nộp muộn, link ngoài; tải bằng URL ký 5 phút + ghi lịch sử; áp dụng `design/QD_ZOD.md` §4.3 (multer ^2.5.0, kiểm nội dung trên buffer); URL ký ở chế độ `attachment` (M2 review T199); nâng `apps/api/scripts/cleanup-orphans.js` (T608): liệt kê file Cloudinary, chế độ `--apply`, ghi AuditLog từng file xóa (`reports/T608.md`) | FR11, FR24 | BE | RV, BM, QA | T401 | DONE 2026-11-05 |
 | T404 | API nhận xét theo bản nộp, đánh giá mốc, kết quả cuối có phiên bản; nhận xét tiến độ khóa bằng `UPDATE … WHERE lockedAt IS NULL` + test đua thật "nhận xét ‖ sửa tiến độ"; PATCH tiến độ không đổi giá trị không ghi audit (`progressService.js:55`) (MINOR `reviews/T402-reviewer-v1.md`) | FR12 | BE | RV, QA | T403 | DONE 2026-11-05 |
 | T405 | API đóng đề tài (REQUEST_CLOSE, RETURN, CONFIRM_CLOSE, CLOSE_EXPIRED) dùng `checkTransition`; `NO_REQUIRED_MILESTONE`, `CLOSE_CONDITIONS_MET` (§7 `API_GD45.md`) – đổi nhánh `stateMachine.js:41` không sửa/làm yếu test stateMachine cũ | FR27 ; MINOR m2–m3 `reviews/T404-reviewer-v1.md` (kiểm `status === READY`, tên test "hai GV") | BE | RV, QA | T404 | DONE 2026-11-05 |
-| T406 | UI mốc, tiến độ, nộp file, nhận xét, đóng đề tài cho cả 3 vai trò | FR09–FR12, FR27 | FE | RV, QA | T405 | DOING |
-| T407 | E2E GĐ4: nộp mốc → nộp muộn → GV nhận xét → đủ điều kiện → đóng | M2, M3 | QA | RV | T406 | TODO |
+| T406 | UI mốc, tiến độ, nộp file, nhận xét, đóng đề tài cho cả 3 vai trò | FR09–FR12, FR27 | FE | RV, QA | T405 | DONE 2026-11-05 |
+| T407 | E2E GĐ4: nộp mốc → nộp muộn → GV nhận xét → đủ điều kiện → đóng | M2, M3 | QA | RV | T406 | DOING |
 
 ## Giai đoạn 5 – Thông báo và thống kê
 
@@ -74,13 +74,13 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 | ID | Việc | FR/NFR | Chủ trì | Review | Phụ thuộc | Trạng thái |
 |---|---|---|---|---|---|---|
 | T600 | Hợp đồng API GĐ6 (`design/API_GD6.md`) cho FR18–FR23 + G5 `API_GD2.md` (cán bộ cho phép gửi với cờ "chưa kiểm tra" khi FR06 lỗi) – theo ràng buộc §14 `API_GD2.md`: cờ suy ra, không thêm cột sửa được; thêm `latestSimilarityStatus` vào item danh sách và xử lý đề tài kẹt khi tăng tham số đợt (INFO 12 `reviews/T300-reviewer-v1.md`) | FR18–FR23 | KTS | RV, FE, BE | T400 | TODO |
-| T601 | Thay giảng viên (chuyển bản nộp chờ, chấm dứt quyền GV cũ) – API (UI ở T607) | FR19 ; kiểm lại GVHD hiện hành dưới khóa Topic trong `feedbackService.js:21-30` (MINOR m1 `reviews/T404-reviewer-v1.md`) ; MINOR m1–m4 `reviews/T405-reviewer-v1.md` (test try/catch, nhánh đua kiểm 201, hằng điều kiện mốc dùng chung, `rel` dưới khóa) | BE | RV, BM, QA | T600, T405 | TODO |
+| T601 | Thay giảng viên (chuyển bản nộp chờ, chấm dứt quyền GV cũ) – API (UI ở T607) | FR19 ; kiểm lại GVHD hiện hành dưới khóa Topic trong `feedbackService.js:21-30` (MINOR m1 `reviews/T404-reviewer-v1.md`) ; MINOR m1–m4 `reviews/T405-reviewer-v1.md` (test try/catch, nhánh đua kiểm 201, hằng điều kiện mốc dùng chung, `rel` dưới khóa) ; test API 400 cho `POST …/documents/links` URL sai dạng (`reviews/T406-reviewer-v1.md`) | BE | RV, BM, QA | T600, T405 | TODO |
 | T602 | Đề nghị và quyết định hủy | FR20 | BE | RV, QA | T600, T405 | TODO |
 | T603 | Rời nhóm + quyền đọc theo khoảng thời gian là thành viên | FR21 | BE | RV, BM | T600, T208 | TODO |
 | T604 | Sửa sai kết quả bằng phiên bản mới; test kho `/api/repository`: kết quả hiện hành bị thay (GOOD → FAIL) thì rời kho, `q` khớp đề tài ngoài kho không rò (MINOR 2 `reviews/T213b-reviewer-v1.md`) | FR23 | BE | RV, QA | T600, T404 | TODO |
 | T605 | Thay đổi sau duyệt (chạy lại FR06 khi đổi tên/tóm tắt) | FR18 | BE | RV, QA | T600, T212a | TODO |
 | T606 | Mở lại mốc đã đạt | FR22 | BE | RV, QA | T600, T404 | TODO |
-| T607 | UI cho T601–T606 | FR18–FR23 | FE | RV, QA | T601–T606 | TODO |
+| T607 | UI cho T601–T606 | FR18–FR23 ; `MilestonesPage.jsx:76,102` lấy `m.version` lúc gửi thay `defaultValues`, khóa nút sau 429 ở form tiến độ, phân trang nhận xét >100 (MINOR `reviews/T406-reviewer-v1.md`) | FE | RV, QA | T601–T606 | TODO |
 | T608 | Sao lưu `pg_dump` hằng ngày (GitHub Actions, giữ 7 bản) + job dọn file mồ côi + hướng dẫn diễn tập khôi phục | FR26 | DO | RV, BM | T202, T203 | DONE 2026-11-05 |
 | T609 | Hiện thực G5: cho phép gửi khi FR06 lỗi với cờ "chưa kiểm tra", endpoint cán bộ cho phép kèm lý do, job chạy lại FR06, nới trigger `submission_immutable` chỉ cho cột `similarityCheckId` | FR06, FR07 | BE | RV, BM, QA | T600, T212a | TODO |
 

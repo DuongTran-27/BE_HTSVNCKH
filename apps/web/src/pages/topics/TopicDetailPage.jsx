@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { TOPIC_STATUS_LABEL } from '@nckh/shared';
+import { Link } from 'react-router';
+import { FINAL_RESULT_LABEL, TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { useAuth } from '../../lib/auth.js';
 import { fmtDateTime } from '../../lib/format.js';
-import { Badge, QueryBox, btnGhost } from '../../components/ui.jsx';
-import { useSimilarityLatest, useTopic } from '../../lib/queries.js';
+import { Badge } from '../../components/ui.jsx';
+import { useSimilarityLatest } from '../../lib/queries.js';
+import { ExecTabs, TopicQuery } from '../../components/ExecShell.jsx';
+import { ResultSection } from '../../components/ResultSection.jsx';
 import { TopicActionBar } from '../../components/TopicActionBar.jsx';
 import { SimilarityBadge, SimilarityPanel } from '../../components/SimilarityPanel.jsx';
 
@@ -15,21 +17,7 @@ const Block = ({ title, children }) => (
 
 // R6 – API_GD2 §5.1
 export function TopicDetailPage() {
-  const { id } = useParams();
-  const query = useTopic(id);
-  const status = query.error?.status;
-  return (
-    <section>
-      {status === 403 || status === 404 ? (
-        <div role="alert" className="rounded-md bg-red-50 p-3 text-red-800">
-          <p>{status === 403 ? 'Bạn không có quyền xem đề tài này' : 'Không tìm thấy đề tài'}</p>
-          <Link to="/de-tai" className={`${btnGhost} mt-2`}>Về danh sách đề tài</Link>
-        </div>
-      ) : (
-        <QueryBox query={query}>{(t) => <TopicDetail topic={t} />}</QueryBox>
-      )}
-    </section>
-  );
+  return <section><TopicQuery>{(t) => <TopicDetail topic={t} />}</TopicQuery></section>;
 }
 
 function TopicDetail({ topic: t }) {
@@ -51,7 +39,9 @@ function TopicDetail({ topic: t }) {
           <Badge>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Badge>
           <span>{t.round.name} – {t.round.academicYear}</span>
           {t.field && <span>· {t.field.name}</span>}
+          {t.currentResult && <span>· Kết quả: {FINAL_RESULT_LABEL[t.currentResult.result]}</span>}
         </p>
+        <div className="mt-2"><ExecTabs topic={t} /></div>
       </header>
 
       {showReason && (
@@ -68,6 +58,9 @@ function TopicDetail({ topic: t }) {
       )}
       {t.round.registrationOpen === false && NOTICE_STATUSES.includes(t.status) && (
         <p role="note" className="rounded-md bg-amber-50 p-3 text-amber-900">Đã hết thời gian đăng ký của đợt – không gửi đề nghị/gửi xét duyệt được</p>
+      )}
+      {t.status === 'WAITING_CLOSE' && (
+        <p role="note" className="rounded-md bg-blue-50 p-3">Đang chờ cán bộ khoa xác nhận đóng đề tài – không sửa được mốc, tiến độ, tài liệu, kết quả.</p>
       )}
       {t.status === 'UNDER_REVIEW' && sub && (
         <p role="note" className="rounded-md bg-blue-50 p-3">
@@ -104,6 +97,7 @@ function TopicDetail({ topic: t }) {
         {canHistory && <Link to={`/de-tai/${t.id}/lich-su`} className="text-blue-800 underline">Lịch sử</Link>}
         {t.permissions?.edit && <Link to={`/de-tai/${t.id}/sua`} className="text-blue-800 underline">Sửa hồ sơ</Link>}
       </p>
+      <ResultSection topic={t} />
       <TopicActionBar topic={t} />
     </div>
   );

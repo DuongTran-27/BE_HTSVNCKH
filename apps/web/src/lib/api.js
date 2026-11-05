@@ -36,6 +36,19 @@ const FALLBACK_MESSAGES = {
   TEMP_LOCKED: 'Đăng nhập sai quá nhiều lần, vui lòng thử lại sau',
   INTERNAL: 'Lỗi hệ thống, vui lòng thử lại',
   SERVICE_BUSY: 'Hệ thống đang bận, vui lòng thử lại',
+  // GĐ4 (API_GD45 §2)
+  TOPIC_NOT_IN_PROGRESS: 'Chỉ thực hiện được khi đề tài đang thực hiện',
+  MILESTONES_NOT_PASSED: 'Còn mốc bắt buộc chưa Đạt',
+  NO_FINAL_RESULT: 'GVHD chưa nhập kết quả cuối và nhận xét tổng kết',
+  NO_REQUIRED_MILESTONE: 'Đề tài chưa có mốc bắt buộc nào',
+  CLOSE_CONDITIONS_MET: 'Đề tài đã đủ điều kiện đóng, hãy chờ GVHD gửi đóng',
+  ROUND_NOT_ENDED: 'Đợt chưa hết hạn, chưa thể đóng với kết quả Không đạt',
+  PROGRESS_LOCKED: 'Cập nhật tiến độ đã được GVHD nhận xét, không sửa được nữa',
+  MILESTONE_LIMIT: 'Đề tài đã đủ số mốc tối đa (20)',
+  MILESTONE_ALREADY_PASSED: 'Mốc đã Đạt; muốn thay đổi cần mở lại mốc',
+  STALE_DOCUMENT: 'Chỉ đánh giá mốc trên bản nộp mới nhất',
+  DOCUMENT_VERSION_LIMIT: 'Đã đạt số phiên bản tối đa cho mục này',
+  STORAGE_UNAVAILABLE: 'Kho lưu trữ file đang lỗi, vui lòng thử lại',
 };
 
 export class ApiError extends Error {

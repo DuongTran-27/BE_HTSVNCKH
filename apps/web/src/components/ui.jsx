@@ -105,3 +105,6 @@ export function Options({ options, placeholder }) {
     </>
   );
 }
+
+/** Lỗi cấp form (errors.root) – hiện trên nút gửi (UI §6) */
+export const FormError = ({ error }) => (error ? <p role="alert" className="text-sm text-red-700 break-words">{error}</p> : null);

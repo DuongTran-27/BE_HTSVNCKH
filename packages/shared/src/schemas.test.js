@@ -1,7 +1,7 @@
 // T215 – schema dùng chung trên zod 4 (QD_ZOD §2, §5, §6)
 import { describe, it, expect, vi } from 'vitest';
 import { z } from 'zod';
-import { topicDraftSchema, topicSubmitSchema, loginSchema, changePasswordSchema } from './index.js';
+import { topicDraftSchema, topicSubmitSchema, loginSchema, changePasswordSchema, documentLinkSchema } from './index.js';
 
 const validTopic = {
   title: 'Hệ thống quản lý đề tài NCKH',
@@ -76,5 +76,17 @@ describe('Schema zod 4 (T215)', () => {
   it('thông điệp mặc định tiếng Việt (z.locales.vi)', () => {
     const r = loginSchema.safeParse({ identifier: 'SV001', password: 1 });
     expect(r.error.issues[0].message).toBe('Đầu vào không hợp lệ: mong đợi string, nhận được số');
+  });
+});
+
+describe('documentLinkSchema (T406)', () => {
+  it('URL không hợp lệ trả lỗi kiểm tra, không ném TypeError', () => {
+    for (const url of ['', 'abc']) {
+      const r = documentLinkSchema.safeParse({ stage: 'PROPOSAL', title: 'Mã nguồn', url });
+      expect(r.success).toBe(false);
+      expect(r.error.issues.map((i) => i.path.join('.'))).toEqual(['url']);
+    }
+    expect(documentLinkSchema.safeParse({ stage: 'PROPOSAL', title: 'a', url: 'https://u:p@x.com' }).success).toBe(false);
+    expect(documentLinkSchema.safeParse({ stage: 'PROPOSAL', title: 'a', url: 'https://x.com' }).success).toBe(true);
   });
 });

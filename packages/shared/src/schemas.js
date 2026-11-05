@@ -144,7 +144,8 @@ export const documentLinkSchema = z.object({
   milestoneId: idSchema.optional(),
   title: z.string().trim().min(1, 'Nhập tên tài liệu').max(200),
   url: z.string().trim().max(2000).pipe(z.url({ protocol: /^https$/, error: 'Chỉ nhận đường dẫn https' }))
-    .refine((u) => { const x = new URL(u); return !x.username && !x.password; }, 'Đường dẫn không được chứa tài khoản/mật khẩu'),
+    // zod 4 vẫn chạy refine khi z.url đã báo lỗi → new URL('abc') ném TypeError (thành 500); lỗi đó đã có issue của z.url
+    .refine((u) => { try { const x = new URL(u); return !x.username && !x.password; } catch { return true; } }, 'Đường dẫn không được chứa tài khoản/mật khẩu'),
 }).superRefine(stageMilestone);
 export const documentListQuerySchema = z.object({
   milestoneId: idSchema.optional(),

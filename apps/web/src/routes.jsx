@@ -22,6 +22,9 @@ const InvitationsPage = lazy(() => import('./pages/topics/InvitationsPage.jsx').
 const SubmissionHistoryPage = lazy(() => import('./pages/topics/SubmissionHistoryPage.jsx').then((m) => ({ default: m.SubmissionHistoryPage })));
 const SubmissionPage = lazy(() => import('./pages/topics/SubmissionPage.jsx').then((m) => ({ default: m.SubmissionPage })));
 const SubmissionDiffPage = lazy(() => import('./pages/topics/SubmissionDiffPage.jsx').then((m) => ({ default: m.SubmissionDiffPage })));
+const MilestonesPage = lazy(() => import('./pages/topics/MilestonesPage.jsx').then((m) => ({ default: m.MilestonesPage })));
+const ProgressPage = lazy(() => import('./pages/topics/ProgressPage.jsx').then((m) => ({ default: m.ProgressPage })));
+const DocumentsPage = lazy(() => import('./pages/topics/DocumentsPage.jsx').then((m) => ({ default: m.DocumentsPage })));
 const ReviewQueuePage = lazy(() => import('./pages/review/ReviewQueuePage.jsx').then((m) => ({ default: m.ReviewQueuePage })));
 const ReviewPage = lazy(() => import('./pages/review/ReviewPage.jsx').then((m) => ({ default: m.ReviewPage })));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage.jsx').then((m) => ({ default: m.UsersPage })));
@@ -70,6 +73,9 @@ const SCREENS = [
   ['de-tai/:id/lich-su', [S, L, F], 'Lịch sử'],
   ['de-tai/:id/lan-gui/:seq', [S, L, F], 'Lần gửi'],
   ['de-tai/:id/so-sanh', [S, L, F], 'So sánh các lần gửi'],
+  ['de-tai/:id/moc', [S, L, F], 'Mốc thực hiện'],
+  ['de-tai/:id/tien-do', [S, L, F], 'Tiến độ'],
+  ['de-tai/:id/tai-lieu', [S, L, F], 'Tài liệu'],
   ['loi-moi', [S], 'Lời mời'],
   ['de-nghi-huong-dan', [L, F], 'Đề nghị hướng dẫn'],
   ['xet-duyet', [F], 'Xét duyệt'],
@@ -104,6 +110,9 @@ const SCREEN_ELEMENT = {
   'de-tai/:id/lich-su': <SubmissionHistoryPage />,
   'de-tai/:id/lan-gui/:seq': <SubmissionPage />,
   'de-tai/:id/so-sanh': <SubmissionDiffPage />,
+  'de-tai/:id/moc': <MilestonesPage />,
+  'de-tai/:id/tien-do': <ProgressPage />,
+  'de-tai/:id/tai-lieu': <DocumentsPage />,
   'xet-duyet': <ReviewQueuePage />,
   'xet-duyet/:id': <ReviewPage />,
   'loi-moi': <InvitationsPage />,
