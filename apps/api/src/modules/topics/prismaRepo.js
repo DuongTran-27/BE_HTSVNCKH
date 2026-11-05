@@ -6,6 +6,7 @@ import { createListRepo } from './listRepo.js';
 import { createReviewRepo } from './reviewRepo.js';
 import { createSimilarityRepo } from '../similarity/prismaRepo.js';
 import { createExecutionRepo } from '../execution/prismaRepo.js';
+import { createCloseRepo } from './closeRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const DETAIL_INCLUDE = {
@@ -17,6 +18,10 @@ const DETAIL_INCLUDE = {
   advisorRequests: { where: { status: 'PENDING' }, take: 1, include: { lecturer: person } },
   submissions: { orderBy: { seq: 'desc' }, take: 1, include: { decision: { include: { decidedBy: person } } } },
   similarityChecks: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1 },
+  // T405 (API_GD45 §7.4): closeReadiness + currentResult
+  milestones: { where: { required: true }, orderBy: { order: 'asc' }, select: { id: true, name: true, evaluation: true } },
+  results: { where: { isCurrent: true }, take: 1, select: { version: true, result: true, summary: true, createdById: true, createdAt: true } },
+  _count: { select: { milestones: { where: { required: false, requiredRemovedAt: { not: null }, evaluation: { not: 'PASSED' } } } } },
 };
 
 export const createTopicRepo = (prisma) => ({
@@ -26,6 +31,7 @@ export const createTopicRepo = (prisma) => ({
   ...createListRepo(prisma),
   ...createSimilarityRepo(prisma),
   ...createExecutionRepo(prisma),
+  ...createCloseRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, isActive: true } }),
   findDetail: (id) => prisma.topic.findUnique({ where: { id }, include: DETAIL_INCLUDE }),

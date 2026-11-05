@@ -33,7 +33,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
   return {
     async createForDocument(user, documentId, body, ip) {
       const d = await repo.findDocument(documentId);
-      if (!d) throw notFound();
+      if (!d || d.status !== 'READY') throw notFound(); // bản chưa xác minh coi như không có (MINOR m2 T404)
       await load(user, d.topicId, { write: true });
       if (body.evaluation && !d.milestoneId) throw badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', { evaluation: 'Chỉ đánh giá được tài liệu của mốc' });
       const f = await repo.writeFeedback(d.topicId, async (o) => {

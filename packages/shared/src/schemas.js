@@ -74,6 +74,9 @@ export const topicActionSchema = z.discriminatedUnion('action', [
   ...['SUBMIT_FOR_REVIEW', 'RESUBMIT'].map((a) => z.object({ action: z.literal(a), version, justification: z.string().trim().max(5000, 'Giải trình tối đa 5000 ký tự').optional() })),
   ...['REQUEST_REVISION', 'REJECT'].map((a) => reasonSchema.extend({ action: z.literal(a), version, submissionId: z.string().trim().min(1).max(64) })),
   z.object({ action: z.literal('APPROVE'), version, submissionId: z.string().trim().min(1).max(64) }),
+  // T405 (API_GD45 §7.1): đóng đề tài; CANCEL vẫn ngoài union cho tới T602
+  ...['REQUEST_CLOSE', 'CONFIRM_CLOSE'].map((a) => z.object({ action: z.literal(a), version })),
+  ...['RETURN_TO_ADVISOR', 'CLOSE_EXPIRED'].map((a) => reasonSchema.extend({ action: z.literal(a), version })),
 ]);
 // Body rỗng (POST similarity-checks): thiếu body coi như {}, trường thừa bị từ chối
 export const emptyBodySchema = z.preprocess((v) => v ?? {}, z.strictObject({}));

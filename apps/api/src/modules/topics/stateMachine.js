@@ -7,7 +7,8 @@ import { withLockTx } from '../../lib/tx.js';
 /**
  * ctx (do service tính sẵn từ DB):
  *  isLeader, isRequestedLecturer, isCurrentAdvisor, inStaffScope,
- *  similarity: {status, level} | null, requiredMilestonesPassed, hasFinalResult, cfg
+ *  similarity: {status, level} | null, cfg,
+ *  đóng đề tài (closeConditions.js): requiredMilestoneCount, requiredMilestonesPassed, pendingMilestones, hasFinalResult, closeConditionsMet, roundEnded
  */
 export const checkTransition = ({ topic, action, actor, reason, justification, ctx = {}, skipSimilarity = false }) => {
   const t = findTransition(action);
@@ -37,9 +38,16 @@ export const checkTransition = ({ topic, action, actor, reason, justification, c
   }
 
   if (action === 'REQUEST_CLOSE' || action === 'CONFIRM_CLOSE') {
-    // Luôn xét theo đánh giá hiện hành (FR22, FR27)
-    if (!ctx.requiredMilestonesPassed) throw conflict('MILESTONES_NOT_PASSED', 'Còn mốc bắt buộc chưa Đạt');
+    // Luôn xét theo đánh giá hiện hành (FR22, FR27). Tập mốc bắt buộc rỗng có mã riêng (G24, API_GD45 §7.2)
+    if (ctx.requiredMilestoneCount === 0) throw conflict('NO_REQUIRED_MILESTONE', 'Đề tài chưa có mốc bắt buộc nào');
+    if (!ctx.requiredMilestonesPassed) {
+      throw conflict('MILESTONES_NOT_PASSED', 'Còn mốc bắt buộc chưa Đạt', ctx.pendingMilestones && { milestones: ctx.pendingMilestones });
+    }
     if (!ctx.hasFinalResult) throw conflict('NO_FINAL_RESULT', 'GVHD chưa nhập kết quả cuối và nhận xét tổng kết');
+  }
+  if (action === 'CLOSE_EXPIRED') { // FR27.5: chỉ khi đợt đã hết hạn và đề tài chưa đủ điều kiện (G26)
+    if (!ctx.roundEnded) throw conflict('ROUND_NOT_ENDED', 'Đợt chưa hết hạn, chưa thể đóng với kết quả Không đạt');
+    if (ctx.closeConditionsMet) throw conflict('CLOSE_CONDITIONS_MET', 'Đề tài đã đủ điều kiện đóng, hãy chờ GVHD gửi đóng');
   }
   return t;
 };

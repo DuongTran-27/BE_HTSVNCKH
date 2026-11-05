@@ -1,13 +1,15 @@
 // Hồ sơ đề tài (FR05, API_GD2 §5.1): tạo nháp, xem chi tiết, sửa khi Nháp/Cần chỉnh sửa. Quyền theo quan hệ tính từ DB.
 import { createHash } from 'node:crypto';
-import { effectiveRoundConfig, findTransition, availableActions, countWords } from '@nckh/shared';
+import { effectiveRoundConfig, findTransition, availableActions, countWords, ENABLED_ACTIONS } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { contentHash } from '../similarity/engine.js';
+import { evaluateClose } from './closeConditions.js';
 
 const EDITABLE = ['DRAFT', 'NEEDS_REVISION'];
-// Hành động GĐ2 (API_GD2 §10); các action khác thuộc giai đoạn sau
+// Hành động GĐ2 (API_GD2 §10). TopicDetail dùng ENABLED_ACTIONS (GĐ2 + đóng đề tài, API_GD45 §7.4)
 export const GD2_ACTIONS = ['REQUEST_ADVISOR', 'ACCEPT_ADVISING', 'DECLINE_ADVISING', 'WITHDRAW_ADVISOR_REQUEST', 'SUBMIT_FOR_REVIEW', 'RESUBMIT', 'REQUEST_REVISION', 'REJECT', 'APPROVE'];
 const FINISHED = ['REJECTED', 'CANCELLED', 'CLOSED'];
+const CLOSING = ['IN_PROGRESS', 'WAITING_CLOSE'];
 const iso = (d) => d.toISOString();
 
 // summary ghi dạng digest + số từ để log không phình (API_GD2 §5.1). Không đặt khóa tên "...hash": redact() sẽ lọc mất.
@@ -41,9 +43,11 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
     const req = t.advisorRequests[0];
     const sub = t.submissions[0];
     const sim = t.similarityChecks[0];
+    const res = t.results[0];
+    const running = t.status === 'IN_PROGRESS';
     const actions = availableActions(t.status, user.role).filter((a) => {
       const tr = findTransition(a);
-      return GD2_ACTIONS.includes(a)
+      return ENABLED_ACTIONS.includes(a)
         && (!tr.leaderOnly || rel.isLeader)
         && (!tr.requestedLecturerOnly || rel.isRequestedLecturer)
         && (!tr.currentAdvisorOnly || rel.isCurrentAdvisor)
@@ -58,6 +62,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         regOpenAt: iso(round.regOpenAt), regCloseAt: iso(round.regCloseAt), reviewDeadline: iso(round.reviewDeadline),
         registrationOpen: round.regOpenAt <= n && n < round.regCloseAt,
         effectiveConfig: effectiveRoundConfig(round.config),
+        endAt: iso(round.endAt), ended: n >= round.endAt,
       },
       members: t.members.map((m) => ({ userId: m.userId, code: m.user.code, fullName: m.user.fullName, role: m.role, joinedAt: iso(m.joinedAt) })),
       pendingInvitations: rel.isMember
@@ -79,12 +84,25 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         ? { id: sim.id, status: sim.status, level: sim.level, createdAt: iso(sim.createdAt), isStale: sim.contentHash !== contentHash(t) }
         : null,
       availableActions: actions,
+      currentResult: res ? { version: res.version, result: res.result, createdAt: iso(res.createdAt) } : null,
+      closeReadiness: CLOSING.includes(t.status) && (rel.isCurrentAdvisor || rel.inStaffScope)
+        ? (({ requiredMilestonesPassed, hasFinalResult, requiredMilestoneCount, pendingCount }) => ({
+            requiredMilestonesPassed, hasFinalResult, requiredMilestoneCount, pendingMilestones: pendingCount, requiredRemovedCount: t._count.milestones,
+          }))(evaluateClose({ milestones: t.milestones, result: res, advisorId: adv?.lecturerId ?? null }))
+        : null,
       permissions: {
         edit: rel.isMember && EDITABLE.includes(t.status),
         invite: rel.isLeader && t.status === 'DRAFT',
         transferLeader: rel.isLeader && !FINISHED.includes(t.status),
         checkSimilarity: rel.isMember && ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'NEEDS_REVISION'].includes(t.status),
         viewHistory: rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope,
+        manageMilestones: (rel.isCurrentAdvisor || rel.inStaffScope) && running,
+        addProgress: rel.isMember && running,
+        uploadProposal: rel.isMember && EDITABLE.includes(t.status),
+        uploadMilestone: rel.isMember && running,
+        giveFeedback: rel.isCurrentAdvisor && running,
+        enterResult: rel.isCurrentAdvisor && running,
+        readExecution: rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && t.status !== 'DRAFT'),
       },
       createdAt: iso(t.createdAt), updatedAt: iso(t.updatedAt),
     };

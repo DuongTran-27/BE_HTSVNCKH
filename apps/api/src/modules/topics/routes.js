@@ -7,6 +7,7 @@ import { createTopicService } from './service.js';
 import { createLimiter } from '../../middlewares/rateLimit.js';
 import { createAdvisorService } from './advisorService.js';
 import { createReviewService, REVIEW_ACTIONS } from './reviewService.js';
+import { createCloseService, CLOSE_ACTIONS } from './closeService.js';
 import { createGroupService } from './groupService.js';
 import { createSnapshotService } from './snapshotService.js';
 import { createListService } from './listService.js';
@@ -19,6 +20,7 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder }) => {
   const advisor = createAdvisorService({ repo, now, getTopic: svc.get });
   const review = createReviewService({ repo, now, getTopic: svc.get, logger });
   const lister = createListService({ repo, now });
+  const close = createCloseService({ repo, now, getTopic: svc.get });
   const actionLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 30, keyBy: 'user' });
   const group = createGroupService({ repo, now, getTopic: svc.get });
   const snapshots = createSnapshotService({ repo });
@@ -56,9 +58,10 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder }) => {
   });
   r.get('/:id/similarity-checks/latest', requireRole('STAFF', 'LECTURER', 'STUDENT'), async (req, res) => res.json(await similarity.latest(req.user, req.params.id)));
   r.post('/:id/similarity-checks', student, similarityLimiter, validate(emptyBodySchema), async (req, res) => res.json(await similarity.check(req.user, req.params.id, req.ip)));
-  // Endpoint chuyển trạng thái chung (§8.1); T210: nhánh FR16, T212a: gửi/xét duyệt. Vai trò kiểm bằng TRANSITIONS.
+  // Endpoint chuyển trạng thái chung (§8.1); T210: nhánh FR16, T212a: gửi/xét duyệt; T405: đóng đề tài. Vai trò kiểm bằng TRANSITIONS.
   r.post('/:id/actions', requireRole('STUDENT', 'LECTURER', 'STAFF'), actionLimiter, validate(topicActionSchema), async (req, res) => {
-    const svcFor = REVIEW_ACTIONS.includes(req.body.action) ? review : advisor;
+    const a = req.body.action;
+    const svcFor = REVIEW_ACTIONS.includes(a) ? review : CLOSE_ACTIONS.includes(a) ? close : advisor;
     res.json(await svcFor.act(req.user, req.params.id, req.body, req.ip));
   });
   mountTopicMilestoneRoutes(r, { repo, now });

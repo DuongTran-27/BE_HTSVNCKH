@@ -186,7 +186,7 @@ describe('Kết quả cuối /api/topics/:id/results', () => {
     expect([a.before, a.after]).toEqual([{ result: 'GOOD', version: 1 }, { result: 'EXCELLENT', version: 2 }]);
   });
 
-  it('409 CONCURRENT_UPDATE khi expectedVersion lệch; hai GV gửi cùng lúc chỉ một bản thắng', async () => {
+  it('409 CONCURRENT_UPDATE khi expectedVersion lệch; cùng GVHD gửi hai yêu cầu đồng thời chỉ một bản thắng', async () => {
     const { t } = await mkRunning();
     expect(code(await result('lecA', t, { expectedVersion: 1 }))).toBe('CONCURRENT_UPDATE');
     const rs = await Promise.all([result('lecA', t), result('lecA', t, { result: 'PASS' })]);
