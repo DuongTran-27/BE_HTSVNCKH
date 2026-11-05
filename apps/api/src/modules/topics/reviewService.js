@@ -49,7 +49,7 @@ export const createReviewService = ({ repo, getTopic, logger, now = () => new Da
     await repo.applyReview({ topic: { id: t.id, version: body.version }, transition, actor: user }, async (o) => {
       submission = await o.createSubmission({
         topicId: t.id, seq: await o.nextSeq(t.id), createdById: user.id, similarityCheckId: row.id,
-        payload: { title: t.title, summary: t.summary, objectives: t.objectives, keywords: t.keywords, fieldId: t.fieldId, fieldName: t.field?.name ?? null, documentIds: [] },
+        payload: { title: t.title, summary: t.summary, objectives: t.objectives, keywords: t.keywords, fieldId: t.fieldId, fieldName: t.field?.name ?? null, documentIds: await o.latestProposalDocumentIds(t.id) },
       });
       await o.audit({ actorId: user.id, action: 'TOPIC_SUBMIT', entityType: 'Submission', entityId: submission.id, before: { status: t.status }, after: { topicId: t.id, seq: submission.seq, action: body.action }, ip });
     });

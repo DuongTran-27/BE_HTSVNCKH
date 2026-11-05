@@ -109,7 +109,7 @@ describe('submission-diff', () => {
     expect(r.status).toBe(200);
     expect(r.body.from.seq).toBe(1);
     expect(r.body.to.payload.title).toBe('Tên 2');
-    expect(r.body.changes).toEqual({ title: true, summary: false, objectives: false, fieldId: true, keywords: { added: ['c'], removed: ['a'] } });
+    expect(r.body.changes).toEqual({ title: true, summary: false, objectives: false, fieldId: true, keywords: { added: ['c'], removed: ['a'] }, documents: false });
   });
   it('query sai: 400; seq không có: 404', async () => {
     for (const q of ['', '?from=1', '?from=1&to=1', '?from=0&to=2', '?from=a&to=2', '?from=1&to=10001']) expect((await get('svA', `${base()}/submission-diff${q}`)).status).toBe(400);

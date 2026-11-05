@@ -43,10 +43,12 @@ export const createSnapshotService = ({ repo }) => {
       await load(user, id);
       const [s] = await repo.findSubmissions(id, [seq]);
       if (!s) throw notFound();
+      const ids = s.payload.documentIds ?? [];
+      const docs = ids.length ? await repo.findDocumentBriefs(ids) : [];
       return {
         submission: {
           id: s.id, seq: s.seq, createdAt: iso(s.createdAt), createdBy: { id: s.createdBy.id, fullName: s.createdBy.fullName },
-          payload: s.payload,
+          payload: { ...s.payload, documents: docs.map((d) => ({ id: d.id, fileName: d.fileName, kind: d.kind, version: d.version, uploadedAt: iso(d.uploadedAt) })) },
           similarityCheck: s.similarityCheck ? checkView(s.similarityCheck, user.role) : null,
           decision: s.decision
             ? { action: s.decision.action, reason: s.decision.reason, decidedBy: { fullName: s.decision.decidedBy.fullName }, decidedAt: iso(s.decision.decidedAt) }
@@ -68,6 +70,7 @@ export const createSnapshotService = ({ repo }) => {
         changes: {
           title: p.title !== q.title, summary: p.summary !== q.summary, objectives: p.objectives !== q.objectives, fieldId: (p.fieldId ?? null) !== (q.fieldId ?? null),
           keywords: sameSet(p.keywords ?? [], q.keywords ?? []),
+          documents: [...(p.documentIds ?? [])].sort().join() !== [...(q.documentIds ?? [])].sort().join(),
         },
       };
     },

@@ -16,13 +16,14 @@ import { topicsRouter } from './modules/topics/routes.js';
 import { advisorRequestsRouter, lecturersRouter } from './modules/topics/advisorRoutes.js';
 import { invitationsRouter } from './modules/topics/invitationRoutes.js';
 import { repositoryRouter } from './modules/topics/repositoryRoutes.js';
-import { milestonesRouter, progressRouter } from './modules/execution/routes.js';
+import { defaultStorageFolder } from './lib/storage.js';
+import { milestonesRouter, progressRouter, documentsRouter } from './modules/execution/routes.js';
 
 /**
  * Tạo ứng dụng với phụ thuộc được tiêm vào để test không cần database thật.
  * deps: { env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, checkDb }
  */
-export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, topicRepo, genPassword, checkDb = async () => true }) => {
+export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, topicRepo, storage, genPassword, checkDb = async () => true }) => {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // sau proxy của Vercel/Render
@@ -43,6 +44,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
 
   // Router nghiệp vụ nhận `guard` và tự gắn đầu router (lib/router.js), mount ở tiền tố riêng.
   const guard = [requireAuth, requirePasswordChanged];
+  const folder = defaultStorageFolder(env);
   if (catalogRepo) {
     for (const [prefix, router] of Object.entries(catalogRouters({ repo: catalogRepo, guard }))) app.use(`/api/${prefix}`, router);
   }
@@ -50,12 +52,13 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
   if (accountRepo) app.use('/api/users', accountsRouter({ repo: accountRepo, hasher, guard, genPassword }));
 
   if (topicRepo) {
-    app.use('/api/topics', topicsRouter({ repo: topicRepo, guard, logger }));
+    app.use('/api/topics', topicsRouter({ repo: topicRepo, guard, logger, storage, folder }));
     app.use('/api/advisor-requests', advisorRequestsRouter({ repo: topicRepo, guard }));
     app.use('/api/lecturers', lecturersRouter({ repo: topicRepo, guard }));
     app.use('/api/invitations', invitationsRouter({ repo: topicRepo, guard }));
     app.use('/api/repository', repositoryRouter({ repo: topicRepo, guard }));
     app.use('/api/milestones', milestonesRouter({ repo: topicRepo, guard }));
+    app.use('/api/documents', documentsRouter({ repo: topicRepo, guard, storage, folder, logger }));
     app.use('/api/progress', progressRouter({ repo: topicRepo, guard }));
   }
 

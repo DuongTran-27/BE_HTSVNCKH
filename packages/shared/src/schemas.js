@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { isoDateTime } from './catalog.js';
-import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT } from './enums.js';
+import { isoDateTime, idSchema } from './catalog.js';
+import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT, DOCUMENT_STAGES } from './enums.js';
 
 // Thông điệp mặc định tiếng Việt; có hiệu lực cho cả api vì chỉ có một bản zod (QD_ZOD §2)
 z.config(z.locales.vi());
@@ -127,3 +127,24 @@ const pgPercent = z.int({ error: 'Phần trăm phải là số nguyên' }).min(0
 export const progressCreateSchema = z.object({ done: pgDone, issues: pgIssues.default(''), nextPlan: pgNext, percent: pgPercent });
 export const progressUpdateSchema = z.strictObject({ done: pgDone.optional(), issues: pgIssues.optional(), nextPlan: pgNext.optional(), percent: pgPercent.optional() })
   .refine((v) => Object.values(v).some((x) => x !== undefined), { message: 'Cần ít nhất một trường để sửa', path: ['done'] });
+
+// FR11 (API_GD45 §5.2–5.4). Field văn bản của multipart và JSON nộp link dùng chung phần stage/milestoneId.
+const docStage = z.enum(DOCUMENT_STAGES, { error: 'Chọn loại tài liệu' });
+const stageMilestone = (v, ctx) => {
+  if ((v.stage === 'PROPOSAL') !== (v.milestoneId === undefined)) {
+    ctx.addIssue({ code: 'custom', path: ['milestoneId'], message: v.stage === 'PROPOSAL' ? 'Đề cương không gắn với mốc' : 'Chọn mốc cho tài liệu này' });
+  }
+};
+export const documentUploadFieldsSchema = z.object({ stage: docStage, milestoneId: idSchema.optional() }).superRefine(stageMilestone);
+export const documentLinkSchema = z.object({
+  stage: docStage,
+  milestoneId: idSchema.optional(),
+  title: z.string().trim().min(1, 'Nhập tên tài liệu').max(200),
+  url: z.string().trim().max(2000).pipe(z.url({ protocol: /^https$/, error: 'Chỉ nhận đường dẫn https' }))
+    .refine((u) => { const x = new URL(u); return !x.username && !x.password; }, 'Đường dẫn không được chứa tài khoản/mật khẩu'),
+}).superRefine(stageMilestone);
+export const documentListQuerySchema = z.object({
+  milestoneId: idSchema.optional(),
+  stage: docStage.optional(),
+  latestOnly: z.enum(['true', 'false']).default('false'),
+});

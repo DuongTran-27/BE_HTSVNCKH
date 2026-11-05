@@ -7,6 +7,8 @@ const ops = (db) => ({
   createSubmission: (data) => db.submission.create({ data }),
   createDecision: (data) => db.reviewDecision.create({ data }),
   audit: (entry) => recordAudit(db, entry),
+  // FR17: bản đề cương mới nhất (Document bất biến nên snapshot không đổi theo thời gian)
+  latestProposalDocumentIds: async (topicId) => (await db.document.findMany({ where: { topicId, stage: 'PROPOSAL', status: 'READY' }, orderBy: { version: 'desc' }, take: 1, select: { id: true } })).map((d) => d.id),
 });
 
 const person = { select: { id: true, fullName: true } };
@@ -20,6 +22,7 @@ export const createReviewRepo = (prisma) => ({
     where: { topicId, seq: { in: seqs } },
     include: { createdBy: person, decision: { include: { decidedBy: person } }, similarityCheck: true },
   }),
+  findDocumentBriefs: (ids) => prisma.document.findMany({ where: { id: { in: ids } }, select: { id: true, fileName: true, kind: true, version: true, uploadedAt: true } }),
   listStatusHistory: (topicId) => prisma.statusHistory.findMany({
     where: { topicId }, orderBy: [{ at: 'asc' }, { id: 'asc' }], include: { actor: { select: { fullName: true, role: true } } },
   }),

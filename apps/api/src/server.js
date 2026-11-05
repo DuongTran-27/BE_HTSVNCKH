@@ -8,12 +8,24 @@ import { createRoundRepo } from './modules/rounds/prismaRepo.js';
 import { createAccountRepo } from './modules/accounts/prismaRepo.js';
 import { createTopicRepo } from './modules/topics/prismaRepo.js';
 import { passwordHasher } from './lib/password.js';
+import { createCloudinaryStorage, createMemoryStorage } from './lib/storage.js';
 
 const env = loadEnv();
 const logger = pino({ level: env.NODE_ENV === 'production' ? 'info' : 'debug' });
 
+// Có CLOUDINARY_URL (SDK tự đọc) thì dùng Cloudinary thật; dev/test không có thì dùng kho giả trong bộ nhớ (production bắt buộc có: env.js)
+let storage;
+if (env.CLOUDINARY_URL) {
+  const { v2: cloudinary } = await import('cloudinary');
+  storage = createCloudinaryStorage({ cloudinary });
+} else {
+  logger.warn('Chưa có CLOUDINARY_URL: dùng kho file giả trong bộ nhớ (chỉ dành cho phát triển)');
+  storage = createMemoryStorage();
+}
+
 const app = createApp({
   env,
+  storage,
   logger,
   authRepo: createAuthRepo(prisma),
   hasher: passwordHasher,

@@ -1,7 +1,7 @@
 // Mốc thực hiện (FR09, API_GD45 §3). Service nhận repo này; `writeMilestone` chạy trong withLockTx với câu khóa Topic đầu tiên.
 import { withLockTx } from '../../lib/tx.js';
 import { recordAudit } from '../audit/service.js';
-import { lockTopicForExecution } from './lock.js';
+import { lockTopicForExecution, lockTopicRow } from './lock.js';
 
 const person = { select: { id: true, fullName: true, role: true } };
 const VIEW_INCLUDE = {
@@ -18,6 +18,13 @@ const ops = (tx) => ({
   updateVersioned: async (id, version, data) => (await tx.milestone.updateMany({ where: { id, version }, data: { ...data, version: { increment: 1 } } })).count === 1,
   createDueChange: (data) => tx.milestoneDueChange.create({ data }),
   audit: (entry) => recordAudit(tx, entry),
+  // FR11
+  findMilestoneForDoc: (id) => tx.milestone.findUnique({ where: { id }, select: { id: true, topicId: true, evaluation: true, dueAt: true } }),
+  chainStats: async (topicId, milestoneId) => {
+    const a = await tx.document.aggregate({ where: { topicId, milestoneId }, _max: { version: true }, _count: { _all: true } });
+    return { max: a._max.version ?? 0, count: a._count._all };
+  },
+  createDocument: (data) => tx.document.create({ data }),
   // FR10
   createProgress: (data) => tx.progressUpdate.create({ data }),
   findProgress: (id) => tx.progressUpdate.findUnique({ where: { id } }),
@@ -40,7 +47,8 @@ export const createExecutionRepo = (prisma) => {
   findExecTopic: (id) => prisma.topic.findUnique({
     where: { id },
     select: {
-      id: true, status: true, facultyId: true,
+      id: true, status: true, facultyId: true, round: { select: { config: true } },
+      advisorRequests: { where: { status: 'PENDING' }, take: 1, select: { lecturerId: true } },
       members: { where: { leftAt: null }, select: { userId: true, role: true } },
       advisings: { where: { endAt: null }, take: 1, select: { lecturerId: true } },
     },
@@ -53,6 +61,20 @@ export const createExecutionRepo = (prisma) => {
   countRequiredRemoved: (topicId) => prisma.milestone.count({ where: { topicId, required: false, requiredRemovedAt: { not: null }, evaluation: { not: 'PASSED' } } }),
   writeMilestone: (topicId, fn) => write(topicId, fn),
   writeProgress: (topicId, fn) => write(topicId, fn),
+  // Upload/link: khóa Topic rồi để service kiểm trạng thái theo stage (đề cương: DRAFT/NEEDS_REVISION; mốc: IN_PROGRESS)
+  writeDocument: (topicId, fn) => withLockTx(prisma, async (tx) => fn(ops(tx), await lockTopicRow(tx, topicId))),
+  findMilestoneBrief: (id) => prisma.milestone.findUnique({ where: { id }, select: { id: true, topicId: true, evaluation: true } }),
+  findDocument: (id) => prisma.document.findUnique({ where: { id }, select: { id: true, topicId: true, stage: true, kind: true, version: true, publicId: true, status: true } }),
+  auditNow: (entry) => recordAudit(prisma, entry),
+  listDocuments: async (topicId, { milestoneId }) => {
+    const rows = await prisma.document.findMany({
+      where: { topicId, status: 'READY', ...(milestoneId && { milestoneId }) },
+      orderBy: [{ milestone: { order: 'asc' } }, { stage: 'asc' }, { version: 'desc' }],
+      take: 1000,
+      include: { uploadedBy: { select: { id: true, fullName: true } }, _count: { select: { feedbacks: true } } },
+    });
+    return rows;
+  },
   findProgressMeta: (id) => prisma.progressUpdate.findUnique({ where: { id }, select: { topicId: true, authorId: true } }),
   viewProgress: (id) => prisma.progressUpdate.findUnique({ where: { id }, include: PROGRESS_INCLUDE }),
   listProgress: async (topicId, { skip, take }) => {

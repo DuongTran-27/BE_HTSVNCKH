@@ -1,4 +1,4 @@
-# T608 (FR26): job dọn file mồ côi - hiện CHỈ dry-run (chưa có Cloudinary, xem docs/VAN_HANH.md mục 3).
+# T608/T403 (FR26): job dọn file mồ côi - lịch chạy DRY-RUN (liệt kê Cloudinary, in danh sách). --apply chạy tay, xem docs/VAN_HANH.md 3.4.
 name: Cleanup orphans
 
 on:
@@ -27,4 +27,6 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+          CLOUDINARY_FOLDER: ${{ vars.CLOUDINARY_FOLDER || 'nckh/production' }}
         run: node apps/api/scripts/cleanup-orphans.js

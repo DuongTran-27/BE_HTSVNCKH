@@ -11,10 +11,10 @@ import { createGroupService } from './groupService.js';
 import { createSnapshotService } from './snapshotService.js';
 import { createListService } from './listService.js';
 import { createSimilarityService } from './similarityService.js';
-import { mountTopicMilestoneRoutes, mountTopicProgressRoutes } from '../execution/routes.js';
+import { mountTopicMilestoneRoutes, mountTopicProgressRoutes, mountTopicDocumentRoutes } from '../execution/routes.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
-export const topicsRouter = ({ repo, now, guard, logger }) => {
+export const topicsRouter = ({ repo, now, guard, logger, storage, folder }) => {
   const svc = createTopicService({ repo, now });
   const advisor = createAdvisorService({ repo, now, getTopic: svc.get });
   const review = createReviewService({ repo, now, getTopic: svc.get, logger });
@@ -63,5 +63,6 @@ export const topicsRouter = ({ repo, now, guard, logger }) => {
   });
   mountTopicMilestoneRoutes(r, { repo, now });
   mountTopicProgressRoutes(r, { repo });
+  mountTopicDocumentRoutes(r, { repo, storage, folder, now, logger });
   return r;
 };

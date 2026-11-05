@@ -1,6 +1,13 @@
 import { conflict, notFound } from '../../lib/errors.js';
 
 // API_GD45 §1.2: câu khóa ĐẦU TIÊN của mọi thao tác ghi GĐ4; kiểm lại IN_PROGRESS từ kết quả câu khóa (không dùng trạng thái đã tải trước).
+// Khóa Topic không kiểm trạng thái: caller tự kiểm từ `status` trả về (upload đề cương ở DRAFT/NEEDS_REVISION)
+export async function lockTopicRow(tx, topicId) {
+  const [row] = await tx.$queryRaw`SELECT id, status, version FROM "Topic" WHERE id = ${topicId} FOR NO KEY UPDATE`;
+  if (!row) throw notFound();
+  return row;
+}
+
 export async function lockTopicForExecution(tx, topicId) {
   const [row] = await tx.$queryRaw`SELECT id, status, version FROM "Topic" WHERE id = ${topicId} FOR NO KEY UPDATE`;
   if (!row) throw notFound();
