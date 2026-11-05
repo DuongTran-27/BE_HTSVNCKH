@@ -38,7 +38,7 @@ Gói được ghim `16.14.0-beta.17`. Nâng bản = tải binary ngoài mới �
 
 ## 2. CI GitHub Actions (T202)
 Workflow `.github/workflows/ci.yml` không cần secret nào (DB test là service container `postgres:16`, mật khẩu test `postgres` không phải bí mật).
-1. Đẩy nhánh chứa T202 lên GitHub và mở PR vào `main`.
+1. Trước tiên đẩy lịch sử hiện có (đến commit ngay trước T202) lên GitHub thành nhánh mặc định `main` (local đang là `master`: `git push origin <commit-trước-T202>:refs/heads/main`), rồi mới đẩy nhánh chứa T202 và mở PR vào `main`. Nếu `main` rỗng/cũ, bước "Prettier cho file mới" sẽ kiểm cả file cũ và job `lint` đỏ. CI cũng chạy khi push vào `master`.
 2. Tab **Actions** → run "CI" của PR: phải có 3 job xanh – `lint`, `test (22.22)`, `test (24)`.
 3. Mở log job `test (24)`, kiểm:
    - bước `npm run db:test:up` in K1–K7 đều `OK` (K2 `Asia/Ho_Chi_Minh`);
@@ -80,3 +80,10 @@ Làm trên **DB thử**, không bao giờ trên DB production (project Supabase 
 - Xóa thật: `node --env-file-if-exists=apps/api/.env apps/api/scripts/cleanup-orphans.js --apply`. Mỗi file xóa ghi AuditLog `STORAGE_ORPHAN_DELETE` (`entityType: StorageObject`, `entityId: publicId`), nên cần URL DB **có quyền ghi AuditLog** – role `backup_ro` của job không ghi được, vì vậy job theo lịch vẫn chỉ dry-run. Không bao giờ xóa file có Document tham chiếu (kiểm lại ngay trước khi xóa); không xóa dòng DB nào.
 - **Chốt chặn `--apply`** (chống xóa nhầm khi DB và thư mục kho không khớp, ví dụ DB dev + kho production): (1) bắt buộc đặt tường minh `CLOUDINARY_FOLDER` (không dùng mặc định `nckh/<NODE_ENV>`), thiếu thì exit 2; (2) từ chối (exit 3, không xóa gì) khi số mồ côi > 10 file hoặc > 10% số file liệt kê, trừ khi có `--max-delete=N` với N >= số mồ côi. Quy trình: chạy dry-run trước **với đúng cùng biến môi trường**, kiểm tra danh sách và `DATABASE_URL` trỏ đúng DB production (có quyền ghi), rồi mới chạy `--apply` (thêm `--max-delete=N` nếu cần). AuditLog được ghi trước khi xóa từng file.
 - Không có `CLOUDINARY_URL`: chỉ dry-run, có thể đưa danh sách bằng `--storage-list=ds.json` (`[{ "publicId", "createdAt" }]`); `--apply` bị từ chối (exit 2).
+
+## 4. Nhắc hạn theo lịch (T502, FR13)
+File: `.github/workflows/reminders.yml` (08:00 giờ VN hằng ngày + chạy tay), gọi `POST /api/cron/reminders` (T501).
+1. Render: đặt biến môi trường `CRON_SECRET` (>= 32 ký tự ngẫu nhiên, ví dụ `openssl rand -base64 48`), deploy lại. Chưa đặt thì endpoint trả 404.
+2. GitHub > Settings > Secrets and variables > Actions > New repository secret: `CRON_SECRET` (cùng giá trị) và `API_BASE_URL` (ví dụ `https://<app>.onrender.com`, không có `/api`, không dấu `/` cuối). Có thể trỏ qua domain Vercel nếu proxy `/api/*` đã bật.
+3. Tab Actions > "Reminders" > Run workflow. Xanh: log in `HTTP 200` và JSON số thông báo đã tạo. Chạy lần hai: số mới ~0 (chống trùng).
+4. Lỗi: 404 = chưa đặt `CRON_SECRET` trên Render; 401 = hai giá trị lệch nhau; 429 = gọi quá 10 lần/15 phút. Workflow tự thử lại 4 lần (cách 30 giây) cho trường hợp Render đang khởi động.

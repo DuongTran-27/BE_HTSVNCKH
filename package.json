@@ -12,7 +12,7 @@
   "scripts": {
     "test": "npm run test --workspaces --if-present",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "format:check": "prettier --check eslint.config.js vitest.config.js .prettierrc.json .github",
     "db:test:up": "node apps/api/scripts/db-test.js up",
     "db:test:reset": "npm run db:test:reset -w @nckh/api",

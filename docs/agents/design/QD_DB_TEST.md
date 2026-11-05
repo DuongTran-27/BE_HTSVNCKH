@@ -144,7 +144,7 @@ Khi loại B: gỡ gói khỏi `package.json`/lockfile, bỏ nhánh embedded tro
 3. Sửa script gốc: `db:test:up` → `node apps/api/scripts/db-test.js up`, `db:test:down` → `... down`. `db:test:reset` giữ nguyên. Không đổi `docker-compose.test.yml`, `init.sql`, `.env.test`, `vitest.config.js`, `reset-test-db.js`, trừ khi chạy thật thấy lỗi (khi đó ghi lý do).
 4. Chạy và dán bằng chứng, theo đúng thứ tự, mỗi lệnh là một tiến trình riêng:
    1. `npm run db:test:up` → bảng K1–K7 (V1, V4) và locale đã dùng (§4.3). Chạy từ **PowerShell** (DO v2 đã thử Git Bash).
-   2. `npm run db:test:reset` (cả nhánh `db push` + `after_init.sql`) – vì `up` đã thoát, lệnh này kết nối được chính là bằng chứng **V2** (server sống sau khi script thoát) và kết nối qua `localhost` (V6).
+   2. `npm run db:test:reset` (`migrate reset`, đã gồm `after_init.sql`; thiếu `migrations` thì báo lỗi, T502) – vì `up` đã thoát, lệnh này kết nối được chính là bằng chứng **V2** (server sống sau khi script thoát) và kết nối qua `localhost` (V6).
    3. `npm test` (V6).
    4. `npm run db:test:up` lần hai khi server đang chạy → "đã chạy", thoát 0.
    5. `npm run db:test:down` → kiểm không còn tiến trình `postgres` (`tasklist | findstr postgres`) và `DATA_DIR` đã xóa; gọi `down` lần hai → thoát 0.

@@ -1,6 +1,5 @@
 // Xóa sạch và dựng lại DB test. Dùng: npm run db:test:reset
-// - Đã có migration (từ T203): prisma migrate reset (migration chứa after_init.sql).
-// - Chưa có migration: prisma db push --force-reset rồi chạy prisma/sql/after_init.sql.
+// prisma migrate reset (migration chứa after_init.sql). Thiếu thư mục migrations thì báo lỗi, không có nhánh db push.
 import { execFileSync, execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readdirSync } from 'node:fs';
@@ -48,10 +47,11 @@ for (const name of prismaUrlVars()) {
 const migrationsDir = `${apiDir}prisma/migrations`;
 const hasMigrations = existsSync(migrationsDir) && readdirSync(migrationsDir).some((d) => /^\d/.test(d));
 
-if (hasMigrations) {
-  run('npx prisma migrate reset --force --skip-seed');
-} else {
-  run('npx prisma db push --force-reset --skip-generate --accept-data-loss');
-  run('npx prisma db execute --schema prisma/schema.prisma --file prisma/sql/after_init.sql');
+if (!hasMigrations) {
+  console.error(
+    `Không tìm thấy migration trong ${migrationsDir}. Tạo bằng prisma migrate dev trước khi reset DB test.`,
+  );
+  process.exit(1);
 }
-console.log(`Đã reset DB test (${hasMigrations ? 'migrate reset' : 'db push + after_init.sql'}).`);
+run('npx prisma migrate reset --force --skip-seed');
+console.log('Đã reset DB test (migrate reset).');
