@@ -103,18 +103,24 @@ describe('PATCH /api/progress/:id', () => {
     expect((await patch(leader, '/api/progress/khongco123', { percent: 5 })).status).toBe(404);
   });
 
-  it('sửa || khóa đồng thời: không có bản sửa sau lockedAt', async () => {
-    for (let i = 0; i < 4; i++) {
+  it('sửa || khóa đồng thời (nhận xét thật qua HTTP): không có bản sửa sau khi đã khóa', async () => {
+    for (let i = 0; i < 12; i++) {
       const { t, leader } = await mkRunning();
       const p = (await mk(leader, t)).body.progress;
-      const [r] = await Promise.all([
+      const [r, f] = await Promise.all([
         patch(leader, `/api/progress/${p.id}`, { percent: 99 }),
-        prisma.progressUpdate.updateMany({ where: { id: p.id, lockedAt: null }, data: { lockedAt: new Date() } }), // như nhận xét §6.2
+        post('lecA', `/api/progress/${p.id}/feedbacks`, { content: 'Tốt, tiếp tục' }), // khóa qua nhận xét §6.2
       ]);
+      expect(f.status, JSON.stringify(f.body)).toBe(201);
       const row = await prisma.progressUpdate.findUnique({ where: { id: p.id } });
       expect(row.lockedAt).not.toBeNull();
-      if (r.status === 409) expect(row.percent).toBe(40);
-      else expect(row.updatedAt <= row.lockedAt).toBe(true);
+      if (r.status === 409) {
+        expect([r.body.error.code, row.percent]).toEqual(['PROGRESS_LOCKED', 40]);
+        expect(f.body.progress.percent).toBe(40);
+      } else {
+        expect([r.status, row.percent]).toEqual([200, 99]);
+        expect(f.body.progress.percent).toBe(99); // sửa phải commit trước khi khóa
+      }
     }
   });
 });
