@@ -2,6 +2,7 @@
 import { INACTIVE_STATUSES } from '@nckh/shared';
 import { recordAudit } from '../audit/service.js';
 import { withLockTx } from '../../lib/tx.js';
+import { notifyTopic } from '../notifications/notify.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const LIVE = { leftAt: null };
@@ -31,6 +32,7 @@ export const groupOps = (db) => ({
     await db.topicMember.updateMany({ where: { topicId, userId: newId, ...LIVE }, data: { role: 'LEADER' } });
   },
   audit: (entry) => recordAudit(db, entry),
+  notify: (args) => notifyTopic(db, args), // FR13, cùng tx
 });
 
 export const createGroupRepo = (prisma) => ({

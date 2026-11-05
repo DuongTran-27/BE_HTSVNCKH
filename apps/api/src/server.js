@@ -11,7 +11,9 @@ import { passwordHasher } from './lib/password.js';
 import { createCloudinaryStorage, createMemoryStorage } from './lib/storage.js';
 
 const env = loadEnv();
-const logger = pino({ level: env.NODE_ENV === 'production' ? 'info' : 'debug' });
+// Không ghi token/CRON_SECRET/cookie vào log (pino-http log cả header của request)
+const logger = pino({ level: env.NODE_ENV === 'production' ? 'info' : 'debug', redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'] });
+if (env.NODE_ENV === 'production' && !env.CRON_SECRET) logger.warn('Chưa có CRON_SECRET: endpoint nhắc hạn /api/cron/reminders bị tắt');
 
 // Có CLOUDINARY_URL (SDK tự đọc) thì dùng Cloudinary thật; dev/test không có thì dùng kho giả trong bộ nhớ (production bắt buộc có: env.js)
 let storage;

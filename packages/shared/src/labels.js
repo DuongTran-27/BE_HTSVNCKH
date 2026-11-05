@@ -47,3 +47,26 @@ export const ACTION_LABEL = Object.freeze({
 
 export const MILESTONE_EVAL_LABEL = Object.freeze({ PENDING: 'Chưa đánh giá', PASSED: 'Đạt', NEEDS_WORK: 'Cần bổ sung' });
 export const DOCUMENT_STAGE_LABEL = Object.freeze({ PROPOSAL: 'Đề cương', MIDTERM: 'Giữa kỳ', FINAL: 'Cuối kỳ', OTHER: 'Khác' });
+
+export const NOTIFICATION_TYPE_LABEL = Object.freeze({
+  INVITATION_RECEIVED: 'Lời mời tham gia nhóm',
+  INVITATION_ACCEPTED: 'Lời mời được chấp nhận',
+  INVITATION_DECLINED: 'Lời mời bị từ chối',
+  ADVISOR_REQUESTED: 'Đề nghị hướng dẫn',
+  ADVISOR_ACCEPTED: 'Giảng viên nhận hướng dẫn',
+  ADVISOR_DECLINED: 'Giảng viên từ chối hướng dẫn',
+  ADVISOR_REQUEST_WITHDRAWN: 'Đề nghị hướng dẫn bị rút',
+  REVIEW_DECIDED: 'Kết quả xét duyệt',
+  MILESTONE_CREATED: 'Mốc mới',
+  MILESTONE_REQUIRED_REMOVED: 'Mốc bị bỏ bắt buộc',
+  MILESTONE_DUE_CHANGED: 'Đổi hạn mốc',
+  DOCUMENT_SUBMITTED: 'Bài nộp mới',
+  FEEDBACK_CREATED: 'Nhận xét mới',
+  RESULT_ENTERED: 'Kết quả cuối',
+  CLOSE_REQUESTED: 'Đề nghị đóng đề tài',
+  CLOSE_RETURNED: 'Hồ sơ đóng bị trả lại',
+  TOPIC_CLOSED: 'Đề tài đã đóng',
+  MILESTONE_DUE_SOON: 'Sắp đến hạn mốc',
+  MILESTONE_OVERDUE: 'Quá hạn mốc',
+  ADVISOR_REQUEST_REMINDER: 'Nhắc phản hồi đề nghị hướng dẫn',
+});

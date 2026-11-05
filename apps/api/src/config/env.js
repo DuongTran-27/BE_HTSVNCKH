@@ -11,7 +11,7 @@ const schema = z.object({
   ENABLE_SWAGGER: z.stringbool().default(false), // coerce.boolean biến "false" thành true
   CLOUDINARY_URL: z.string().optional(),
   CLOUDINARY_FOLDER: z.string().trim().min(1).max(100).optional(), // mặc định nckh/<NODE_ENV> (storage.js)
-  CRON_SECRET: z.string().optional(),
+  CRON_SECRET: z.string().min(32, 'CRON_SECRET tối thiểu 32 ký tự').optional(), // thiếu thì /api/cron trả 404
 }).refine((e) => e.NODE_ENV !== 'production' || !!e.CLOUDINARY_URL, { message: 'Production cần CLOUDINARY_URL', path: ['CLOUDINARY_URL'] });
 
 export const loadEnv = (source = process.env) => {

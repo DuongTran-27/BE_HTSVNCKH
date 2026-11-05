@@ -63,7 +63,7 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 
 | ID | Việc | FR/NFR | Chủ trì | Review | Phụ thuộc | Trạng thái |
 |---|---|---|---|---|---|---|
-| T501 | Thông báo trong web (đã đọc, chống trùng theo dedupeKey) + endpoint nhắc hạn bảo vệ bằng CRON_SECRET; gắn thông báo vào mọi endpoint đã có (T208, T210, T212a, T401–T405) theo danh sách sự kiện FR13 | FR13 | BE | RV, BM | T405 | DOING |
+| T501 | Thông báo trong web (đã đọc, chống trùng theo dedupeKey) + endpoint nhắc hạn bảo vệ bằng CRON_SECRET; gắn thông báo vào mọi endpoint đã có (T208, T210, T212a, T401–T405) theo danh sách sự kiện FR13 | FR13 | BE | RV, BM | T405 | DONE 2026-11-05 |
 | T502 | GitHub Actions theo lịch gọi endpoint nhắc hạn; script `lint` thêm `--max-warnings 0`; trigger `ci.yml` khớp nhánh mặc định thật (`main`/`master`) và `VAN_HANH.md` §2 ghi cách đẩy lịch sử (MINOR 2–3 `reviews/T202-reviewer-v1.md`); bỏ nhánh `db push` chết trong `reset-test-db.js` (thiếu `migrations` thì báo lỗi) và cập nhật `QD_DB_TEST.md:147` (MINOR 4 `reviews/T203-reviewer-v1.md`) | FR13, NFR10 | DO | RV | T501 | TODO |
 | T503 | API thống kê theo GV/lĩnh vực/trạng thái/kết quả/năm/đợt + CSV cùng bộ lọc; GV chỉ thấy đề tài mình | FR14 | BE | RV, BM, QA | T405 | TODO |
 | T504 | UI chuông thông báo, dashboard Recharts, xuất CSV (kho tra cứu đã làm ở T308; G3: cần đăng nhập); tiện ích dashboard "đề tài kẹt sau khi đóng đăng ký" (FR16.5) | FR08, FR13, FR14 | FE | RV, QA | T501, T503 | TODO |
@@ -74,7 +74,7 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 | ID | Việc | FR/NFR | Chủ trì | Review | Phụ thuộc | Trạng thái |
 |---|---|---|---|---|---|---|
 | T600 | Hợp đồng API GĐ6 (`design/API_GD6.md`) cho FR18–FR23 + G5 `API_GD2.md` (cán bộ cho phép gửi với cờ "chưa kiểm tra" khi FR06 lỗi) – theo ràng buộc §14 `API_GD2.md`: cờ suy ra, không thêm cột sửa được; thêm `latestSimilarityStatus` vào item danh sách và xử lý đề tài kẹt khi tăng tham số đợt (INFO 12 `reviews/T300-reviewer-v1.md`) | FR18–FR23 | KTS | RV, FE, BE | T400 | TODO |
-| T601 | Thay giảng viên (chuyển bản nộp chờ, chấm dứt quyền GV cũ) – API (UI ở T607) | FR19 ; kiểm lại GVHD hiện hành dưới khóa Topic trong `feedbackService.js:21-30` (MINOR m1 `reviews/T404-reviewer-v1.md`) ; MINOR m1–m4 `reviews/T405-reviewer-v1.md` (test try/catch, nhánh đua kiểm 201, hằng điều kiện mốc dùng chung, `rel` dưới khóa) ; test API 400 cho `POST …/documents/links` URL sai dạng (`reviews/T406-reviewer-v1.md`) | BE | RV, BM, QA | T600, T405 | TODO |
+| T601 | Thay giảng viên (chuyển bản nộp chờ, chấm dứt quyền GV cũ) – API (UI ở T607) | FR19 ; kiểm lại GVHD hiện hành dưới khóa Topic trong `feedbackService.js:21-30` (MINOR m1 `reviews/T404-reviewer-v1.md`) ; MINOR m1–m4 `reviews/T405-reviewer-v1.md` (test try/catch, nhánh đua kiểm 201, hằng điều kiện mốc dùng chung, `rel` dưới khóa) ; test API 400 cho `POST …/documents/links` URL sai dạng (`reviews/T406-reviewer-v1.md`) ; MINOR A–B `reviews/T501-bao-mat-v1.md` (test redact log `server.js`, `advisorService.js` ném lỗi khi thiếu id đề nghị trong `dedupeKey`) | BE | RV, BM, QA | T600, T405 | TODO |
 | T602 | Đề nghị và quyết định hủy | FR20 | BE | RV, QA | T600, T405 | TODO |
 | T603 | Rời nhóm + quyền đọc theo khoảng thời gian là thành viên | FR21 | BE | RV, BM | T600, T208 | TODO |
 | T604 | Sửa sai kết quả bằng phiên bản mới; test kho `/api/repository`: kết quả hiện hành bị thay (GOOD → FAIL) thì rời kho, `q` khớp đề tài ngoài kho không rò (MINOR 2 `reviews/T213b-reviewer-v1.md`) | FR23 | BE | RV, QA | T600, T404 | TODO |

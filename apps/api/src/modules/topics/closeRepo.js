@@ -2,6 +2,7 @@
 import { recordAudit } from '../audit/service.js';
 import { applyTransition } from './stateMachine.js';
 import { loadCloseConditions } from './closeConditions.js';
+import { notifyTopic } from '../notifications/notify.js';
 
 const ops = (tx) => ({
   closeConditions: (topicId) => loadCloseConditions(tx, topicId),
@@ -11,6 +12,7 @@ const ops = (tx) => ({
   demoteResult: (id) => tx.resultVersion.updateMany({ where: { id, isCurrent: true }, data: { isCurrent: false } }),
   createResult: (data) => tx.resultVersion.create({ data }),
   audit: (entry) => recordAudit(tx, entry),
+  notify: (args) => notifyTopic(tx, args), // FR13, cùng tx
 });
 
 export const createCloseRepo = (prisma) => ({

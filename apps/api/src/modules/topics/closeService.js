@@ -3,9 +3,17 @@
 import { conflict, forbidden, notFound } from '../../lib/errors.js';
 import { checkTransition } from './stateMachine.js';
 import { relations, canView } from './service.js';
+import { topicName } from '../notifications/notify.js';
 
 export const CLOSE_ACTIONS = ['REQUEST_CLOSE', 'RETURN_TO_ADVISOR', 'CONFIRM_CLOSE', 'CLOSE_EXPIRED'];
 const NEEDS_CONDITIONS = ['REQUEST_CLOSE', 'CONFIRM_CLOSE', 'CLOSE_EXPIRED'];
+// FR13 (§8.3): người nhận, khóa (phân biệt bằng version SAU chuyển cho sự kiện lặp lại được), tiêu đề
+const CLOSE_NOTICE = {
+  REQUEST_CLOSE: { type: 'CLOSE_REQUESTED', to: ['staff'], key: (id, v) => `CLOSE_REQUESTED:${id}:v${v}`, title: (x) => `GVHD đề nghị đóng đề tài ${topicName(x)}` },
+  RETURN_TO_ADVISOR: { type: 'CLOSE_RETURNED', to: ['advisor', 'members'], key: (id, v) => `CLOSE_RETURNED:${id}:v${v}`, title: (x) => `Cán bộ khoa trả lại hồ sơ đóng đề tài ${topicName(x)}` },
+  CONFIRM_CLOSE: { type: 'TOPIC_CLOSED', to: ['advisor', 'members'], key: (id) => `TOPIC_CLOSED:${id}`, title: (x) => `Đề tài ${topicName(x)} đã được đóng` },
+  CLOSE_EXPIRED: { type: 'TOPIC_CLOSED', to: ['advisor', 'members'], key: (id) => `TOPIC_CLOSED:${id}`, title: (x) => `Đề tài ${topicName(x)} đã được đóng` },
+};
 const ASSUME_MET = { requiredMilestoneCount: 1, requiredMilestonesPassed: true, hasFinalResult: true, roundEnded: true, closeConditionsMet: false };
 
 export const createCloseService = ({ repo, getTopic, now = () => new Date() }) => ({
@@ -36,6 +44,8 @@ export const createCloseService = ({ repo, getTopic, now = () => new Date() }) =
         after = { ...after, result: 'FAIL', resultVersion: version };
       }
       await o.audit({ actorId: user.id, action: `TOPIC_${body.action}`, entityType: 'Topic', entityId: t.id, before: { status: t.status }, after, ip });
+      const n = CLOSE_NOTICE[body.action];
+      await o.notify({ topicId: t.id, to: n.to, actorId: user.id, type: n.type, key: n.key(t.id, body.version + 1), link: `/de-tai/${t.id}`, title: n.title });
     });
     return getTopic(user, topicId);
   },

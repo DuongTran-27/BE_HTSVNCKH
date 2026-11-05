@@ -1,12 +1,14 @@
 // Gửi xét duyệt, snapshot, quyết định (FR07, FR17, API_GD2 §8). Submission/ReviewDecision chỉ thêm (trigger DB).
 import { recordAudit } from '../audit/service.js';
 import { applyTransition } from './stateMachine.js';
+import { notifyTopic } from '../notifications/notify.js';
 
 const ops = (db) => ({
   nextSeq: async (topicId) => ((await db.submission.aggregate({ where: { topicId }, _max: { seq: true } }))._max.seq ?? 0) + 1,
   createSubmission: (data) => db.submission.create({ data }),
   createDecision: (data) => db.reviewDecision.create({ data }),
   audit: (entry) => recordAudit(db, entry),
+  notify: (args) => notifyTopic(db, args), // FR13, cùng tx
   // FR17: bản đề cương mới nhất (Document bất biến nên snapshot không đổi theo thời gian)
   latestProposalDocumentIds: async (topicId) => (await db.document.findMany({ where: { topicId, stage: 'PROPOSAL', status: 'READY' }, orderBy: { version: 'desc' }, take: 1, select: { id: true } })).map((d) => d.id),
 });

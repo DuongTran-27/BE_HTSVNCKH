@@ -2,6 +2,7 @@
 import { MILESTONE_MAX_PER_TOPIC } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { relations } from '../topics/service.js';
+import { topicName } from '../notifications/notify.js';
 
 const iso = (d) => d.toISOString();
 const invalid = (details) => badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', details);
@@ -58,6 +59,8 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
           required: body.required, evaluation: 'PENDING', version: 0, createdById: user.id,
         });
         await o.audit({ actorId: user.id, action: 'MILESTONE_CREATE', entityType: 'Milestone', entityId: m.id, before: null, after: { topicId, order: m.order, name: m.name, output: m.output, dueAt: m.dueAt, required: m.required }, ip });
+        // Thành viên + GVHD (GVHD tự tạo thì notify bỏ người gây sự kiện)
+        await o.notify({ topicId, to: ['members', 'advisor'], actorId: user.id, type: 'MILESTONE_CREATED', key: `MILESTONE_CREATED:${m.id}`, link: `/de-tai/${topicId}/moc`, title: (x) => `Mốc mới "${m.name}" – đề tài ${topicName(x)}` });
         return m.id;
       });
       return { milestone: await view(id) };
@@ -80,6 +83,9 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
         if (!(await o.updateVersioned(id, body.version, data))) throw stale();
         const pick = (x) => ({ name: x.name, output: x.output, required: x.required });
         await o.audit({ actorId: user.id, action: 'MILESTONE_UPDATE', entityType: 'Milestone', entityId: id, before: pick(m), after: pick({ ...m, ...data }), ip });
+        if (data.requiredRemovedAt) { // m3: bỏ bắt buộc khi chưa Đạt → báo cán bộ khoa; version sau cập nhật phân biệt từng lần
+          await o.notify({ topicId, to: ['staff'], actorId: user.id, type: 'MILESTONE_REQUIRED_REMOVED', key: `MILESTONE_REQUIRED_REMOVED:${id}:v${body.version + 1}`, link: `/de-tai/${topicId}/moc`, title: (x) => `Mốc "${m.name}" được bỏ bắt buộc khi chưa Đạt – đề tài ${topicName(x)}` });
+        }
       });
       return { milestone: await view(id) };
     },
@@ -95,6 +101,7 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
         if (!(await o.updateVersioned(id, body.version, { dueAt: newDueAt }))) throw stale();
         const c = await o.createDueChange({ milestoneId: id, oldDueAt: m.dueAt, newDueAt, reason: body.reason, changedById: user.id, changedAt: now() });
         await o.audit({ actorId: user.id, action: 'MILESTONE_DUE_CHANGE', entityType: 'Milestone', entityId: id, before: { dueAt: m.dueAt }, after: { dueAt: newDueAt, reason: body.reason }, ip });
+        await o.notify({ topicId, to: ['members', 'advisor'], actorId: user.id, type: 'MILESTONE_DUE_CHANGED', key: `MILESTONE_DUE_CHANGED:${c.id}`, link: `/de-tai/${topicId}/moc`, title: (x) => `Hạn mốc "${m.name}" đã thay đổi – đề tài ${topicName(x)}` });
         return c;
       });
       return {

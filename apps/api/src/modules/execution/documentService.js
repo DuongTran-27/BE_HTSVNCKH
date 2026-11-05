@@ -4,6 +4,7 @@ import { effectiveRoundConfig, DOCUMENT_FILE_TYPES, DOCUMENT_MAX_VERSIONS, DOWNL
 import { AppError, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { extOf, sanitizeFileName, unsupported } from '../../lib/upload.js';
 import { relations } from '../topics/service.js';
+import { topicName } from '../notifications/notify.js';
 
 const iso = (d) => d.toISOString();
 const PROPOSAL_STATES = ['DRAFT', 'NEEDS_REVISION'];
@@ -64,6 +65,9 @@ export const createDocumentService = ({ repo, storage, folder, now = () => new D
         actorId: user.id, action, entityType: 'Document', entityId: row.id, before: null,
         after: { documentId: row.id, topicId, stage: f.stage, milestoneId: row.milestoneId, version: row.version, kind: row.kind, sizeBytes: row.sizeBytes, isLate: row.isLate }, ip,
       });
+      if (ms) { // chỉ bản nộp của mốc (§8.3); đề cương không báo
+        await o.notify({ topicId, to: ['advisor'], actorId: user.id, type: 'DOCUMENT_SUBMITTED', key: `DOCUMENT_SUBMITTED:${row.id}`, link: `/de-tai/${topicId}/tai-lieu`, title: (x) => `Nhóm đã nộp bài cho mốc "${ms.name}" – đề tài ${topicName(x)}` });
+      }
       return row;
     });
     return { document: presentDocument({ ...d, uploadedBy: { id: user.id, fullName: user.fullName } }, true) };

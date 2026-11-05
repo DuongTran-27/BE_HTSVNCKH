@@ -4,6 +4,7 @@ import { INACTIVE_STATUSES } from '@nckh/shared';
 import { recordAudit } from '../audit/service.js';
 import { applyTransition } from './stateMachine.js';
 import { groupOps } from './groupRepo.js';
+import { notifyTopic } from '../notifications/notify.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const activeTopic = (roundId) => ({ roundId, status: { notIn: INACTIVE_STATUSES } });
@@ -23,6 +24,7 @@ const ops = (db) => ({
     (await db.advisorRequest.updateMany({ where: { topicId, status: 'PENDING' }, data: { status, ...data } })).count === 1,
   createAdvising: (data) => db.advising.create({ data }),
   audit: (entry) => recordAudit(db, entry),
+  notify: (args) => notifyTopic(db, args), // FR13, cùng tx
 });
 
 export const createAdvisorRepo = (prisma) => ({

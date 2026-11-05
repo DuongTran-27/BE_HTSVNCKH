@@ -5,9 +5,11 @@ import { runSimilarityCheck, similarityView } from '../similarity/service.js';
 import { checkTransition } from './stateMachine.js';
 import { relations, canView } from './service.js';
 import { assertTopicComplete } from './advisorService.js';
+import { topicName } from '../notifications/notify.js';
 
 export const REVIEW_ACTIONS = ['SUBMIT_FOR_REVIEW', 'RESUBMIT', 'REQUEST_REVISION', 'REJECT', 'APPROVE'];
 const STALE = () => conflict('STALE_SUBMISSION', 'Hồ sơ đã có phiên bản mới hơn hoặc đã được quyết định, vui lòng tải lại');
+const DECISION_TEXT = { APPROVE: 'được duyệt', REQUEST_REVISION: 'cần chỉnh sửa', REJECT: 'bị từ chối' };
 const CONCURRENT = () => conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
 
 export const createReviewService = ({ repo, getTopic, logger, now = () => new Date() }) => {
@@ -64,6 +66,7 @@ export const createReviewService = ({ repo, getTopic, logger, now = () => new Da
     await repo.applyReview({ topic: { id: t.id, version: body.version }, transition, actor: user, reason: body.reason }, async (o) => {
       await o.createDecision({ submissionId: latest.id, action: body.action, reason: body.reason ?? null, decidedById: user.id, decidedAt: now() });
       await o.audit({ actorId: user.id, action: `REVIEW_${body.action}`, entityType: 'Submission', entityId: latest.id, before: { status: t.status }, after: { topicId: t.id, seq: latest.seq, reason: body.reason ?? null }, ip });
+      await o.notify({ topicId: t.id, to: ['members', 'advisor'], actorId: user.id, type: 'REVIEW_DECIDED', key: `REVIEW_DECIDED:${latest.id}`, link: `/de-tai/${t.id}`, title: (x) => `Kết quả xét duyệt: đề tài ${topicName(x)} ${DECISION_TEXT[body.action]}` });
     });
     return readAfter(user, t, transition, body);
   };

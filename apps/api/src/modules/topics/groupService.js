@@ -1,6 +1,7 @@
 // Nhóm, lời mời, trưởng nhóm (FR03, API_GD2 §5.3–5.5). Quyền theo quan hệ tính từ DB; giới hạn kiểm SAU câu khóa.
 import { effectiveRoundConfig } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
+import { topicName } from '../notifications/notify.js';
 
 const FINISHED = ['REJECTED', 'CANCELLED', 'CLOSED'];
 const iso = (d) => d?.toISOString() ?? null;
@@ -42,6 +43,7 @@ export const createGroupService = ({ repo, getTopic, now = () => new Date() }) =
         }
         const created = await o.createInvitation({ topicId, inviteeId: invitee.id });
         await o.audit({ actorId: user.id, action: 'INVITATION_CREATE', entityType: 'Invitation', entityId: created.id, before: null, after: { topicId, inviteeId: invitee.id }, ip });
+        await o.notify({ topicId, userIds: [invitee.id], actorId: user.id, type: 'INVITATION_RECEIVED', key: `INVITATION_RECEIVED:${created.id}`, link: '/loi-moi', title: (x) => `Bạn được mời tham gia nhóm đề tài ${topicName(x)}` });
         return created;
       });
       return { invitation: present(inv) };
@@ -83,6 +85,7 @@ export const createGroupService = ({ repo, getTopic, now = () => new Date() }) =
         }
         await o.addMember(pre.topicId, user.id);
         await o.audit({ actorId: user.id, action: 'INVITATION_ACCEPT', entityType: 'Invitation', entityId: id, before: { status: 'PENDING' }, after: { status: 'ACCEPTED', topicId: pre.topicId }, ip });
+        await o.notify({ topicId: pre.topicId, to: ['leader'], actorId: user.id, type: 'INVITATION_ACCEPTED', key: `INVITATION_ACCEPTED:${id}`, link: `/de-tai/${pre.topicId}/nhom`, title: (x) => `${user.fullName} đã nhận lời mời tham gia đề tài ${topicName(x)}` });
       });
       return { invitation: present(await loadInvitation(id)), topicId: pre.topicId };
     },
@@ -95,6 +98,9 @@ export const createGroupService = ({ repo, getTopic, now = () => new Date() }) =
       await repo.tx(async (o) => {
         if (!(await o.closeInvitation(id, kind, now()))) throw closed();
         await o.audit({ actorId: user.id, action: kind === 'DECLINED' ? 'INVITATION_DECLINE' : 'INVITATION_CANCEL', entityType: 'Invitation', entityId: id, before: { status: 'PENDING' }, after: { status: kind }, ip });
+        if (kind === 'DECLINED') { // hủy lời mời không thông báo (§8.3)
+          await o.notify({ topicId: pre.topicId, to: ['leader'], actorId: user.id, type: 'INVITATION_DECLINED', key: `INVITATION_DECLINED:${id}`, link: `/de-tai/${pre.topicId}/nhom`, title: (x) => `${user.fullName} đã từ chối lời mời tham gia đề tài ${topicName(x)}` });
+        }
       });
       return { invitation: present(await loadInvitation(id)) };
     },

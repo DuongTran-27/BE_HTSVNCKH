@@ -172,3 +172,6 @@ export const finalResultSchema = z.strictObject({
   summary: z.string().trim().min(20, 'Nhận xét tổng kết tối thiểu 20 ký tự').max(5000),
   expectedVersion: version,
 });
+
+// FR13 (API_GD45 §8.1): unread 'true' = chỉ chưa đọc, 'false' = chỉ đã đọc, bỏ trống = tất cả
+export const notificationListQuerySchema = z.object({ unread: z.enum(['true', 'false']).optional(), ...pageQuery });

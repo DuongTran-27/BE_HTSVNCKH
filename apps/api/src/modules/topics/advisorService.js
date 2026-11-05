@@ -3,6 +3,7 @@ import { effectiveRoundConfig, topicSubmitSchema } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { checkTransition } from './stateMachine.js';
 import { relations, canView } from './service.js';
+import { topicName } from '../notifications/notify.js';
 
 const iso = (d) => d?.toISOString() ?? null;
 
@@ -30,6 +31,9 @@ export const createAdvisorService = ({ repo, getTopic, now = () => new Date() })
 
   const audit = (o, user, action, t, after, ip) =>
     o.audit({ actorId: user.id, action, entityType: 'AdvisorRequest', entityId: t.id, before: { status: t.status }, after, ip });
+  // Phản hồi của GV → thành viên (FR13); nhận và từ chối chung khóa vì một đề nghị chỉ có một phản hồi (§8.3)
+  const notifyResponse = (o, user, t, type, title) =>
+    o.notify({ topicId: t.id, to: ['members'], actorId: user.id, type, key: `ADVISOR_RESPONSE:${t.advisorRequests[0]?.id}`, link: `/de-tai/${t.id}`, title });
 
   // extra chạy TRONG transaction của applyTransition, sau khi Topic đã bị khóa
   const extras = {
@@ -51,6 +55,7 @@ export const createAdvisorService = ({ repo, getTopic, now = () => new Date() })
       const req = await o.createRequest({ topicId: t.id, lecturerId: body.lecturerId });
       await o.withdrawPendingInvitations(t.id, now());
       await o.audit({ actorId: user.id, action: 'ADVISOR_REQUEST_CREATE', entityType: 'AdvisorRequest', entityId: req.id, before: null, after: { topicId: t.id, lecturerId: body.lecturerId }, ip });
+      await o.notify({ topicId: t.id, userIds: [body.lecturerId], actorId: user.id, type: 'ADVISOR_REQUESTED', key: `ADVISOR_REQUESTED:${req.id}`, link: '/de-nghi-huong-dan', title: (x) => `Đề nghị hướng dẫn đề tài ${topicName(x)}` });
     },
     ACCEPT_ADVISING: (t, user, _body, ip) => async (o) => {
       const cfg = effectiveRoundConfig(t.round.config);
@@ -61,14 +66,19 @@ export const createAdvisorService = ({ repo, getTopic, now = () => new Date() })
       if (!(await o.closeRequest(t.id, 'ACCEPTED', { respondedAt: now() }))) throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
       await o.createAdvising({ topicId: t.id, lecturerId: user.id, startAt: now() });
       await audit(o, user, 'ADVISOR_REQUEST_ACCEPT', t, { status: 'ACCEPTED' }, ip);
+      await notifyResponse(o, user, t, 'ADVISOR_ACCEPTED', (x) => `${user.fullName} đã nhận hướng dẫn đề tài ${topicName(x)}`);
     },
     DECLINE_ADVISING: (t, user, body, ip) => async (o) => {
       if (!(await o.closeRequest(t.id, 'DECLINED', { respondedAt: now(), reason: body.reason }))) throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
       await audit(o, user, 'ADVISOR_REQUEST_DECLINE', t, { status: 'DECLINED', reason: body.reason }, ip);
+      await notifyResponse(o, user, t, 'ADVISOR_DECLINED', (x) => `Giảng viên đã từ chối hướng dẫn đề tài ${topicName(x)}`); // lý do không đưa vào tiêu đề (§8.2)
     },
     WITHDRAW_ADVISOR_REQUEST: (t, user, _body, ip) => async (o) => {
       if (!(await o.closeRequest(t.id, 'WITHDRAWN', { respondedAt: now() }))) throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
       await audit(o, user, 'ADVISOR_REQUEST_WITHDRAW', t, { status: 'WITHDRAWN' }, ip);
+      // Chỉ mã đề tài: sau khi rút, GV chỉ còn thấy mã trong danh sách đề nghị (advisorService.listRequests)
+      const req = t.advisorRequests[0];
+      await o.notify({ topicId: t.id, userIds: [req?.lecturerId], actorId: user.id, type: 'ADVISOR_REQUEST_WITHDRAWN', key: `ADVISOR_REQUEST_WITHDRAWN:${req?.id}`, link: '/de-nghi-huong-dan', title: (x) => `Nhóm đã rút đề nghị hướng dẫn đề tài ${x.code}` });
     },
   };
 
