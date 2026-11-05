@@ -542,7 +542,7 @@ Thứ tự (rẻ trước, nặng sau):
 6. `applyTransition` với `extra`: tạo `Submission { seq = max(seq)+1, payload, createdById, similarityCheckId }`. `@@unique([topicId, seq])` + khóa `version` chống gửi đôi.
    `payload` (bất biến, FR17): `{ title, summary, objectives, keywords, fieldId, fieldName, documentIds: [] }`. `documentIds` rỗng ở GĐ2; T403 gắn tài liệu giai đoạn PROPOSAL.
 
-Cho phép gửi với cờ "chưa kiểm tra" khi lỗi kéo dài (mục 3): **ngoài GĐ2**, hợp đồng ở T600, hiện thực ở T609 (§12-G5, §14).
+Cho phép gửi với cờ "chưa kiểm tra" khi lỗi kéo dài (mục 3): **ngoài GĐ2**, hợp đồng **`API_GD6.md` §9** (T600), hiện thực ở T609 (§12-G5, §14). Tóm tắt: cán bộ tạo bản ghi `SimilarityBypass` kèm lý do; lần gửi kế tiếp mà FR06 lỗi thì vẫn qua, `Submission` trỏ dòng kiểm ERROR (cờ suy ra); cron chạy lại mỗi giờ, chèn dòng kiểm OK mới và đổi đúng cột `similarityCheckId`.
 
 **Luồng UI gửi hồ sơ khuyến nghị** (T305):
 1. Lưu nháp nếu còn thay đổi.
@@ -756,7 +756,7 @@ G1, G2, G3, G11, G12, G13, G14: **đã xác nhận (người dùng, 2026-11-01)*
 | G2 | **Đã xác nhận (người dùng, 2026-11-01).** `RESUBMIT` không giới hạn thời gian; `reviewDeadline` không chặn quyết định của cán bộ | Lý do chính là tránh kẹt: ở NEEDS_REVISION chỉ có một đường ra là `RESUBMIT` (`transitions.js:12`). Nếu chặn theo thời gian thì đề tài kẹt vĩnh viễn, không hủy được và cũng không đóng được. Tương tự, chặn quyết định sau `reviewDeadline` sẽ làm đề tài kẹt ở UNDER_REVIEW. Câu "chỉ gửi được trong thời gian mở đăng ký" (FR05) được áp cho lần gửi đầu (SUBMIT_FOR_REVIEW, cùng FR16.5) |
 | G3 | **Đã xác nhận (người dùng, 2026-11-01).** Kho chung (FR08) cần đăng nhập (mọi vai trò) | An toàn mặc định; nếu khoa muốn công khai Internet chỉ cần bỏ `requireAuth` + thêm limiter theo IP |
 | G4 | GV xem kết quả FR06 như sinh viên (hồ sơ chờ của nhóm khác bị ẩn) | Mục 3 chỉ cho cán bộ thấy đầy đủ; GV không có vai trò xét duyệt |
-| G5 | Cán bộ cho phép gửi với cờ "chưa kiểm tra" (mục 3) để sang GĐ6 | Cần thêm trường DB, luồng tự chạy lại và nới trigger snapshot (§11b). GĐ2 giữ quy tắc an toàn: lỗi thì không gửi được. Hợp đồng: **T600**; hiện thực: **T609**. Ràng buộc thiết kế ở §14 |
+| G5 | Cán bộ cho phép gửi với cờ "chưa kiểm tra" (mục 3) để sang GĐ6 | Cần thêm trường DB, luồng tự chạy lại và nới trigger snapshot (§11b). GĐ2 giữ quy tắc an toàn: lỗi thì không gửi được. **Hợp đồng đã có: `API_GD6.md` §9** (T600, giả định G44); hiện thực: **T609**. Ràng buộc thiết kế ở §14 – §9 tuân đủ 4 ý |
 | G6 | Cán bộ không thấy đề tài DRAFT | Nháp chưa gửi tới ai; giảm lộ dữ liệu |
 | G7 | Lời mời chỉ ở DRAFT; số thành viên cố định từ khi gửi đề nghị GVHD | Tránh thay đổi nhóm sau khi GV đã nhận; đổi thành viên sau đó đi qua FR21 (GĐ6) |
 | G8 | Mọi thành viên hiện hành sửa được nháp; chỉ trưởng nhóm mời, gửi, rút, đổi trưởng nhóm | FR03 chỉ giới hạn "gửi hồ sơ"; khóa lạc quan chống ghi đè |
@@ -779,7 +779,7 @@ G1, G2, G3, G11, G12, G13, G14: **đã xác nhận (người dùng, 2026-11-01)*
 ## 14. Ngoài phạm vi GĐ2
 Rời nhóm/xóa thành viên (FR21), thay GV (FR19), hủy (FR20), thay đổi sau duyệt (FR18), file trong snapshot (T403), thông báo (T501), thống kê (T503), OpenAPI (T701 sinh từ các schema ở §11).
 
-Cờ "chưa kiểm tra" (G5, FR06 mục 3): hợp đồng **T600**, hiện thực **T609**. Ràng buộc thiết kế bắt buộc cho T600 (để T609 chỉ nới đúng một cột, khớp mô tả trên bảng việc):
+Cờ "chưa kiểm tra" (G5, FR06 mục 3): hợp đồng **T600 – `API_GD6.md` §9**, hiện thực **T609**. Ràng buộc thiết kế bắt buộc cho T600 (để T609 chỉ nới đúng một cột, khớp mô tả trên bảng việc):
 - Cờ "chưa kiểm tra" **suy ra**, không lưu thành cột sửa được trên `Submission`: `similarityCheckId IS NULL` hoặc `similarityCheck.status = 'ERROR'`. Không thêm cột kiểu `Submission.unchecked` để job xóa sau.
 - Quyết định "cán bộ cho phép gửi" (kèm lý do, người, thời điểm) lưu thành **bản ghi mới** (bảng riêng hoặc `AuditLog`), không UPDATE `Submission` hay `SimilarityCheck`.
 - Job chạy lại FR06 **chèn** một dòng `SimilarityCheck` mới rồi trỏ `Submission.similarityCheckId` sang dòng đó. Không UPDATE/DELETE `SimilarityCheck`, nên trigger `similarity_check_immutable` giữ nguyên.
