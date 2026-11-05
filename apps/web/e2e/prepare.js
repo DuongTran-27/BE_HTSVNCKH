@@ -67,9 +67,15 @@ try {
   const neg = await mkExec(sv5, 'Đề tài thực hiện E2E chưa đủ điều kiện', [['Mốc chưa đạt E2E', 30 * day]]);
   const closedOk = await prisma.topic.findMany({ where: { status: 'CLOSED', results: { some: { isCurrent: true, result: { in: ['EXCELLENT', 'GOOD', 'PASS'] } } } }, select: { code: true, title: true, summary: true, results: { where: { isCurrent: true }, select: { result: true } } }, orderBy: { code: 'asc' } });
   const leaders = await prisma.user.findMany({ where: { code: { in: ['SV22027', 'SV22028'] } }, select: { fullName: true } });
+  // GĐ5 (T505): SV riêng có 3 thông báo (2 chưa đọc); không sự kiện nghiệp vụ nào của spec khác báo cho SV này
+  const sv6 = await mk('STUDENT', 'SVE2E6', 'Hồ Thị Chuông E2E');
+  for (const [i, readAt] of [[1, null], [2, null], [3, new Date()]]) {
+    await prisma.notification.create({ data: { userId: sv6.id, type: 'MILESTONE_CREATED', title: `Thông báo chuông E2E số ${i}`, link: '/', dedupeKey: `T505:${i}`, readAt } });
+  }
   mkdirSync(OUT_DIR, { recursive: true });
   writeFileSync(STATE_FILE, JSON.stringify({
     exec: { flow: { id: flow.id, code: flow.code, sv: { code: sv4.code } }, neg: { id: neg.id, code: neg.code, sv: { code: sv5.code } } },
+    bell: { sv: { code: sv6.code }, unread: 2, total: 3 },
     password: SEED_PASSWORD, main: content(inProg[0]), mobile: { id: mobile.id, code: mobile.code, ...content(m) },
     fail: { code: failTopic.code, title: failTopic.title }, closedOk, leaderNames: leaders.map((l) => l.fullName),
     users: { sv1: { code: sv1.code, name: sv1.fullName }, sv2: { code: sv2.code, name: sv2.fullName }, gv: { code: gv.code, name: gv.fullName }, cb: { code: cb.code }, admin: { code: 'QT001' } },
