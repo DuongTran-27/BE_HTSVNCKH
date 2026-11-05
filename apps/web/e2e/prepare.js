@@ -50,10 +50,26 @@ try {
     await tx.resultVersion.create({ data: { topicId: t.id, version: 1, result: 'FAIL', summary: 'Không đạt', createdById: cb.id } });
     return t;
   });
+  // GĐ4 (T407): hai đề tài IN_PROGRESS có GVHD GVE2E; "flow" chạy đủ luồng đóng, "neg" không đủ điều kiện (ca âm + 360 px)
+  const [sv4, sv5] = [await mk('STUDENT', 'SVE2E4', 'Đặng Thị Hạnh E2E'), await mk('STUDENT', 'SVE2E5', 'Bùi Văn Di Động')];
+  const day = 86_400_000;
+  const mkExec = (sv, title, milestones) => prisma.$transaction(async (tx) => {
+    const t = await tx.topic.create({ data: { code: await nextTopicCode(tx, round.academicYear), roundId: round.id, facultyId: faculty.id, fieldId: m.fieldId, title, summary: 'Tóm tắt đề tài thực hiện dùng cho kiểm thử E2E giai đoạn 4.', objectives: 'Mục tiêu', keywords: ['thực hiện'], status: 'IN_PROGRESS', version: 5 } });
+    await tx.topicMember.create({ data: { topicId: t.id, userId: sv.id, role: 'LEADER' } });
+    await tx.advisorRequest.create({ data: { topicId: t.id, lecturerId: gv.id, status: 'ACCEPTED', respondedAt: new Date() } });
+    await tx.advising.create({ data: { topicId: t.id, lecturerId: gv.id } });
+    for (const [i, [name, dueMs]] of milestones.entries()) {
+      await tx.milestone.create({ data: { topicId: t.id, order: i + 1, name, output: 'Báo cáo PDF', dueAt: new Date(Date.now() + dueMs), required: true, createdById: gv.id } });
+    }
+    return t;
+  });
+  const flow = await mkExec(sv4, 'Đề tài thực hiện E2E luồng đóng', [['Báo cáo giữa kỳ E2E', 30 * day], ['Báo cáo cuối kỳ E2E', -2 * day]]);
+  const neg = await mkExec(sv5, 'Đề tài thực hiện E2E chưa đủ điều kiện', [['Mốc chưa đạt E2E', 30 * day]]);
   const closedOk = await prisma.topic.findMany({ where: { status: 'CLOSED', results: { some: { isCurrent: true, result: { in: ['EXCELLENT', 'GOOD', 'PASS'] } } } }, select: { code: true, title: true, summary: true, results: { where: { isCurrent: true }, select: { result: true } } }, orderBy: { code: 'asc' } });
   const leaders = await prisma.user.findMany({ where: { code: { in: ['SV22027', 'SV22028'] } }, select: { fullName: true } });
   mkdirSync(OUT_DIR, { recursive: true });
   writeFileSync(STATE_FILE, JSON.stringify({
+    exec: { flow: { id: flow.id, code: flow.code, sv: { code: sv4.code } }, neg: { id: neg.id, code: neg.code, sv: { code: sv5.code } } },
     password: SEED_PASSWORD, main: content(inProg[0]), mobile: { id: mobile.id, code: mobile.code, ...content(m) },
     fail: { code: failTopic.code, title: failTopic.title }, closedOk, leaderNames: leaders.map((l) => l.fullName),
     users: { sv1: { code: sv1.code, name: sv1.fullName }, sv2: { code: sv2.code, name: sv2.fullName }, gv: { code: gv.code, name: gv.fullName }, cb: { code: cb.code }, admin: { code: 'QT001' } },
