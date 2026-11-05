@@ -2,6 +2,7 @@ import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router';
 import { logout } from '../lib/api.js';
 import { useAuth } from '../lib/auth.js';
 import { ROLE_LABEL } from '@nckh/shared';
+import { NotificationBell } from './NotificationBell.jsx';
 import { MENU } from '../lib/nav.js';
 
 const linkClass = ({ isActive }) => `inline-flex min-h-11 items-center rounded-md px-3 text-sm ${isActive ? 'bg-blue-800 font-semibold' : 'hover:bg-blue-800'}`;
@@ -23,6 +24,7 @@ export function Layout() {
             </nav>
           )}
           <div className="ml-auto flex flex-wrap items-center gap-1 text-sm">
+            {!user.mustChangePassword && <NotificationBell />}
             <span className="break-words">{user.fullName} ({ROLE_LABEL[user.role] ?? user.role})</span>
             {!user.mustChangePassword && <NavLink to="/doi-mat-khau" className={linkClass}>Đổi mật khẩu</NavLink>}
             <button type="button" onClick={logout} className="min-h-11 rounded-md px-3 hover:bg-blue-800">Đăng xuất</button>

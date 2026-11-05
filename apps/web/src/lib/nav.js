@@ -10,14 +10,15 @@ export const safeNext = (next) => {
 };
 
 // Menu theo vai trò (UI §2). Chỉ để dẫn đường, backend vẫn kiểm quyền (FR25)
+const STATS = { to: '/thong-ke', label: 'Thống kê' };
 const KHO = { to: '/kho', label: 'Kho đề tài' };
 export const MENU = {
   STUDENT: [{ to: '/de-tai', label: 'Đề tài của tôi' }, { to: '/loi-moi', label: 'Lời mời' }, KHO],
-  LECTURER: [{ to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, KHO],
+  LECTURER: [{ to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, STATS, KHO],
   STAFF: [
     { to: '/xet-duyet', label: 'Xét duyệt' }, { to: '/de-tai', label: 'Đề tài' }, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' },
     { to: '/quan-ly/dot', label: 'Đợt' }, { to: '/quan-ly/tai-khoan', label: 'Tài khoản' },
-    { to: '/quan-ly/danh-muc/nganh', label: 'Danh mục' }, KHO,
+    { to: '/quan-ly/danh-muc/nganh', label: 'Danh mục' }, STATS, KHO,
   ],
   ADMIN: [{ to: '/quan-ly/tai-khoan', label: 'Tài khoản' }, { to: '/quan-ly/danh-muc/khoa', label: 'Danh mục' }, KHO],
 };

@@ -33,6 +33,8 @@ const UserDetailPage = lazy(() => import('./pages/admin/UserDetailPage.jsx').the
 const UserImportPage = lazy(() => import('./pages/admin/UserImportPage.jsx').then((m) => ({ default: m.UserImportPage })));
 const CatalogPage = lazy(() => import('./pages/admin/CatalogPage.jsx').then((m) => ({ default: m.CatalogPage })));
 const RoundsPage = lazy(() => import('./pages/admin/RoundsPage.jsx').then((m) => ({ default: m.RoundsPage })));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx').then((m) => ({ default: m.NotificationsPage })));
+const StatsPage = lazy(() => import('./pages/stats/StatsPage.jsx').then((m) => ({ default: m.StatsPage })));
 const RoundFormPage = lazy(() => import('./pages/admin/RoundFormPage.jsx').then((m) => ({ default: m.RoundFormPage })));
 
 // Loader chạy ngay khi tạo router, trước khi phiên khởi động xong → phải chờ bootstrapSession trước khi đọc auth
@@ -92,6 +94,8 @@ const SCREENS = [
   ['quan-ly/dot', [F], 'Đợt'],
   ['quan-ly/dot/moi', [F], 'Tạo đợt'],
   ['quan-ly/dot/:id', [F], 'Chi tiết đợt'],
+  ['thong-bao', [S, L, F, A], 'Thông báo'],
+  ['thong-ke', [L, F], 'Thống kê'],
   ['kho', [S, L, F, A], 'Kho đề tài'],
   ['kho/:code', [S, L, F, A], 'Chi tiết kho đề tài'],
 ];
@@ -99,6 +103,8 @@ const SCREENS = [
 // Màn đã làm (T304–T308); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
 const SCREEN_ELEMENT = {
   'de-tai': <TopicListPage />,
+  'thong-bao': <NotificationsPage />,
+  'thong-ke': <StatsPage />,
   kho: <RepositoryPage />,
   'kho/:code': <RepositoryDetailPage />,
   'de-tai/moi': <TopicCreatePage />,

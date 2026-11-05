@@ -213,6 +213,7 @@ export const api = async (path, options = {}) => {
     }
     throw err;
   }
+  if (options.as === 'blob') return res.blob(); // tải file (CSV thống kê)
   return res.status === 204 ? null : res.json();
 };
 
