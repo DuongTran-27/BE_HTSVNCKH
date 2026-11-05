@@ -48,3 +48,34 @@ Workflow `.github/workflows/ci.yml` không cần secret nào (DB test là servic
 4. Job Summary của run có bảng "Độ phủ module nghiệp vụ"; artifact `coverage` (giữ 7 ngày) có báo cáo HTML.
 5. (Khuyến nghị) Settings → Branches → Branch protection cho `main`: bật "Require status checks to pass", chọn `lint`, `test (22.22)`, `test (24)`.
 6. Nếu job `test (22.22)` báo không tìm được Node 22.22 → báo devops; không hạ `engines` (react-router 8.4 cần ≥ 22.22).
+
+## 3. Sao lưu và dọn file mồ côi (T608, FR26)
+File: `.github/workflows/backup.yml`, `.github/workflows/cleanup-orphans.yml`, `apps/api/scripts/backup-prune.js`, `apps/api/scripts/cleanup-orphans.js`.
+
+### 3.1 Thiết lập (một lần, con người làm)
+1. Supabase > Project Settings > Database > Connection string, chọn **Session pooler** (cổng 5432; pg_dump không chạy qua Transaction pooler 6543). **Bắt buộc dùng role chỉ đọc** (job dọn mồ côi dùng lại secret này, chạy sau `npm ci`). Tạo bằng SQL Editor: `CREATE ROLE backup_ro LOGIN BYPASSRLS PASSWORD '<mật khẩu mạnh>'; GRANT CONNECT ON DATABASE postgres TO backup_ro; GRANT USAGE ON SCHEMA public TO backup_ro; GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup_ro; GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO backup_ro; ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT ON TABLES TO backup_ro; ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT ON SEQUENCES TO backup_ro;` `BYPASSRLS` là bắt buộc: mọi bảng `public` bật RLS không có policy (migration `20261101000100`), thiếu nó pg_dump báo lỗi còn job dọn mồ côi thấy 0 dòng mà không lỗi. Nếu Supabase từ chối `BYPASSRLS` cho role `postgres` thì báo devops, đừng bỏ cờ này. `ALTER DEFAULT PRIVILEGES` giúp bảng tạo ở migration sau vẫn đọc được. pg_dump chỉ dump schema `public` (`--schema=public`). (với pooler, user là `backup_ro.<ref>`).
+2. GitHub repo phải là **private** (workflow tự từ chối chạy nếu repo public). Settings > Secrets and variables > Actions > New repository secret: `BACKUP_DATABASE_URL` = chuỗi trên; `BACKUP_PASSPHRASE` = cụm mật khẩu dài ngẫu nhiên (>= 32 ký tự) dùng mã hóa dump. Cất `BACKUP_PASSPHRASE` ở nơi an toàn thứ hai (trình quản lý mật khẩu): mất nó là không giải mã được mọi bản sao lưu.
+3. Settings > Actions > General > Workflow permissions: workflow tự khai `actions: write` để xóa artifact cũ; nếu tổ chức chặn thì chọn "Read and write permissions".
+4. Đẩy lên GitHub. Tab Actions > "Backup" > Run workflow (chạy tay lần đầu).
+
+### 3.2 Xác nhận
+- Run xanh; bước "Kiểm tra bản dump đọc được" in vài dòng `pg_restore --list`; artifact `nckh-backup-YYYYMMDD-HHMMSS.dump.gpg` xuất hiện.
+- Từ ngày thứ 8, bước "Giữ 7 bản mới nhất" in `đã xóa artifact ...`; luôn còn đúng 7 bản `nckh-backup-*` (chỉ tính artifact của run `backup.yml` trên nhánh mặc định; step không còn đỏ khi không có gì để xóa).
+- Sau khi đẩy lên, đợi một lần chạy **theo lịch** (sự kiện `schedule`, không phải chạy tay) và xác nhận log: bước "Từ chối repo public" xanh, bước dọn in đúng nhánh mặc định. Chạy tay có payload khác lịch nên không đủ.
+- Lịch chạy 03:00 giờ VN. GitHub tự tắt workflow theo lịch sau 60 ngày repo không hoạt động: kiểm tra định kỳ.
+- Giới hạn: chỉ sao lưu DB, không sao lưu file Cloudinary (ngoài phạm vi FR26). Dump được mã hóa gpg AES256 bằng `BACKUP_PASSPHRASE` trước khi upload.
+
+### 3.3 Diễn tập khôi phục (làm ít nhất một lần, có biên bản)
+Làm trên **DB thử**, không bao giờ trên DB production (project Supabase thứ hai hoặc Postgres cục bộ).
+1. Tải artifact từ tab Actions, giải nén ra `nckh-backup-....dump.gpg`, rồi giải mã: `gpg --batch --pinentry-mode loopback --passphrase '<BACKUP_PASSPHRASE>' -d -o nckh-backup.dump nckh-backup-....dump.gpg` (gõ trên máy cá nhân, tránh để cụm mật khẩu trong lịch sử shell; hoặc bỏ `--passphrase` để gpg hỏi). Các lệnh dưới dùng `nckh-backup.dump`.
+2. Ghi giờ bắt đầu. Tạo DB trống, rồi (nếu trên Supabase hai extension nằm ở schema `extensions` thì tạo `CREATE SCHEMA IF NOT EXISTS extensions;` và thêm `WITH SCHEMA extensions` vào các lệnh sau) `CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS unaccent;`
+3. `pg_restore --no-owner --no-privileges --clean --if-exists -d "<URL DB thử>" nckh-backup.dump` (hoặc `docker run --rm -i postgres:17 pg_restore ... < file`). Cảnh báo về schema hệ thống Supabase có thể bỏ qua; lỗi ở bảng `public` thì không.
+4. Chạy truy vấn sau ở cả DB gốc và DB thử, so sánh (lệch nhỏ là bình thường nếu DB gốc có ghi sau thời điểm dump; ghi lại):
+   `SELECT 'User',count(*) FROM "User" UNION ALL SELECT 'Topic',count(*) FROM "Topic" UNION ALL SELECT 'Document',count(*) FROM "Document" UNION ALL SELECT 'StatusHistory',count(*) FROM "StatusHistory" UNION ALL SELECT 'AuditLog',count(*) FROM "AuditLog";`
+5. Kiểm trigger và index còn nguyên: `SELECT count(*) FROM pg_trigger WHERE tgname LIKE '%immutable%';` (kỳ vọng >= 3), `SELECT count(*) FROM pg_indexes WHERE indexdef ILIKE '%gin%';` (> 0).
+6. Ghi giờ kết thúc. Lập biên bản (ngày, người làm, bản dump nào, thời gian khôi phục, bảng số bản ghi, kết quả) lưu vào `docs/agents/reports/` hoặc nơi khoa quy định.
+
+### 3.4 Dọn file mồ côi
+- Job `Cleanup orphans` hiện **chỉ dry-run**, đọc DB bằng secret `BACKUP_DATABASE_URL` (dùng lại; không có `--apply`). Nó in số Document `UPLOADING` quá 24 giờ. Không xóa gì; không bao giờ chọn Document `READY`.
+- Chạy cục bộ: `node --env-file-if-exists=apps/api/.env apps/api/scripts/cleanup-orphans.js [--storage-list=ds.json]`.
+- Khi T403 (Cloudinary) xong cần thêm: (1) hàm liệt kê file Cloudinary (publicId, createdAt) thay `--storage-list`; (2) chế độ `--apply` xóa file mồ côi rồi ghi từng file vào AuditLog (FR26); (3) secret Cloudinary cho workflow. Lúc đó mới đổi job sang xóa thật.
