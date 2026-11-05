@@ -19,6 +19,7 @@ import { repositoryRouter } from './modules/topics/repositoryRoutes.js';
 import { defaultStorageFolder } from './lib/storage.js';
 import { milestonesRouter, progressRouter, documentsRouter } from './modules/execution/routes.js';
 import { notificationsRouter, cronRouter } from './modules/notifications/routes.js';
+import { statsRouter } from './modules/stats/routes.js';
 
 /**
  * Tạo ứng dụng với phụ thuộc được tiêm vào để test không cần database thật.
@@ -62,6 +63,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     app.use('/api/documents', documentsRouter({ repo: topicRepo, guard, storage, folder, logger }));
     app.use('/api/progress', progressRouter({ repo: topicRepo, guard }));
     app.use('/api/notifications', notificationsRouter({ repo: topicRepo, guard }));
+    app.use('/api/stats', statsRouter({ repo: topicRepo, guard }));
     app.use('/api/cron', cronRouter({ repo: topicRepo, env, logger })); // bộ lập lịch ngoài (FR13), không qua guard người dùng
   }
 

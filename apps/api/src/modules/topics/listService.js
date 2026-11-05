@@ -29,7 +29,7 @@ export const createListService = ({ repo, now = () => new Date() }) => {
       leader: leader ? { code: leader.user.code, fullName: leader.user.fullName } : null,
       memberCount: t.members.length,
       latestSubmission: sub ? { seq: sub.seq, createdAt: iso(sub.createdAt) } : null,
-      result: t.results[0]?.result ?? null,
+      result: t.status === 'CLOSED' ? (t.results[0]?.result ?? null) : null, // G27: kết quả chính thức chỉ khi đã đóng
       latestSimilarityLevel: sim?.status === 'OK' ? sim.level : null,
       updatedAt: iso(t.updatedAt),
     };
@@ -41,7 +41,7 @@ export const createListService = ({ repo, now = () => new Date() }) => {
       for (const k of ['roundId', 'fieldId', 'status']) if (q[k]) and.push({ [k]: q[k] });
       if (q.academicYear) and.push({ round: { academicYear: q.academicYear } });
       if (q.lecturerId) and.push({ advisings: { some: { lecturerId: q.lecturerId, endAt: null } } });
-      if (q.result) and.push({ results: { some: { isCurrent: true, result: q.result } } });
+      if (q.result) and.push({ status: 'CLOSED', results: { some: { isCurrent: true, result: q.result } } }); // G27, cùng định nghĩa với thống kê
       if (q.q) and.push({ id: { in: await repo.searchIds(q.q) } });
       const { total, rows } = await repo.list({ where: { AND: and }, orderBy: SORTS[q.sort], skip: (q.page - 1) * q.pageSize, take: q.pageSize });
       return { items: rows.map(present), page: q.page, pageSize: q.pageSize, total };

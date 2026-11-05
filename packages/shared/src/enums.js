@@ -87,3 +87,6 @@ export const NOTIFICATION_TYPES = Object.freeze([
   'CLOSE_REQUESTED', 'CLOSE_RETURNED', 'TOPIC_CLOSED',
   'MILESTONE_DUE_SOON', 'MILESTONE_OVERDUE', 'ADVISOR_REQUEST_REMINDER',
 ]);
+
+// FR14 (API_GD45 §9): chiều thống kê
+export const STATS_GROUP_BY = Object.freeze(['lecturer', 'field', 'status', 'result', 'academicYear', 'round']);

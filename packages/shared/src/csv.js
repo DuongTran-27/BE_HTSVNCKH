@@ -52,3 +52,7 @@ export const parseCsv = (text) => {
   if (cell !== '' || rec.length) endRecord();
   return records;
 };
+
+// yyyyMMdd theo giờ Việt Nam cho tên file CSV (API_GD45 §11); en-CA định dạng sẵn yyyy-MM-dd
+const vnDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' });
+export const formatVnDate = (date) => vnDay.format(date).replaceAll('-', '');

@@ -70,3 +70,8 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   MILESTONE_OVERDUE: 'Quá hạn mốc',
   ADVISOR_REQUEST_REMINDER: 'Nhắc phản hồi đề nghị hướng dẫn',
 });
+
+// Tên cột chiều trong CSV thống kê (API_GD45 §9.2)
+export const STATS_DIMENSION_LABEL = Object.freeze({
+  lecturer: 'Giảng viên hướng dẫn', field: 'Lĩnh vực', status: 'Trạng thái', result: 'Kết quả', academicYear: 'Năm học', round: 'Đợt',
+});

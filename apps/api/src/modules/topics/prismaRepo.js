@@ -8,6 +8,7 @@ import { createSimilarityRepo } from '../similarity/prismaRepo.js';
 import { createExecutionRepo } from '../execution/prismaRepo.js';
 import { createCloseRepo } from './closeRepo.js';
 import { createNotificationRepo } from '../notifications/prismaRepo.js';
+import { createStatsRepo } from '../stats/prismaRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const DETAIL_INCLUDE = {
@@ -34,6 +35,7 @@ export const createTopicRepo = (prisma) => ({
   ...createExecutionRepo(prisma),
   ...createCloseRepo(prisma),
   ...createNotificationRepo(prisma),
+  ...createStatsRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, isActive: true } }),
   findDetail: (id) => prisma.topic.findUnique({ where: { id }, include: DETAIL_INCLUDE }),

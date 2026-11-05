@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isoDateTime, idSchema } from './catalog.js';
-import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT, DOCUMENT_STAGES } from './enums.js';
+import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT, DOCUMENT_STAGES, STATS_GROUP_BY } from './enums.js';
 
 // Thông điệp mặc định tiếng Việt; có hiệu lực cho cả api vì chỉ có một bản zod (QD_ZOD §2)
 z.config(z.locales.vi());
@@ -175,3 +175,12 @@ export const finalResultSchema = z.strictObject({
 
 // FR13 (API_GD45 §8.1): unread 'true' = chỉ chưa đọc, 'false' = chỉ đã đọc, bỏ trống = tất cả
 export const notificationListQuerySchema = z.object({ unread: z.enum(['true', 'false']).optional(), ...pageQuery });
+
+// FR14 (API_GD45 §9.2): khóa lặp thành mảng → 400; facultyId chỉ STAFF (service kiểm)
+const L = topicListQuerySchema.shape;
+export const statsQuerySchema = z.object({
+  groupBy: z.enum(STATS_GROUP_BY, { error: 'Chọn chiều thống kê' }),
+  roundId: L.roundId, academicYear: L.academicYear, fieldId: L.fieldId, lecturerId: L.lecturerId, result: L.result,
+  status: opt(z.enum(Object.values(TOPIC_STATUS).filter((s) => s !== 'DRAFT'))),
+  facultyId: opt(z.string().trim().max(64)),
+});
