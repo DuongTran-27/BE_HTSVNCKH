@@ -90,6 +90,26 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
       return { result: presentResult(r) };
     },
 
+    // FR23 (API_GD6 §7): cán bộ trong phạm vi sửa kết quả đề tài CLOSED bằng phiên bản mới; bản cũ giữ nguyên
+    async correctResult(user, topicId, body, ip) {
+      await load(user, topicId, { write: false }); // 403 trước 409; cán bộ khoa khác không đọc được
+      const r = await repo.writeCorrection(topicId, async (o, lock) => {
+        if (lock.status !== 'CLOSED') throw conflict('TOPIC_NOT_CLOSED', 'Chỉ sửa kết quả của đề tài đã đóng');
+        const cur = await o.currentResult(topicId);
+        if (!cur) throw conflict('NO_FINAL_RESULT', 'Đề tài chưa có kết quả cuối');
+        if (cur.version !== body.expectedVersion) throw stale();
+        const summary = body.summary ?? cur.summary;
+        if (body.result === cur.result && summary === cur.summary) throw badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', { _: 'Kết quả mới phải khác kết quả hiện hành' });
+        const version = (await o.maxResultVersion(topicId)) + 1;
+        await o.demoteResult(cur.id);
+        const row = await o.createResult({ topicId, version, result: body.result, summary, reason: body.reason, isCurrent: true, createdById: user.id });
+        await o.audit({ actorId: user.id, action: 'RESULT_CORRECT', entityType: 'ResultVersion', entityId: row.id, before: { version: cur.version, result: cur.result }, after: { version, result: row.result, reason: body.reason }, ip });
+        await o.notify({ topicId, to: ['members', 'advisor'], actorId: user.id, type: 'RESULT_CORRECTED', key: `RESULT_CORRECTED:${row.id}`, link: `/de-tai/${topicId}`, title: (x) => `Kết quả cuối đề tài ${topicName(x)} đã được cán bộ khoa sửa` });
+        return row;
+      });
+      return { result: presentResult(r) };
+    },
+
     async listResults(user, topicId) {
       await load(user, topicId, { write: false });
       const items = (await repo.listResults(topicId)).map(presentResult);

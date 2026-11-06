@@ -173,6 +173,14 @@ export const finalResultSchema = z.strictObject({
   expectedVersion: version,
 });
 
+// FR23 (API_GD6 §7): sửa sai kết quả; summary bỏ trống = giữ nhận xét tổng kết hiện hành
+export const resultCorrectionSchema = z.strictObject({
+  result: finalResultSchema.shape.result,
+  summary: z.string().trim().min(20, 'Nhận xét tổng kết tối thiểu 20 ký tự').max(5000).optional(),
+  reason: z.string().trim().min(5, 'Lý do tối thiểu 5 ký tự').max(2000),
+  expectedVersion: version,
+});
+
 // FR13 (API_GD45 §8.1): unread 'true' = chỉ chưa đọc, 'false' = chỉ đã đọc, bỏ trống = tất cả
 export const notificationListQuerySchema = z.object({ unread: z.enum(['true', 'false']).optional(), ...pageQuery });
 

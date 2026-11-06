@@ -1,4 +1,4 @@
-import { milestoneCreateSchema, milestoneUpdateSchema, milestoneDueChangeSchema, progressCreateSchema, progressUpdateSchema, paginationQuery, idSchema, documentUploadFieldsSchema, documentLinkSchema, documentListQuerySchema, emptyBodySchema, documentFeedbackSchema, progressFeedbackSchema, feedbackListQuerySchema, finalResultSchema } from '@nckh/shared';
+import { milestoneCreateSchema, milestoneUpdateSchema, milestoneDueChangeSchema, progressCreateSchema, progressUpdateSchema, paginationQuery, idSchema, documentUploadFieldsSchema, documentLinkSchema, documentListQuerySchema, emptyBodySchema, documentFeedbackSchema, progressFeedbackSchema, feedbackListQuerySchema, finalResultSchema, resultCorrectionSchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { notFound, badRequest } from '../../lib/errors.js';
@@ -105,5 +105,6 @@ export const mountTopicFeedbackRoutes = (r, { repo, now }) => {
   const svc = createFeedbackService({ repo, now });
   r.get('/:id/feedbacks', roles, validate(feedbackListQuerySchema, 'query'), async (req, res) => res.json(await svc.list(req.user, req.params.id, req.validated)));
   r.get('/:id/results', roles, async (req, res) => res.json(await svc.listResults(req.user, req.params.id)));
+  r.post('/:id/result-corrections', requireRole('STAFF'), validate(resultCorrectionSchema), async (req, res) => res.status(201).json(await svc.correctResult(req.user, req.params.id, req.body, req.ip)));
   r.post('/:id/results', roles, validate(finalResultSchema), async (req, res) => res.status(201).json(await svc.createResult(req.user, req.params.id, req.body, req.ip)));
 };

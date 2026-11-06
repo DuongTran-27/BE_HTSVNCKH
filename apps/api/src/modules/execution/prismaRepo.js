@@ -85,6 +85,7 @@ export const createExecutionRepo = (prisma) => {
   writeProgress: write,
   writeFeedback: write,
   // Upload/link: khóa Topic rồi để service kiểm trạng thái theo stage (đề cương: DRAFT/NEEDS_REVISION; mốc: IN_PROGRESS)
+  writeCorrection: (topicId, fn) => withLockTx(prisma, async (tx) => fn(ops(tx), await lockTopicRow(tx, topicId))), // FR23: đề tài CLOSED, service kiểm trạng thái dưới khóa
   writeDocument: (topicId, fn) => withLockTx(prisma, async (tx) => fn(ops(tx), await lockTopicRow(tx, topicId))),
   findMilestoneBrief: (id) => prisma.milestone.findUnique({ where: { id }, select: { id: true, topicId: true, evaluation: true } }),
   findDocument: (id) => prisma.document.findUnique({ where: { id }, select: { id: true, topicId: true, milestoneId: true, stage: true, kind: true, version: true, publicId: true, status: true, fileName: true, uploadedAt: true } }),
