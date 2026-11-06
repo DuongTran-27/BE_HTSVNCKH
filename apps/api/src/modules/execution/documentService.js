@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { effectiveRoundConfig, DOCUMENT_FILE_TYPES, DOCUMENT_MAX_VERSIONS, DOWNLOAD_URL_TTL_SECONDS } from '@nckh/shared';
 import { AppError, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { extOf, sanitizeFileName, unsupported } from '../../lib/upload.js';
-import { relations } from '../topics/service.js';
+import { relations, canReadExecution } from '../topics/service.js';
 import { topicName } from '../notifications/notify.js';
 
 const iso = (d) => d.toISOString();
@@ -23,10 +23,10 @@ export const createDocumentService = ({ repo, storage, folder, now = () => new D
     if (!t) throw notFound();
     return t;
   };
-  // canReadExecution; GV được đề nghị chỉ xem đề cương (G23)
+  // canReadExecution (gồm GV cũ được cấp quyền đọc); GV được đề nghị chỉ xem đề cương (G23)
   const canRead = (t, user, stage) => {
     const rel = relations(t, user);
-    return rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && t.status !== 'DRAFT') || (rel.isRequestedLecturer && stage === 'PROPOSAL');
+    return canReadExecution(t, rel) || (rel.isRequestedLecturer && stage === 'PROPOSAL');
   };
   const assertStage = (status, stage) => {
     if (stage === 'PROPOSAL') {

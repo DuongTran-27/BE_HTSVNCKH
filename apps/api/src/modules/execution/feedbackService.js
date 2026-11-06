@@ -1,6 +1,6 @@
 // Nhận xét, đánh giá mốc, kết quả cuối FR12 (API_GD45 §6). Ghi: chỉ GVHD hiện hành, IN_PROGRESS; đọc: canReadExecution.
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
-import { relations } from '../topics/service.js';
+import { relations, canReadExecution } from '../topics/service.js';
 import { presentMilestone } from './service.js';
 import { presentProgress } from './progressService.js';
 import { topicName } from '../notifications/notify.js';
@@ -23,7 +23,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
     const t = await repo.findExecTopic(topicId);
     if (!t) throw notFound();
     const rel = relations({ ...t, advisorRequests: [] }, user);
-    if (!(rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && t.status !== 'DRAFT'))) throw forbidden();
+    if (!canReadExecution(t, rel)) throw forbidden();
     if (write) {
       if (user.role !== 'LECTURER' || !rel.isCurrentAdvisor) throw forbidden('Chỉ giảng viên hướng dẫn hiện hành được nhận xét, đánh giá');
       if (t.status !== 'IN_PROGRESS') throw conflict('TOPIC_NOT_IN_PROGRESS', 'Chỉ thực hiện được khi đề tài đang thực hiện');
@@ -49,7 +49,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
         await o.audit({ actorId: user.id, action: 'FEEDBACK_CREATE', entityType: 'Feedback', entityId: row.id, before: null, after: { topicId: d.topicId, documentId: d.id, milestoneId: d.milestoneId, evaluation: row.evaluation }, ip });
         await o.notify({ topicId: d.topicId, to: ['members'], actorId: user.id, type: 'FEEDBACK_CREATED', key: `FEEDBACK_CREATED:${row.id}`, link: `/de-tai/${d.topicId}/tai-lieu`, title: (x) => `GVHD đã nhận xét bản nộp "${d.fileName}" – đề tài ${topicName(x)}` });
         return row;
-      });
+      }, { advisorId: user.id }); // kiểm lại GVHD hiện hành dưới khóa (API_GD6 §1.2)
       const m = d.milestoneId ? presentMilestone(await repo.viewMilestone(d.milestoneId), now()) : null;
       return { feedback: presentFeedback(f), milestone: m };
     },
@@ -65,7 +65,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
         await o.notify({ topicId: meta.topicId, to: ['members'], actorId: user.id, type: 'FEEDBACK_CREATED', key: `FEEDBACK_CREATED:${row.id}`, link: `/de-tai/${meta.topicId}/tien-do`, title: (x) => `GVHD đã nhận xét bản cập nhật tiến độ – đề tài ${topicName(x)}` });
         // Đọc trong transaction: đúng nội dung đã bị khóa cùng nhận xét này
         return { feedback: presentFeedback(row), progress: presentProgress(await o.viewProgressTx(progressId)) };
-      });
+      }, { advisorId: user.id }); // kiểm lại GVHD hiện hành dưới khóa (API_GD6 §1.2)
     },
 
     async list(user, topicId, q) {
@@ -86,7 +86,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
         await o.audit({ actorId: user.id, action: 'RESULT_CREATE', entityType: 'ResultVersion', entityId: row.id, before: cur && { result: cur.result, version: cur.version }, after: { result: row.result, version }, ip });
         await o.notify({ topicId, to: ['members'], actorId: user.id, type: 'RESULT_ENTERED', key: `RESULT_ENTERED:${row.id}`, link: `/de-tai/${topicId}`, title: (x) => `GVHD đã nhập kết quả cuối đề tài ${topicName(x)}` });
         return row;
-      });
+      }, { advisorId: user.id }); // kiểm lại GVHD hiện hành dưới khóa (API_GD6 §1.2)
       return { result: presentResult(r) };
     },
 

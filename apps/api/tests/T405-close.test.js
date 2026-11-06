@@ -15,9 +15,9 @@ describe('checkTransition – nhánh đóng đề tài (unit)', () => {
   const close = (ctx) => checkTransition({ topic: { status: 'IN_PROGRESS' }, action: 'REQUEST_CLOSE', actor: gv, ctx: { isCurrentAdvisor: true, ...ctx } });
   it('NO_REQUIRED_MILESTONE khi tập mốc bắt buộc rỗng (G24); MILESTONES_NOT_PASSED kèm details', () => {
     expectCode(() => close({ requiredMilestoneCount: 0, requiredMilestonesPassed: false, hasFinalResult: true }), 'NO_REQUIRED_MILESTONE');
-    try { close({ requiredMilestoneCount: 2, requiredMilestonesPassed: false, pendingMilestones: [{ id: 'm1', name: 'A' }], hasFinalResult: true }); } catch (e) {
-      expect([e.code, e.details]).toEqual(['MILESTONES_NOT_PASSED', { milestones: [{ id: 'm1', name: 'A' }] }]);
-    }
+    // MINOR m1 T405: không ném thì test đỏ (trước đây try/catch để lọt)
+    expect(() => close({ requiredMilestoneCount: 2, requiredMilestonesPassed: false, pendingMilestones: [{ id: 'm1', name: 'A' }], hasFinalResult: true }))
+      .toThrow(expect.objectContaining({ code: 'MILESTONES_NOT_PASSED', details: { milestones: [{ id: 'm1', name: 'A' }] } }));
     expect(close({ requiredMilestoneCount: 1, requiredMilestonesPassed: true, hasFinalResult: true }).to).toBe('WAITING_CLOSE');
   });
   it('CLOSE_EXPIRED: ROUND_NOT_ENDED, CLOSE_CONDITIONS_MET, thiếu lý do, sai vai trò', () => {
@@ -48,7 +48,8 @@ describe('checkTransition – nhánh đóng đề tài (unit)', () => {
     const repo = {
       findDetail: async () => ({ id: 't1', status: 'IN_PROGRESS', version: 0, facultyId: 'f', round: { endAt: new Date(0) }, members: [], advisings: [{ lecturerId: 'g1' }], advisorRequests: [] }),
       readCloseConditions: async () => met,
-      applyClose: async (_args, extra) => extra({ closeConditions: async () => ({ ...met, requiredMilestonesPassed: false, closeConditionsMet: false }), audit: async (e) => audits.push(e) }),
+      // T601: closeConditions dưới khóa trả thêm advisorId (GVHD hiện hành đọc lại, API_GD6 §1.2) – g1 vẫn là GVHD
+      applyClose: async (_args, extra) => extra({ closeConditions: async () => ({ ...met, requiredMilestonesPassed: false, closeConditionsMet: false, advisorId: 'g1' }), audit: async (e) => audits.push(e) }),
     };
     const svc = createCloseService({ repo, getTopic: async () => ({}) });
     await expect(svc.act(gv, 't1', { action: 'REQUEST_CLOSE', version: 0 })).rejects.toMatchObject({ code: 'MILESTONES_NOT_PASSED' });
@@ -140,7 +141,11 @@ describe('REQUEST_CLOSE', () => {
       const topic = await prisma.topic.findUnique({ where: { id: t.id } });
       const pending = await prisma.milestone.count({ where: { topicId: t.id, required: true, evaluation: { not: 'PASSED' } } });
       if (topic.status === 'WAITING_CLOSE') expect([pending, code(m)]).toEqual([0, 'TOPIC_NOT_IN_PROGRESS']);
-      else expect([c.status, ['MILESTONES_NOT_PASSED', 'CONCURRENT_UPDATE']]).toEqual([409, expect.arrayContaining([code(c)])]);
+      else { // MINOR m2 T405: nhánh "không đóng" thì mốc mới phải được tạo
+        expect(c.status).toBe(409);
+        expect(['MILESTONES_NOT_PASSED', 'CONCURRENT_UPDATE']).toContain(code(c));
+        expect(m.status).toBe(201);
+      }
     }
   });
 });

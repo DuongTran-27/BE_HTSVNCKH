@@ -15,7 +15,7 @@ import { createSimilarityService } from './similarityService.js';
 import { mountTopicMilestoneRoutes, mountTopicProgressRoutes, mountTopicDocumentRoutes, mountTopicFeedbackRoutes } from '../execution/routes.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
-export const topicsRouter = ({ repo, now, guard, logger, storage, folder }) => {
+export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountExtra }) => {
   const svc = createTopicService({ repo, now });
   const advisor = createAdvisorService({ repo, now, getTopic: svc.get });
   const review = createReviewService({ repo, now, getTopic: svc.get, logger });
@@ -68,5 +68,6 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder }) => {
   mountTopicProgressRoutes(r, { repo });
   mountTopicDocumentRoutes(r, { repo, storage, folder, now, logger });
   mountTopicFeedbackRoutes(r, { repo, now });
+  mountExtra?.(r); // GĐ6: yêu cầu thay đổi, quyền đọc GV cũ (changeRequests/routes.js)
   return r;
 };

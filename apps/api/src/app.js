@@ -20,6 +20,7 @@ import { defaultStorageFolder } from './lib/storage.js';
 import { milestonesRouter, progressRouter, documentsRouter } from './modules/execution/routes.js';
 import { notificationsRouter, cronRouter } from './modules/notifications/routes.js';
 import { statsRouter } from './modules/stats/routes.js';
+import { changeRequestRoutes } from './modules/changeRequests/routes.js';
 
 /**
  * Tạo ứng dụng với phụ thuộc được tiêm vào để test không cần database thật.
@@ -54,7 +55,9 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
   if (accountRepo) app.use('/api/users', accountsRouter({ repo: accountRepo, hasher, guard, genPassword }));
 
   if (topicRepo) {
-    app.use('/api/topics', topicsRouter({ repo: topicRepo, guard, logger, storage, folder }));
+    const changeRequests = changeRequestRoutes({ repo: topicRepo, guard });
+    app.use('/api/topics', topicsRouter({ repo: topicRepo, guard, logger, storage, folder, mountExtra: changeRequests.mountTopicRoutes }));
+    app.use('/api/change-requests', changeRequests.router);
     app.use('/api/advisor-requests', advisorRequestsRouter({ repo: topicRepo, guard }));
     app.use('/api/lecturers', lecturersRouter({ repo: topicRepo, guard }));
     app.use('/api/invitations', invitationsRouter({ repo: topicRepo, guard }));

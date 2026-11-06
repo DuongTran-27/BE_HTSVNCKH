@@ -7,8 +7,10 @@ import { createReviewRepo } from './reviewRepo.js';
 import { createSimilarityRepo } from '../similarity/prismaRepo.js';
 import { createExecutionRepo } from '../execution/prismaRepo.js';
 import { createCloseRepo } from './closeRepo.js';
+import { REQUIRED_REMOVED_WHERE } from './closeConditions.js';
 import { createNotificationRepo } from '../notifications/prismaRepo.js';
 import { createStatsRepo } from '../stats/prismaRepo.js';
+import { createChangeRequestRepo } from '../changeRequests/prismaRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const DETAIL_INCLUDE = {
@@ -23,8 +25,15 @@ const DETAIL_INCLUDE = {
   // T405 (API_GD45 §7.4): closeReadiness + currentResult
   milestones: { where: { required: true }, orderBy: { order: 'asc' }, select: { id: true, name: true, evaluation: true } },
   results: { where: { isCurrent: true }, take: 1, select: { version: true, result: true, summary: true, createdById: true, createdAt: true } },
-  _count: { select: { milestones: { where: { required: false, requiredRemovedAt: { not: null }, evaluation: { not: 'PASSED' } } } } },
+  _count: { select: { milestones: { where: REQUIRED_REMOVED_WHERE } } },
+  // GĐ6 (API_GD6 §1.1, §2.5): yêu cầu đang chờ (quan hệ isChangeTarget + pendingChangeRequests)
+  changeRequests: { where: { status: 'PENDING' }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], select: { id: true, type: true, targetUserId: true, targetAcceptedAt: true, createdAt: true } },
 };
+// Prisma không include cùng quan hệ hai lần với điều kiện khác → GV đã kết thúc đọc bằng câu riêng
+export const findFormerAdvisings = (db, topicId) => db.advising.findMany({
+  where: { topicId, endAt: { not: null } }, orderBy: [{ endAt: 'asc' }, { id: 'asc' }],
+  select: { lecturerId: true, startAt: true, endAt: true, readOnlyGranted: true, lecturer: { select: { fullName: true } } },
+});
 
 export const createTopicRepo = (prisma) => ({
   ...createGroupRepo(prisma),
@@ -36,9 +45,13 @@ export const createTopicRepo = (prisma) => ({
   ...createCloseRepo(prisma),
   ...createNotificationRepo(prisma),
   ...createStatsRepo(prisma),
+  ...createChangeRequestRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, isActive: true } }),
-  findDetail: (id) => prisma.topic.findUnique({ where: { id }, include: DETAIL_INCLUDE }),
+  findDetail: async (id) => {
+    const t = await prisma.topic.findUnique({ where: { id }, include: DETAIL_INCLUDE });
+    return t && { ...t, formerAdvisings: await findFormerAdvisings(prisma, id) };
+  },
 
   // Tạo nháp + trưởng nhóm + AuditLog trong một transaction; mã lấy từ sequence (FR05)
   create: ({ round, userId, data }, buildAudit) =>

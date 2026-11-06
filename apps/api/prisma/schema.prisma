@@ -138,37 +138,40 @@ model Round {
 
 // ---------- Người dùng, phiên (FR01, FR02, FR25) ----------
 model User {
-  id                  String               @id @default(cuid())
-  code                String               @unique
-  email               String               @unique
-  fullName            String
-  passwordHash        String
-  role                Role
-  facultyId           String?
-  classId             String?
-  isLocked            Boolean              @default(false)
-  mustChangePassword  Boolean              @default(true)
-  failedLogins        Int                  @default(0)
-  lockedUntil         DateTime?            @db.Timestamptz(6)
-  createdAt           DateTime             @default(now()) @db.Timestamptz(6)
-  faculty             Faculty?             @relation(fields: [facultyId], references: [id])
-  class               Class?               @relation(fields: [classId], references: [id])
-  refreshTokens       RefreshToken[]
-  staffScopes         StaffScope[]
-  memberships         TopicMember[]
-  advisings           Advising[]
-  notifications       Notification[]
-  invitationsReceived Invitation[]         @relation("InvitationInvitee")
-  advisorRequests     AdvisorRequest[]     @relation("AdvisorRequestLecturer")
-  submissionsCreated  Submission[]         @relation("SubmissionCreatedBy")
-  reviewDecisions     ReviewDecision[]     @relation("ReviewDecisionDecidedBy")
-  statusChanges       StatusHistory[]      @relation("StatusHistoryActor")
-  milestonesCreated   Milestone[]          @relation("MilestoneCreatedBy")
-  dueChangesMade      MilestoneDueChange[] @relation("DueChangeBy")
-  progressUpdates     ProgressUpdate[]     @relation("ProgressAuthor")
-  documentsUploaded   Document[]           @relation("DocumentUploadedBy")
-  feedbacksWritten    Feedback[]           @relation("FeedbackLecturer")
-  resultsCreated      ResultVersion[]      @relation("ResultCreatedBy")
+  id                     String               @id @default(cuid())
+  code                   String               @unique
+  email                  String               @unique
+  fullName               String
+  passwordHash           String
+  role                   Role
+  facultyId              String?
+  classId                String?
+  isLocked               Boolean              @default(false)
+  mustChangePassword     Boolean              @default(true)
+  failedLogins           Int                  @default(0)
+  lockedUntil            DateTime?            @db.Timestamptz(6)
+  createdAt              DateTime             @default(now()) @db.Timestamptz(6)
+  faculty                Faculty?             @relation(fields: [facultyId], references: [id])
+  class                  Class?               @relation(fields: [classId], references: [id])
+  refreshTokens          RefreshToken[]
+  staffScopes            StaffScope[]
+  memberships            TopicMember[]
+  advisings              Advising[]
+  notifications          Notification[]
+  invitationsReceived    Invitation[]         @relation("InvitationInvitee")
+  advisorRequests        AdvisorRequest[]     @relation("AdvisorRequestLecturer")
+  submissionsCreated     Submission[]         @relation("SubmissionCreatedBy")
+  reviewDecisions        ReviewDecision[]     @relation("ReviewDecisionDecidedBy")
+  statusChanges          StatusHistory[]      @relation("StatusHistoryActor")
+  milestonesCreated      Milestone[]          @relation("MilestoneCreatedBy")
+  dueChangesMade         MilestoneDueChange[] @relation("DueChangeBy")
+  progressUpdates        ProgressUpdate[]     @relation("ProgressAuthor")
+  documentsUploaded      Document[]           @relation("DocumentUploadedBy")
+  feedbacksWritten       Feedback[]           @relation("FeedbackLecturer")
+  resultsCreated         ResultVersion[]      @relation("ResultCreatedBy")
+  changeRequestsMade     ChangeRequest[]      @relation("ChangeRequestCreatedBy")
+  changeRequestsDecided  ChangeRequest[]      @relation("ChangeRequestDecidedBy")
+  changeRequestsTargeted ChangeRequest[]      @relation("ChangeRequestTarget")
 }
 
 model StaffScope {
@@ -279,13 +282,15 @@ model AdvisorRequest {
 
 // Quan hệ hướng dẫn có thời hạn – endAt != null nghĩa là đã thay (FR19)
 model Advising {
-  id         String    @id @default(cuid())
-  topicId    String
-  lecturerId String
-  startAt    DateTime  @default(now()) @db.Timestamptz(6)
-  endAt      DateTime? @db.Timestamptz(6)
-  topic      Topic     @relation(fields: [topicId], references: [id])
-  lecturer   User      @relation(fields: [lecturerId], references: [id])
+  id              String    @id @default(cuid())
+  topicId         String
+  lecturerId      String
+  startAt         DateTime  @default(now()) @db.Timestamptz(6)
+  endAt           DateTime? @db.Timestamptz(6)
+  // FR19.4: cán bộ cấp quyền chỉ đọc cho GV cũ (API_GD6 §3.5)
+  readOnlyGranted Boolean   @default(false)
+  topic           Topic     @relation(fields: [topicId], references: [id])
+  lecturer        User      @relation(fields: [lecturerId], references: [id])
 
   @@index([lecturerId, endAt])
 }
@@ -454,6 +459,7 @@ model SimilarityCheck {
   createdAt        DateTime         @default(now()) @db.Timestamptz(6)
   topic            Topic            @relation(fields: [topicId], references: [id])
   submission       Submission?
+  changeRequest    ChangeRequest?
 
   @@index([topicId, createdAt])
 }
@@ -466,18 +472,30 @@ model Synonym {
 
 // ---------- Yêu cầu thay đổi (FR18–FR21) ----------
 model ChangeRequest {
-  id           String        @id @default(cuid())
-  topicId      String
-  type         ChangeType
-  payload      Json // trước/sau, giảng viên mới, người rời…
-  reason       String
-  status       RequestStatus @default(PENDING)
-  createdById  String
-  decidedById  String?
-  decisionNote String?
-  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
-  decidedAt    DateTime?     @db.Timestamptz(6)
-  topic        Topic         @relation(fields: [topicId], references: [id])
+  id                String           @id @default(cuid())
+  topicId           String
+  type              ChangeType
+  payload           Json // bất biến (trigger change_request_guard), dạng theo loại: API_GD6 §2.1
+  reason            String
+  status            RequestStatus    @default(PENDING)
+  createdById       String
+  // Người đích phải đồng ý trước khi cán bộ duyệt (GV mới FR19, SV được thêm FR18); stage suy ra, không lưu
+  targetUserId      String?
+  targetAcceptedAt  DateTime?        @db.Timestamptz(6)
+  similarityCheckId String?          @unique // chỉ TOPIC_CHANGE (FR18 chạy lại FR06)
+  decidedById       String?
+  decisionNote      String?
+  createdAt         DateTime         @default(now()) @db.Timestamptz(6)
+  decidedAt         DateTime?        @db.Timestamptz(6)
+  topic             Topic            @relation(fields: [topicId], references: [id])
+  createdBy         User             @relation("ChangeRequestCreatedBy", fields: [createdById], references: [id])
+  decidedBy         User?            @relation("ChangeRequestDecidedBy", fields: [decidedById], references: [id])
+  target            User?            @relation("ChangeRequestTarget", fields: [targetUserId], references: [id])
+  similarityCheck   SimilarityCheck? @relation(fields: [similarityCheckId], references: [id])
+
+  @@index([topicId, status])
+  @@index([targetUserId, status])
+  @@index([status, type])
 }
 
 // ---------- Thông báo, lịch sử (FR13, FR15) ----------

@@ -1,8 +1,10 @@
 // Mốc thực hiện (FR09, API_GD45 §3). Service nhận repo này; `writeMilestone` chạy trong withLockTx với câu khóa Topic đầu tiên.
 import { withLockTx } from '../../lib/tx.js';
 import { recordAudit } from '../audit/service.js';
-import { lockTopicForExecution, lockTopicRow } from './lock.js';
+import { lockTopicForExecution, lockTopicRow, assertCurrentAdvisor } from './lock.js';
 import { notifyTopic } from '../notifications/notify.js';
+import { REQUIRED_REMOVED_WHERE } from '../topics/closeConditions.js';
+import { findFormerAdvisings } from '../topics/prismaRepo.js';
 
 const person = { select: { id: true, fullName: true, role: true } };
 const VIEW_INCLUDE = {
@@ -52,30 +54,36 @@ const PROGRESS_INCLUDE = {
 };
 
 export const createExecutionRepo = (prisma) => {
-  const write = (topicId, fn) => withLockTx(prisma, async (tx) => {
-    await lockTopicForExecution(tx, topicId);
-    return fn(ops(tx));
+  // opts.advisorId: thao tác chỉ GVHD hiện hành được làm → đọc lại Advising SAU câu khóa Topic (API_GD6 §1.2, MINOR m1 T404).
+  // Duyệt thay GV khóa cùng dòng Topic nên GV cũ hoặc ghi xong trước thời điểm duyệt, hoặc nhận 403.
+  const write = (topicId, fn, opts = {}) => withLockTx(prisma, async (tx) => {
+    const lock = await lockTopicForExecution(tx, topicId);
+    if (opts.advisorId) await assertCurrentAdvisor(tx, topicId, opts.advisorId);
+    return fn(ops(tx), lock);
   });
   return {
   // Đề tài + quan hệ tối thiểu để tính quyền (cùng hình dạng `relations` của topics/service.js)
-  findExecTopic: (id) => prisma.topic.findUnique({
-    where: { id },
-    select: {
-      id: true, status: true, facultyId: true, round: { select: { config: true } },
-      advisorRequests: { where: { status: 'PENDING' }, take: 1, select: { lecturerId: true } },
-      members: { where: { leftAt: null }, select: { userId: true, role: true } },
-      advisings: { where: { endAt: null }, take: 1, select: { lecturerId: true } },
-    },
-  }),
+  findExecTopic: async (id) => {
+    const t = await prisma.topic.findUnique({
+      where: { id },
+      select: {
+        id: true, status: true, facultyId: true, round: { select: { config: true } },
+        advisorRequests: { where: { status: 'PENDING' }, take: 1, select: { lecturerId: true } },
+        members: { where: { leftAt: null }, select: { userId: true, role: true } },
+        advisings: { where: { endAt: null }, take: 1, select: { lecturerId: true } },
+      },
+    });
+    return t && { ...t, formerAdvisings: await findFormerAdvisings(prisma, id) };
+  },
   findMilestoneTopicId: async (id) => (await prisma.milestone.findUnique({ where: { id }, select: { topicId: true } }))?.topicId ?? null,
   listMilestones: (topicId) => prisma.milestone.findMany({ where: { topicId }, orderBy: { order: 'asc' }, include: VIEW_INCLUDE }),
   viewMilestone: (id) => prisma.milestone.findUnique({ where: { id }, include: VIEW_INCLUDE }),
   listDueChanges: (milestoneId) => prisma.milestoneDueChange.findMany({ where: { milestoneId }, orderBy: [{ changedAt: 'desc' }, { id: 'desc' }], include: { changedBy: person } }),
   // Số mốc đã bị bỏ cờ bắt buộc khi chưa Đạt (m3); cột + index thay vì đọc AuditLog. T405 dùng cho closeReadiness.
-  countRequiredRemoved: (topicId) => prisma.milestone.count({ where: { topicId, required: false, requiredRemovedAt: { not: null }, evaluation: { not: 'PASSED' } } }),
-  writeMilestone: (topicId, fn) => write(topicId, fn),
-  writeProgress: (topicId, fn) => write(topicId, fn),
-  writeFeedback: (topicId, fn) => write(topicId, fn),
+  countRequiredRemoved: (topicId) => prisma.milestone.count({ where: { topicId, ...REQUIRED_REMOVED_WHERE } }),
+  writeMilestone: write,
+  writeProgress: write,
+  writeFeedback: write,
   // Upload/link: khóa Topic rồi để service kiểm trạng thái theo stage (đề cương: DRAFT/NEEDS_REVISION; mốc: IN_PROGRESS)
   writeDocument: (topicId, fn) => withLockTx(prisma, async (tx) => fn(ops(tx), await lockTopicRow(tx, topicId))),
   findMilestoneBrief: (id) => prisma.milestone.findUnique({ where: { id }, select: { id: true, topicId: true, evaluation: true } }),

@@ -1,6 +1,6 @@
 // Hồ sơ đề tài (FR05, API_GD2 §5.1): tạo nháp, xem chi tiết, sửa khi Nháp/Cần chỉnh sửa. Quyền theo quan hệ tính từ DB.
 import { createHash } from 'node:crypto';
-import { effectiveRoundConfig, findTransition, availableActions, countWords, ENABLED_ACTIONS } from '@nckh/shared';
+import { effectiveRoundConfig, findTransition, availableActions, countWords, ENABLED_ACTIONS, ADVISOR_CHANGE_STATUSES } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { contentHash } from '../similarity/engine.js';
 import { evaluateClose } from './closeConditions.js';
@@ -20,20 +20,30 @@ const snapshot = (t) => ({
   fieldId: t.fieldId ?? null,
   summaryDigest: { sha256: createHash('sha256').update(t.summary).digest('hex'), words: countWords(t.summary) },
 });
+export const presentFormerAdvisors = (rows) => rows.map((a) => ({
+  lecturerId: a.lecturerId, fullName: a.lecturer.fullName, startAt: iso(a.startAt), endAt: iso(a.endAt), readOnlyGranted: a.readOnlyGranted,
+}));
 const fail = (details) => badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', details);
 
+// t.advisings: Advising hiện hành (endAt null); t.formerAdvisings: đã kết thúc (API_GD6 §1.1); t.changeRequests: PENDING
 export const relations = (t, user) => {
   const me = t.members.find((m) => m.userId === user.id);
+  const isCurrentAdvisor = t.advisings.some((a) => a.lecturerId === user.id);
   return {
     isMember: !!me,
     isLeader: me?.role === 'LEADER',
-    isCurrentAdvisor: t.advisings.some((a) => a.lecturerId === user.id),
+    isCurrentAdvisor,
     isRequestedLecturer: t.advisorRequests.some((r) => r.lecturerId === user.id),
     inStaffScope: user.role === 'STAFF' && !!user.staffFacultyIds?.includes(t.facultyId),
+    isFormerAdvisorReader: !isCurrentAdvisor && (t.formerAdvisings ?? []).some((a) => a.lecturerId === user.id && a.readOnlyGranted),
+    // Chỉ GV mới của ADVISOR_CHANGE được xem chi tiết (MINOR m1 T600: SV đích của TOPIC_CHANGE xem qua ChangeRequestView)
+    isChangeTarget: (t.changeRequests ?? []).some((c) => c.type === 'ADVISOR_CHANGE' && c.targetUserId === user.id),
   };
 };
-export const canView = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isRequestedLecturer || (rel.inStaffScope && t.status !== 'DRAFT');
-
+export const canView = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isRequestedLecturer || rel.isFormerAdvisorReader || rel.isChangeTarget
+  || (rel.inStaffScope && t.status !== 'DRAFT');
+// Quyền đọc phần thực hiện + snapshot/lịch sử (API_GD45 §1.1, API_GD2 §8.4, API_GD6 §1.1) – một nơi duy nhất
+export const canReadExecution = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || (rel.inStaffScope && t.status !== 'DRAFT');
 
 export const createTopicService = ({ repo, now = () => new Date() }) => {
   const present = (t, user, rel) => {
@@ -95,15 +105,22 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         invite: rel.isLeader && t.status === 'DRAFT',
         transferLeader: rel.isLeader && !FINISHED.includes(t.status),
         checkSimilarity: rel.isMember && ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'NEEDS_REVISION'].includes(t.status),
-        viewHistory: rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope,
+        viewHistory: rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || rel.inStaffScope,
         manageMilestones: (rel.isCurrentAdvisor || rel.inStaffScope) && running,
         addProgress: rel.isMember && running,
         uploadProposal: rel.isMember && EDITABLE.includes(t.status),
         uploadMilestone: rel.isMember && running,
         giveFeedback: rel.isCurrentAdvisor && running,
         enterResult: rel.isCurrentAdvisor && running,
-        readExecution: rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && t.status !== 'DRAFT'),
+        readExecution: canReadExecution(t, rel),
+        // GĐ6 (API_GD6 §2.5); quyền của loại khác do task của loại đó thêm
+        requestAdvisorChange: (rel.isLeader || rel.inStaffScope) && ADVISOR_CHANGE_STATUSES.includes(t.status),
+        manageFormerAdvisorAccess: rel.inStaffScope,
       },
+      pendingChangeRequests: (t.changeRequests ?? []).filter((c) => rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope || c.targetUserId === user.id)
+        .map((c) => ({ id: c.id, type: c.type, stage: c.targetUserId && !c.targetAcceptedAt ? 'TARGET' : 'STAFF', createdAt: iso(c.createdAt) })),
+      readOnlyAccess: rel.isFormerAdvisorReader,
+      formerAdvisors: rel.inStaffScope ? presentFormerAdvisors(t.formerAdvisings ?? []) : [],
       createdAt: iso(t.createdAt), updatedAt: iso(t.updatedAt),
     };
   };

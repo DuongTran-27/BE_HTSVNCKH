@@ -8,15 +8,18 @@ import { notifyTopic } from '../notifications/notify.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const activeTopic = (roundId) => ({ roundId, status: { notIn: INACTIVE_STATUSES } });
+// Số đề tài hoạt động GV đang hướng dẫn trong đợt (FR16); dùng chung với duyệt thay GV (API_GD6 §3.3–3.4)
+export const countLecturerActive = (db, lecturerId, roundId) => db.advising.count({ where: { lecturerId, endAt: null, topic: activeTopic(roundId) } });
+export const lockUsers = (db, ids) => db.$queryRaw`SELECT id FROM "User" WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR NO KEY UPDATE`;
 
 const ops = (db) => ({
   findUser: (id) => db.user.findUnique({ where: { id }, select: { id: true, role: true, isLocked: true, facultyId: true } }),
   // Khóa User mức NO KEY UPDATE, id tăng dần (§1.8), sau khóa Topic
-  lockUsers: (ids) => db.$queryRaw`SELECT id FROM "User" WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR NO KEY UPDATE`,
+  lockUsers: (ids) => lockUsers(db, ids),
   liveMembers: (topicId) => db.topicMember.findMany({ where: { topicId, leftAt: null }, select: { userId: true, user: { select: { code: true } } }, orderBy: { userId: 'asc' } }),
   // Đếm bằng câu riêng, sau khóa; không tính chính đề tài đang chuyển
   countStudentActive: (userId, roundId, exceptTopicId) => groupOps(db).countActiveTopics(userId, roundId, exceptTopicId),
-  countLecturerActive: (lecturerId, roundId) => db.advising.count({ where: { lecturerId, endAt: null, topic: activeTopic(roundId) } }),
+  countLecturerActive: (lecturerId, roundId) => countLecturerActive(db, lecturerId, roundId),
   createRequest: (data) => db.advisorRequest.create({ data }),
   withdrawPendingInvitations: (topicId, at) => db.invitation.updateMany({ where: { topicId, status: 'PENDING' }, data: { status: 'WITHDRAWN', respondedAt: at } }),
   // Chỉ một đề nghị PENDING mỗi đề tài; count 0 = đã bị xử lý

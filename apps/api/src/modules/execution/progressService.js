@@ -1,6 +1,6 @@
 // Cập nhật tiến độ FR10 (API_GD45 §4). SV thành viên thêm; chỉ tác giả sửa; khóa khi GVHD nhận xét (lockedAt, T404).
 import { conflict, forbidden, notFound } from '../../lib/errors.js';
-import { relations } from '../topics/service.js';
+import { relations, canReadExecution } from '../topics/service.js';
 
 const iso = (d) => d.toISOString();
 const FIELDS = ['done', 'issues', 'nextPlan', 'percent'];
@@ -18,7 +18,7 @@ export const createProgressService = ({ repo }) => {
     const t = await repo.findExecTopic(topicId);
     if (!t) throw notFound();
     const rel = relations({ ...t, advisorRequests: [] }, user);
-    if (!(rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && t.status !== 'DRAFT'))) throw forbidden();
+    if (!canReadExecution(t, rel)) throw forbidden();
     if (write) {
       if (user.role !== 'STUDENT' || !rel.isMember) throw forbidden('Chỉ sinh viên trong nhóm được cập nhật tiến độ');
       if (authorId && authorId !== user.id) throw forbidden('Chỉ tác giả được sửa bản cập nhật này');

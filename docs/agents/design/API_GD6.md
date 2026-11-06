@@ -34,7 +34,7 @@ Mọi quy ước của `API_GD2.md` §1 (đường dẫn, middleware, định d�
 | Ký hiệu | Định nghĩa | Được |
 |---|---|---|
 | `isFormerAdvisorReader` | Có `Advising` của đề tài với `lecturerId = me`, `endAt IS NOT NULL`, `readOnlyGranted = true`, và **không** `isCurrentAdvisor` | Mọi endpoint **đọc** mà `isCurrentAdvisor` đọc được (chi tiết, thực hiện, snapshot, lịch sử). Không ghi gì (FR19.4 "trừ khi cán bộ cấp quyền chỉ đọc") |
-| `isChangeTarget` | Có `ChangeRequest` `PENDING` của đề tài với `targetUserId = me` và loại `ADVISOR_CHANGE` hoặc `TOPIC_CHANGE` | Chỉ `GET /api/topics/:id` (như `isRequestedLecturer`, để quyết định đồng ý) và yêu cầu của chính mình (§2.4) |
+| `isChangeTarget` | Có `ChangeRequest` `PENDING` của đề tài với `targetUserId = me` và loại `ADVISOR_CHANGE` (SV đích của `TOPIC_CHANGE` chỉ xem qua `ChangeRequestView` – MINOR m1 T600) | Chỉ `GET /api/topics/:id` (như `isRequestedLecturer`, để quyết định đồng ý) và yêu cầu của chính mình (§2.4) |
 | `formerMemberWindows` | Danh sách `[joinedAt, leftAt)` của các dòng `TopicMember` của me có `leftAt IS NOT NULL` | Chỉ các phiên bản trong khoảng (§5.4) |
 
 - `canView` (= quyền `GET /api/topics/:id`) thêm `isFormerAdvisorReader || isChangeTarget`.
@@ -52,7 +52,7 @@ Kết quả: GV cũ gửi nhận xét đúng lúc cán bộ duyệt thay GV → 
 - Mọi thao tác ghi của GĐ6 chạy qua `withLockTx`. Thứ tự khóa **Topic → User (id tăng dần)** (API_GD2 §1.8). Câu khóa Topic: `SELECT id, status, version FROM "Topic" WHERE id = $1 FOR NO KEY UPDATE`, hoặc `topic.updateMany` có điều kiện khi cần tăng `version`.
 - Chuyển trạng thái của `ChangeRequest` luôn bằng **cập nhật có điều kiện** `changeRequest.updateMany({ where: { id, status: 'PENDING', … }, data })`; `count = 0` → 409 `CHANGE_REQUEST_CLOSED`. Nhờ vậy hai cán bộ bấm duyệt/từ chối cùng lúc, hoặc người tạo rút đúng lúc cán bộ duyệt, chỉ một bên thắng.
 - **StatusHistory**: chỉ `CANCEL` (qua `applyTransition`). Các thao tác còn lại không đổi trạng thái đề tài → ghi **bản ghi riêng** (`ChangeRequest`, `MilestoneReopen`, `ResultVersion`, `SimilarityBypass`) + **AuditLog** trong cùng transaction (mục 5 đặc tả, FR15). Tên `action` của AuditLog ghi ở từng endpoint.
-- **Thông báo** (§11) ghi trong cùng transaction bằng `notify`/`notifyTopic` có sẵn.
+- **Thông báo** (§11b) ghi trong cùng transaction bằng `notify`/`notifyTopic` có sẵn.
 - Tăng `Topic.version` khi đổi tập thành viên, đổi GVHD, đổi nội dung hồ sơ, hoặc đổi trạng thái (giống API_GD2 §1.5). Các thao tác khác **không** tăng.
 
 ---
@@ -107,13 +107,13 @@ PENDING, stage TARGET ──(người đích đồng ý)──► PENDING, stage
 ### 2.3 Endpoint ghi
 Tất cả: limiter 30/15 phút/`req.user.id` (chung bộ đếm), ADMIN 403, thứ tự kiểm theo API_GD45 §1.1 (tải → quyền đọc 403 → quyền ghi 403 → trạng thái 409 → điều kiện riêng).
 
-**`POST /api/topics/:id/change-requests`** – tạo. Body `changeRequestCreateSchema` (union theo `type`, §2.7). Quyền, trạng thái và điều kiện của từng loại: §3.2, §4.1, §5.2, §6.2. Ghi `ChangeRequest` + AuditLog `CHANGE_REQUEST_CREATE` (`after`: `type`, `payload`, `reason`) + thông báo `CHANGE_REQUESTED` (+ `CHANGE_TARGET_INVITED` nếu có người đích). Có `TOPIC_CHANGE` đổi tên/tóm tắt: chạy FR06 **trước** transaction (§6.2).
+**`POST /api/topics/:id/change-requests`** – tạo. Body `changeRequestCreateSchema` (union theo `type`, §2.7). Quyền, trạng thái và điều kiện của từng loại: §3.2, §4.1, §5.2, §6.2. Ghi `ChangeRequest` + AuditLog `CHANGE_REQUEST_CREATE` (`after`: `type`, `payload`, `reason`) + thông báo `CHANGE_REQUESTED` (+ `CHANGE_TARGET_INVITED` nếu `stage = TARGET` lúc tạo – MINOR m3 T600). Có `TOPIC_CHANGE` đổi tên/tóm tắt: chạy FR06 **trước** transaction (§6.2).
 201 `{ "changeRequest": ChangeRequestView }`.
 
 **`POST /api/change-requests/:id/accept`** – người đích, `stage = TARGET` (403 nếu không phải người đích; 409 `CHANGE_REQUEST_CLOSED` nếu không còn TARGET). Body `emptyBodySchema`. `withLockTx`: khóa User của chính mình → kiểm sớm (hạn mức GV §3.3 / số đề tài hoạt động của SV §6.3) → `updateMany({ where: { id, status: 'PENDING', targetAcceptedAt: null }, data: { targetAcceptedAt: now } })`. AuditLog `CHANGE_REQUEST_ACCEPT`. Thông báo `CHANGE_TARGET_ACCEPTED`.
 200 `{ "changeRequest": ChangeRequestView }`.
 
-**`POST /api/change-requests/:id/decline`** – người đích ở `stage = TARGET`, hoặc STAFF `inStaffScope` ở mọi stage. Body `changeRequestDeclineSchema { reason }` (bắt buộc, 5..2000). `updateMany where { id, status: 'PENDING' }` → `DECLINED`, `decidedById = me`, `decidedAt = now`, `decisionNote = reason`. AuditLog `CHANGE_REQUEST_DECLINE`. Thông báo `CHANGE_DECIDED`. Bị từ chối thì **mọi thứ giữ nguyên** (FR18).
+**`POST /api/change-requests/:id/decline`** – người đích ở `stage = TARGET`, hoặc STAFF `inStaffScope` ở mọi stage. Body `changeRequestDeclineSchema { reason }` (bắt buộc, 5..2000). `updateMany where { id, status: 'PENDING' }` (nhánh người đích thêm `targetUserId: me, targetAcceptedAt: null` – MINOR m4 T600) → `DECLINED`, `decidedById = me`, `decidedAt = now`, `decisionNote = reason`. AuditLog `CHANGE_REQUEST_DECLINE`. Thông báo `CHANGE_DECIDED`. Bị từ chối thì **mọi thứ giữ nguyên** (FR18).
 200 `{ "changeRequest": ChangeRequestView }`.
 
 **`POST /api/change-requests/:id/withdraw`** – chỉ người tạo, `PENDING`. Body `emptyBodySchema`. `updateMany where { id, status: 'PENDING', createdById: me }` → `WITHDRAWN`, `decidedAt = now`. AuditLog `CHANGE_REQUEST_WITHDRAW`. Thông báo `CHANGE_WITHDRAWN`.
@@ -138,7 +138,7 @@ Phạm vi (áp ở `WHERE`, trước phân trang):
 | Vai trò | Thấy |
 |---|---|
 | STAFF | Đề tài có `facultyId` trong phạm vi |
-| LECTURER | `targetUserId = me` **hoặc** đề tài mình là GVHD hiện hành |
+| LECTURER | `targetUserId = me` **hoặc** đề tài mình là GVHD hiện hành **hoặc** `ADVISOR_CHANGE` có `payload.from.lecturerId = me` (MINOR m2 T600) |
 | STUDENT | `targetUserId = me` **hoặc** `createdById = me` **hoặc** đề tài mình là thành viên hiện hành |
 | ADMIN | 403 |
 
@@ -204,7 +204,7 @@ CREATE TRIGGER change_request_no_truncate BEFORE TRUNCATE ON "ChangeRequest" FOR
 | `resultCorrectionSchema` | §7 | T604 |
 | `milestoneReopenSchema { version, reason }` | §8 | T606 |
 | `similarityBypassCreateSchema { reason }` | §9 | T609 |
-| `NOTIFICATION_TYPES` + `NOTIFICATION_TYPE_LABEL` thêm các loại §11 | §11 | task gắn sự kiện |
+| `NOTIFICATION_TYPES` + `NOTIFICATION_TYPE_LABEL` thêm các loại §11b | §11b | task gắn sự kiện |
 
 Tất cả theo QD §5 (`.max()` trước refine, strict object ở body, thông điệp tiếng Việt).
 
@@ -603,6 +603,7 @@ Test (T605): tăng `minSummaryWords` khi có đề tài HAS_ADVISOR không đạ
 
 Dùng lại: `INVALID_TRANSITION`, `REASON_REQUIRED`, `TOPIC_NOT_IN_PROGRESS`, `TOPIC_NOT_EDITABLE`, `TOPIC_INCOMPLETE`, `GROUP_FULL`, `GROUP_TOO_SMALL`, `STUDENT_TOPIC_LIMIT`, `LECTURER_QUOTA_EXCEEDED`, `SIMILARITY_NOT_CHECKED`, `JUSTIFICATION_REQUIRED`, `NO_FINAL_RESULT`, `CONCURRENT_UPDATE`, `SERVICE_BUSY`.
 Quy ước `details` thêm dạng riêng: `ROUND_CONFIG_BLOCKS_TOPICS` → `{ codes, total }`.
+- Sai trạng thái khi tạo yêu cầu (MINOR m8 T600): `ADVISOR_CHANGE`, `CANCEL` trả 409 `INVALID_TRANSITION`; `LEAVE_GROUP`, `TOPIC_CHANGE` trả 409 `TOPIC_NOT_IN_PROGRESS`. Giữ nguyên theo từng mục; FE (T607) xử lý cả hai mã như nhau (hiện thông điệp, tải lại đề tài).
 
 ---
 

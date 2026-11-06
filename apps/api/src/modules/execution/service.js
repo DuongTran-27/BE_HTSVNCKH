@@ -1,7 +1,7 @@
 // Mốc thực hiện FR09 (API_GD45 §3). Quyền: đọc = canReadExecution; ghi = GVHD hiện hành hoặc cán bộ trong phạm vi khoa, khi IN_PROGRESS.
 import { MILESTONE_MAX_PER_TOPIC } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
-import { relations } from '../topics/service.js';
+import { relations, canReadExecution } from '../topics/service.js';
 import { topicName } from '../notifications/notify.js';
 
 const iso = (d) => d.toISOString();
@@ -27,7 +27,7 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
     const t = await repo.findExecTopic(topicId);
     if (!t) throw notFound();
     const rel = relations({ ...t, advisorRequests: [] }, user);
-    if (!(rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && t.status !== 'DRAFT'))) throw forbidden();
+    if (!canReadExecution(t, rel)) throw forbidden();
     if (write) {
       const ok = (user.role === 'LECTURER' && rel.isCurrentAdvisor) || (user.role === 'STAFF' && rel.inStaffScope);
       if (!ok) throw forbidden('Chỉ giảng viên hướng dẫn hoặc cán bộ khoa được quản lý mốc');
@@ -42,6 +42,8 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
   };
   const view = async (id) => presentMilestone(await repo.viewMilestone(id), now());
   const stale = () => conflict('CONCURRENT_UPDATE', 'Mốc vừa được người khác cập nhật, vui lòng tải lại');
+  // Nhánh LECTURER: kiểm lại GVHD hiện hành dưới khóa Topic (API_GD6 §1.2); cán bộ không phụ thuộc Advising
+  const lockOpts = (user) => (user.role === 'LECTURER' ? { advisorId: user.id } : {});
 
   return {
     async list(user, topicId) {
@@ -62,7 +64,7 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
         // Thành viên + GVHD (GVHD tự tạo thì notify bỏ người gây sự kiện)
         await o.notify({ topicId, to: ['members', 'advisor'], actorId: user.id, type: 'MILESTONE_CREATED', key: `MILESTONE_CREATED:${m.id}`, link: `/de-tai/${topicId}/moc`, title: (x) => `Mốc mới "${m.name}" – đề tài ${topicName(x)}` });
         return m.id;
-      });
+      }, lockOpts(user));
       return { milestone: await view(id) };
     },
 
@@ -86,7 +88,7 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
         if (data.requiredRemovedAt) { // m3: bỏ bắt buộc khi chưa Đạt → báo cán bộ khoa; version sau cập nhật phân biệt từng lần
           await o.notify({ topicId, to: ['staff'], actorId: user.id, type: 'MILESTONE_REQUIRED_REMOVED', key: `MILESTONE_REQUIRED_REMOVED:${id}:v${body.version + 1}`, link: `/de-tai/${topicId}/moc`, title: (x) => `Mốc "${m.name}" được bỏ bắt buộc khi chưa Đạt – đề tài ${topicName(x)}` });
         }
-      });
+      }, lockOpts(user));
       return { milestone: await view(id) };
     },
 
@@ -103,7 +105,7 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
         await o.audit({ actorId: user.id, action: 'MILESTONE_DUE_CHANGE', entityType: 'Milestone', entityId: id, before: { dueAt: m.dueAt }, after: { dueAt: newDueAt, reason: body.reason }, ip });
         await o.notify({ topicId, to: ['members', 'advisor'], actorId: user.id, type: 'MILESTONE_DUE_CHANGED', key: `MILESTONE_DUE_CHANGED:${c.id}`, link: `/de-tai/${topicId}/moc`, title: (x) => `Hạn mốc "${m.name}" đã thay đổi – đề tài ${topicName(x)}` });
         return c;
-      });
+      }, lockOpts(user));
       return {
         milestone: await view(id),
         dueChange: presentDueChange({ ...change, changedBy: { id: user.id, fullName: user.fullName, role: user.role } }),

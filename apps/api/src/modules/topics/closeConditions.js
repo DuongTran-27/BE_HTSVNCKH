@@ -22,10 +22,14 @@ export const evaluateClose = ({ milestones, result, advisorId }) => {
   };
 };
 
+// Mốc bị bỏ cờ bắt buộc khi chưa Đạt (m3 T401) – một định nghĩa cho closeReadiness và execution (MINOR m3 T405)
+export const REQUIRED_REMOVED_WHERE = Object.freeze({ required: false, requiredRemovedAt: { not: null }, evaluation: { not: 'PASSED' } });
+
 // Đọc bằng `db` truyền vào (prisma ngoài transaction, hoặc tx sau khi đã giữ khóa Topic)
 export const loadCloseConditions = async (db, topicId) => {
   const milestones = await db.milestone.findMany({ where: { topicId, required: true }, orderBy: { order: 'asc' }, select: { id: true, name: true, evaluation: true } });
   const result = await db.resultVersion.findFirst({ where: { topicId, isCurrent: true }, select: { summary: true, createdById: true } });
   const adv = await db.advising.findFirst({ where: { topicId, endAt: null }, select: { lecturerId: true } });
-  return evaluateClose({ milestones, result, advisorId: adv?.lecturerId ?? null });
+  const advisorId = adv?.lecturerId ?? null;
+  return { ...evaluateClose({ milestones, result, advisorId }), advisorId };
 };

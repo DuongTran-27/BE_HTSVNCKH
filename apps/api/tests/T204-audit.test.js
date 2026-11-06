@@ -192,12 +192,12 @@ describe('bảng chỉ-thêm ở mức DB (FR15)', () => {
     expect(await prisma.topic.count()).toBeGreaterThan(0);
   });
 
-  it('có đủ 9 trigger BEFORE TRUNCATE gọi forbid_mutation() (5 của FR15 + 4 của gd4_execution)', async () => {
+  it('có đủ 10 trigger BEFORE TRUNCATE gọi forbid_mutation() (5 của FR15 + 4 của gd4_execution + 1 của gd6_change_requests)', async () => {
     const rows = await prisma.$queryRaw`
       SELECT c.relname, p.proname, t.tgtype FROM pg_trigger t
       JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_proc p ON p.oid = t.tgfoid
       WHERE NOT t.tgisinternal AND (t.tgtype & 32) = 32`; // 32 = TRUNCATE
-    expect(rows.map((r) => r.relname).sort()).toEqual([...TABLES, 'Document', 'Feedback', 'MilestoneDueChange', 'ResultVersion'].sort()); // API_GD45 §11b
+    expect(rows.map((r) => r.relname).sort()).toEqual([...TABLES, 'Document', 'Feedback', 'MilestoneDueChange', 'ResultVersion', 'ChangeRequest'].sort()); // API_GD45 §11b, API_GD6 §2.6
     for (const r of rows) {
       expect(r.proname).toBe('forbid_mutation');
       expect(r.tgtype & 3).toBe(2); // BEFORE, FOR EACH STATEMENT (bit ROW = 1 tắt)

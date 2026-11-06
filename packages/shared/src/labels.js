@@ -69,7 +69,19 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   MILESTONE_DUE_SOON: 'Sắp đến hạn mốc',
   MILESTONE_OVERDUE: 'Quá hạn mốc',
   ADVISOR_REQUEST_REMINDER: 'Nhắc phản hồi đề nghị hướng dẫn',
+  CHANGE_REQUESTED: 'Yêu cầu thay đổi mới',
+  CHANGE_TARGET_INVITED: 'Lời đề xuất cần bạn đồng ý',
+  CHANGE_TARGET_ACCEPTED: 'Người được đề xuất đã đồng ý',
+  CHANGE_DECIDED: 'Yêu cầu thay đổi đã có quyết định',
+  CHANGE_WITHDRAWN: 'Yêu cầu thay đổi bị rút',
+  ADVISOR_HANDOVER: 'Bàn giao bản nộp chờ nhận xét',
 });
+
+// GĐ6 (API_GD6 §2.7)
+export const CHANGE_TYPE_LABEL = Object.freeze({
+  TOPIC_CHANGE: 'Thay đổi sau duyệt', ADVISOR_CHANGE: 'Thay giảng viên', CANCEL: 'Hủy đề tài', LEAVE_GROUP: 'Rời nhóm',
+});
+export const CHANGE_STAGE_LABEL = Object.freeze({ TARGET: 'Chờ người được đề xuất đồng ý', STAFF: 'Chờ cán bộ khoa duyệt' });
 
 // Tên cột chiều trong CSV thống kê (API_GD45 §9.2)
 export const STATS_DIMENSION_LABEL = Object.freeze({

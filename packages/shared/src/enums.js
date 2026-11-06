@@ -86,7 +86,16 @@ export const NOTIFICATION_TYPES = Object.freeze([
   'DOCUMENT_SUBMITTED', 'FEEDBACK_CREATED', 'RESULT_ENTERED',
   'CLOSE_REQUESTED', 'CLOSE_RETURNED', 'TOPIC_CLOSED',
   'MILESTONE_DUE_SOON', 'MILESTONE_OVERDUE', 'ADVISOR_REQUEST_REMINDER',
+  // GĐ6 (API_GD6 §11b) – khung yêu cầu thay đổi, thay GV
+  'CHANGE_REQUESTED', 'CHANGE_TARGET_INVITED', 'CHANGE_TARGET_ACCEPTED', 'CHANGE_DECIDED', 'CHANGE_WITHDRAWN', 'ADVISOR_HANDOVER',
 ]);
+
+// GĐ6 (API_GD6 §2): yêu cầu thay đổi (khớp enum ChangeType của Prisma); stage suy ra, không lưu
+export const CHANGE_TYPE = Object.freeze({ TOPIC_CHANGE: 'TOPIC_CHANGE', ADVISOR_CHANGE: 'ADVISOR_CHANGE', CANCEL: 'CANCEL', LEAVE_GROUP: 'LEAVE_GROUP' });
+export const CHANGE_STAGE = Object.freeze({ TARGET: 'TARGET', STAFF: 'STAFF' });
+// G35: thay GV được ở mọi trạng thái có GVHD còn làm việc (không WAITING_CLOSE)
+export const ADVISOR_CHANGE_STATUSES = Object.freeze(['HAS_ADVISOR', 'UNDER_REVIEW', 'NEEDS_REVISION', 'IN_PROGRESS']);
+export const PRE_APPROVAL_STATUSES = Object.freeze(['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'UNDER_REVIEW', 'NEEDS_REVISION']);
 
 // FR14 (API_GD45 §9): chiều thống kê
 export const STATS_GROUP_BY = Object.freeze(['lecturer', 'field', 'status', 'result', 'academicYear', 'round']);

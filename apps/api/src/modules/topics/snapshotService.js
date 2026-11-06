@@ -1,7 +1,7 @@
 // Đọc snapshot hồ sơ và lịch sử trạng thái (FR17, API_GD2 §8.4). Chỉ đọc.
 import { forbidden, notFound } from '../../lib/errors.js';
 import { presentMatches } from '../similarity/service.js';
-import { relations } from './service.js';
+import { relations, canReadExecution } from './service.js';
 
 const iso = (d) => d.toISOString();
 const sameSet = (a, b) => ({ added: b.filter((k) => !a.includes(k)), removed: a.filter((k) => !b.includes(k)) });
@@ -16,12 +16,12 @@ const checkView = (c, role) => {
 };
 
 export const createSnapshotService = ({ repo }) => {
-  // Quyền đọc §8.4: thành viên, GVHD hiện hành, STAFF trong phạm vi khoa (GV được đề nghị chưa có quyền)
+  // Quyền đọc §8.4: thành viên, GVHD hiện hành, GV cũ được cấp quyền đọc, STAFF trong phạm vi khoa (GV được đề nghị chưa có quyền)
   const load = async (user, id) => {
     const t = await repo.findDetail(id);
     if (!t) throw notFound();
     const rel = relations(t, user);
-    if (!(rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && t.status !== 'DRAFT'))) throw forbidden(); // như canView
+    if (!canReadExecution(t, rel)) throw forbidden();
     return t;
   };
   const brief = (s) => ({ seq: s.seq, createdAt: iso(s.createdAt), payload: s.payload });

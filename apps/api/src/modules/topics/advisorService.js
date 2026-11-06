@@ -6,6 +6,12 @@ import { relations, canView } from './service.js';
 import { topicName } from '../notifications/notify.js';
 
 const iso = (d) => d?.toISOString() ?? null;
+// dedupeKey phải chứa id đề nghị thật; thiếu thì ném thay vì tạo khóa "...:undefined" chặn vĩnh viễn thông báo (MINOR B T501)
+export const pendingRequestOf = (t) => {
+  const req = t.advisorRequests[0];
+  if (!req?.id) throw new Error(`Đề tài ${t.id} không có đề nghị hướng dẫn PENDING`);
+  return req;
+};
 
 // Đủ trường bắt buộc theo cấu hình đợt (FR05) – dùng chung với gửi xét duyệt
 export const assertTopicComplete = (t) => {
@@ -33,7 +39,7 @@ export const createAdvisorService = ({ repo, getTopic, now = () => new Date() })
     o.audit({ actorId: user.id, action, entityType: 'AdvisorRequest', entityId: t.id, before: { status: t.status }, after, ip });
   // Phản hồi của GV → thành viên (FR13); nhận và từ chối chung khóa vì một đề nghị chỉ có một phản hồi (§8.3)
   const notifyResponse = (o, user, t, type, title) =>
-    o.notify({ topicId: t.id, to: ['members'], actorId: user.id, type, key: `ADVISOR_RESPONSE:${t.advisorRequests[0]?.id}`, link: `/de-tai/${t.id}`, title });
+    o.notify({ topicId: t.id, to: ['members'], actorId: user.id, type, key: `ADVISOR_RESPONSE:${pendingRequestOf(t).id}`, link: `/de-tai/${t.id}`, title });
 
   // extra chạy TRONG transaction của applyTransition, sau khi Topic đã bị khóa
   const extras = {
@@ -77,8 +83,8 @@ export const createAdvisorService = ({ repo, getTopic, now = () => new Date() })
       if (!(await o.closeRequest(t.id, 'WITHDRAWN', { respondedAt: now() }))) throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
       await audit(o, user, 'ADVISOR_REQUEST_WITHDRAW', t, { status: 'WITHDRAWN' }, ip);
       // Chỉ mã đề tài: sau khi rút, GV chỉ còn thấy mã trong danh sách đề nghị (advisorService.listRequests)
-      const req = t.advisorRequests[0];
-      await o.notify({ topicId: t.id, userIds: [req?.lecturerId], actorId: user.id, type: 'ADVISOR_REQUEST_WITHDRAWN', key: `ADVISOR_REQUEST_WITHDRAWN:${req?.id}`, link: '/de-nghi-huong-dan', title: (x) => `Nhóm đã rút đề nghị hướng dẫn đề tài ${x.code}` });
+      const req = pendingRequestOf(t);
+      await o.notify({ topicId: t.id, userIds: [req.lecturerId], actorId: user.id, type: 'ADVISOR_REQUEST_WITHDRAWN', key: `ADVISOR_REQUEST_WITHDRAWN:${req.id}`, link: '/de-nghi-huong-dan', title: (x) => `Nhóm đã rút đề nghị hướng dẫn đề tài ${x.code}` });
     },
   };
 

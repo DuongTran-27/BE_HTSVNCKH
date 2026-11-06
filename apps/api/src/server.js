@@ -1,4 +1,3 @@
-import pino from 'pino';
 import { loadEnv } from './config/env.js';
 import { createApp } from './app.js';
 import { prisma } from './lib/prisma.js';
@@ -9,10 +8,10 @@ import { createAccountRepo } from './modules/accounts/prismaRepo.js';
 import { createTopicRepo } from './modules/topics/prismaRepo.js';
 import { passwordHasher } from './lib/password.js';
 import { createCloudinaryStorage, createMemoryStorage } from './lib/storage.js';
+import { createLogger } from './lib/logger.js';
 
 const env = loadEnv();
-// Không ghi token/CRON_SECRET/cookie vào log (pino-http log cả header của request)
-const logger = pino({ level: env.NODE_ENV === 'production' ? 'info' : 'debug', redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'] });
+const logger = createLogger(env); // redact header bí mật: lib/logger.js
 if (env.NODE_ENV === 'production' && !env.CRON_SECRET) logger.warn('Chưa có CRON_SECRET: endpoint nhắc hạn /api/cron/reminders bị tắt');
 
 // Có CLOUDINARY_URL (SDK tự đọc) thì dùng Cloudinary thật; dev/test không có thì dùng kho giả trong bộ nhớ (production bắt buộc có: env.js)

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isoDateTime, idSchema } from './catalog.js';
-import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT, DOCUMENT_STAGES, STATS_GROUP_BY } from './enums.js';
+import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT, DOCUMENT_STAGES, STATS_GROUP_BY, CHANGE_TYPE, CHANGE_STAGE } from './enums.js';
 
 // Thông điệp mặc định tiếng Việt; có hiệu lực cho cả api vì chỉ có một bản zod (QD_ZOD §2)
 z.config(z.locales.vi());
@@ -184,3 +184,20 @@ export const statsQuerySchema = z.object({
   status: opt(z.enum(Object.values(TOPIC_STATUS).filter((s) => s !== 'DRAFT'))),
   facultyId: opt(z.string().trim().max(64)),
 });
+
+// GĐ6 (API_GD6 §2.7): khung yêu cầu thay đổi. Mỗi loại một nhánh; T602 (CANCEL), T603 (LEAVE_GROUP), T605 (TOPIC_CHANGE) thêm nhánh.
+const crReason = z.string().trim().min(5, 'Lý do tối thiểu 5 ký tự').max(2000);
+export const changeRequestCreateSchema = z.discriminatedUnion('type', [
+  z.strictObject({ type: z.literal('ADVISOR_CHANGE'), reason: crReason, newLecturerId: idSchema }),
+], { error: 'Loại yêu cầu không hợp lệ' });
+export const changeRequestApproveSchema = z.preprocess((v) => v ?? {}, z.strictObject({ reason: crReason.optional() }));
+export const changeRequestDeclineSchema = z.strictObject({ reason: crReason });
+export const changeRequestListQuerySchema = z.object({
+  status: opt(reqStatus),
+  type: opt(z.enum(Object.values(CHANGE_TYPE))),
+  stage: opt(z.enum(Object.values(CHANGE_STAGE))),
+  roundId: opt(z.string().trim().max(64)),
+  topicId: opt(z.string().trim().max(64)),
+  ...pageQuery,
+});
+export const formerAdvisorAccessSchema = z.strictObject({ granted: z.boolean({ error: 'Chọn cấp hoặc thu hồi quyền' }), reason: crReason });

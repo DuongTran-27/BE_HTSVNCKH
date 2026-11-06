@@ -10,7 +10,8 @@ const SORTS = {
 export const createListService = ({ repo, now = () => new Date() }) => {
   const scopeOf = (user) => {
     if (user.role === 'STUDENT') return { members: { some: { userId: user.id, leftAt: null } } };
-    if (user.role === 'LECTURER') return { advisings: { some: { lecturerId: user.id, endAt: null } } };
+    // GV cũ được cấp quyền đọc cũng thấy đề tài (lối vào để đọc, API_GD6 §1.1); bộ lọc lecturerId và thống kê vẫn chỉ GVHD hiện hành (G29)
+    if (user.role === 'LECTURER') return { advisings: { some: { lecturerId: user.id, OR: [{ endAt: null }, { readOnlyGranted: true }] } } };
     if (user.role === 'STAFF') return { facultyId: { in: user.staffFacultyIds ?? [] }, status: { not: 'DRAFT' } };
     return { id: { in: [] } }; // ADMIN và vai trò lạ: không có phạm vi nghiệp vụ
   };

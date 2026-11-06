@@ -25,7 +25,7 @@ export const createRoundService = ({ repo, now = () => new Date() }) => {
       reviewDeadline: r.reviewDeadline.toISOString(),
       endAt: r.endAt.toISOString(),
       effectiveConfig: effectiveRoundConfig(r.config),
-      registrationOpen: r.regOpenAt.getTime() <= t && t <= r.regCloseAt.getTime(),
+      registrationOpen: r.regOpenAt.getTime() <= t && t < r.regCloseAt.getTime(), // API_GD2 §1.4: nửa mở như topics/service.js
     };
     return user.role === 'STAFF' ? { ...out, config: r.config ?? {} } : out; // GV/SV chỉ cần effectiveConfig
   };

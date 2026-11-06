@@ -23,7 +23,7 @@ export const createCloseService = ({ repo, getTopic, now = () => new Date() }) =
     const rel = relations(t, user);
     if (!canView(t, rel)) throw forbidden(); // trước checkTransition để không lộ trạng thái (§1.1)
     const roundEnded = now() >= t.round.endAt;
-    const check = (topic, cond) => checkTransition({ topic, action: body.action, actor: user, reason: body.reason, ctx: { ...rel, ...cond, roundEnded } });
+    const check = (topic, cond, r = rel) => checkTransition({ topic, action: body.action, actor: user, reason: body.reason, ctx: { ...r, ...cond, roundEnded } });
     // Thứ tự §1.1: quyền/trạng thái/lý do (ctx giả định đạt) → version → điều kiện đóng thật
     checkTransition({ topic: t, action: body.action, actor: user, reason: body.reason, ctx: { ...rel, ...ASSUME_MET } });
     if (body.version !== t.version) throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
@@ -32,8 +32,9 @@ export const createCloseService = ({ repo, getTopic, now = () => new Date() }) =
 
     await repo.applyClose({ topic: { id: t.id, version: body.version }, transition, actor: user, reason: body.reason }, async (o) => {
       // FR27.3: kiểm lại ngay lúc đóng, sau khi updateMany đã giữ khóa Topic (§7.2); sai → rollback
+      // GVHD hiện hành đọc lại dưới khóa (MINOR m4 T405, API_GD6 §1.2): GV vừa bị thay không gửi đóng được
       const cond = needs ? await o.closeConditions(t.id) : {};
-      if (needs) check({ status: transition.from }, cond);
+      if (needs) check({ status: transition.from }, cond, { ...rel, isCurrentAdvisor: cond.advisorId === user.id });
       let after = { status: transition.to, reason: body.reason ?? null };
       if (body.action === 'CLOSE_EXPIRED') {
         const cur = await o.currentResult(t.id);
