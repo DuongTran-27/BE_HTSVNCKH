@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { effectiveRoundConfig, DOCUMENT_FILE_TYPES, DOCUMENT_MAX_VERSIONS, DOWNLOAD_URL_TTL_SECONDS } from '@nckh/shared';
 import { AppError, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { extOf, sanitizeFileName, unsupported } from '../../lib/upload.js';
-import { relations, canReadExecution } from '../topics/service.js';
+import { relations, canReadExecution, versionReader } from '../topics/service.js';
 import { topicName } from '../notifications/notify.js';
 
 const iso = (d) => d.toISOString();
@@ -24,9 +24,11 @@ export const createDocumentService = ({ repo, storage, folder, now = () => new D
     return t;
   };
   // canReadExecution (gồm GV cũ được cấp quyền đọc); GV được đề nghị chỉ xem đề cương (G23)
-  const canRead = (t, user, stage) => {
+  // Trả hàm uploadedAt → được đọc, hoặc null. Người đã rời nhóm: chỉ bản tải lên trong khoảng là thành viên (FR21, API_GD6 §5.4)
+  const readerOf = (t, user, stage) => {
     const rel = relations(t, user);
-    return canReadExecution(t, rel) || (rel.isRequestedLecturer && stage === 'PROPOSAL');
+    if (rel.isRequestedLecturer && stage === 'PROPOSAL') return () => true;
+    return versionReader(t, rel);
   };
   const assertStage = (status, stage) => {
     if (stage === 'PROPOSAL') {
@@ -118,12 +120,17 @@ export const createDocumentService = ({ repo, storage, folder, now = () => new D
 
     async list(user, topicId, q) {
       const t = await loadTopic(topicId);
-      if (!canRead(t, user, q.stage)) throw forbidden();
+      const can = readerOf(t, user, q.stage);
+      if (!can) throw forbidden();
+      const rel = relations(t, user);
+      const full = canReadExecution(t, rel) || (rel.isRequestedLecturer && q.stage === 'PROPOSAL');
       const rows = await repo.listDocuments(topicId, q);
       const key = (d) => `${d.milestoneId ?? ''}|${d.milestoneId ? '' : d.stage}`;
       const max = new Map();
       for (const d of rows) max.set(key(d), Math.max(max.get(key(d)) ?? 0, d.version));
-      const items = rows.map((d) => presentDocument(d, d.version === max.get(key(d)))).filter((d) => (!q.stage || d.stage === q.stage) && (q.latestOnly !== 'true' || d.isLatest)); // isLatest tính trên cả chuỗi trước khi lọc stage
+      const items = rows.filter((d) => full || can(d.uploadedAt))
+        .map((d) => ({ ...presentDocument(d, d.version === max.get(key(d))), ...(!full && { feedbackCount: null }) })) // người đã rời: không lộ nhận xét
+        .filter((d) => (!q.stage || d.stage === q.stage) && (q.latestOnly !== 'true' || d.isLatest)); // isLatest tính trên cả chuỗi trước khi lọc stage
       return { items };
     },
 
@@ -131,7 +138,7 @@ export const createDocumentService = ({ repo, storage, folder, now = () => new D
       const d = await repo.findDocument(id);
       if (!d) throw notFound();
       const t = await loadTopic(d.topicId);
-      if (!canRead(t, user, d.stage)) throw forbidden();
+      if (!readerOf(t, user, d.stage)?.(d.uploadedAt)) throw forbidden();
       if (d.kind !== 'FILE' || !d.publicId) throw new AppError(400, 'VALIDATION_ERROR', 'Tài liệu dạng link, mở trực tiếp đường dẫn');
       const expiresAt = new Date(now().getTime() + DOWNLOAD_URL_TTL_SECONDS * 1000);
       let url;

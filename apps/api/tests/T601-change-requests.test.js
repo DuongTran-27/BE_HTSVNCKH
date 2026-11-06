@@ -301,12 +301,14 @@ describe('khung ChangeRequest – vòng đời, đua, trùng (§2, ca 5, 7, 10)'
     await expect(prisma.changeRequest.delete({ where: { id } })).rejects.toThrow(/chỉ thêm/);
   });
 
-  // T602 đã cắm CANCEL (test ở T602-cancel.test.js); ca này giữ ý nghĩa với loại còn chưa có handler (LEAVE_GROUP, T603)
-  it('loại chưa có handler duyệt (LEAVE_GROUP, T603) → 409 CHANGE_NOT_READY, không 500', async () => {
+  // T602 cắm CANCEL, T603 cắm LEAVE_GROUP (test ở T602-cancel / T603-leave); loại còn chưa có handler là TOPIC_CHANGE (T605).
+  // T605 cắm nốt thì đổi ca này sang loại không có trong TYPES (dòng DB đi vòng enum không được) – xem reports/T603.md
+  it('loại chưa có handler duyệt (TOPIC_CHANGE, T605) → 409 CHANGE_NOT_READY, không 500, yêu cầu vẫn PENDING', async () => {
     const { t, leader } = await mkRunning();
     const staff = await mkUser('STAFF');
-    const c = await prisma.changeRequest.create({ data: { topicId: t.id, type: 'LEAVE_GROUP', payload: {}, reason: REASON, createdById: U[leader].id, targetUserId: U[leader].id, targetAcceptedAt: new Date() } });
+    const c = await prisma.changeRequest.create({ data: { topicId: t.id, type: 'TOPIC_CHANGE', payload: {}, reason: REASON, createdById: U[leader].id } });
     expect(code(await approve(staff, c.id))).toBe('CHANGE_NOT_READY');
+    expect((await prisma.changeRequest.findUnique({ where: { id: c.id } })).status).toBe('PENDING');
   });
 });
 

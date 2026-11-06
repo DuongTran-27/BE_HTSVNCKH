@@ -185,12 +185,15 @@ export const statsQuerySchema = z.object({
   facultyId: opt(z.string().trim().max(64)),
 });
 
-// GĐ6 (API_GD6 §2.7): khung yêu cầu thay đổi. Mỗi loại một nhánh; đã có ADVISOR_CHANGE (T601), CANCEL (T602); T603 (LEAVE_GROUP), T605 (TOPIC_CHANGE) thêm nhánh.
+// GĐ6 (API_GD6 §2.7): khung yêu cầu thay đổi. Mỗi loại một nhánh; đã có ADVISOR_CHANGE (T601), CANCEL (T602), LEAVE_GROUP (T603); T605 (TOPIC_CHANGE) thêm nhánh.
 const crReason = z.string().trim().min(5, 'Lý do tối thiểu 5 ký tự').max(2000);
 export const changeRequestCreateSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('ADVISOR_CHANGE'), reason: crReason, newLecturerId: idSchema }),
   z.strictObject({ type: z.literal('CANCEL'), reason: crReason }), // T602 (FR20)
+  z.strictObject({ type: z.literal('LEAVE_GROUP'), reason: crReason }), // T603 (FR21): chỉ cho chính mình, không chọn người
 ], { error: 'Loại yêu cầu không hợp lệ' });
+// FR21 rời nhóm trước duyệt (API_GD6 §5.1)
+export const leaveTopicSchema = z.strictObject({ version: z.int().min(0) });
 export const changeRequestApproveSchema = z.preprocess((v) => v ?? {}, z.strictObject({ reason: crReason.optional() }));
 export const changeRequestDeclineSchema = z.strictObject({ reason: crReason });
 export const changeRequestListQuerySchema = z.object({

@@ -23,7 +23,10 @@ const ops = (tx) => ({
   formerAdvisings: (topicId) => findFormerAdvisings(tx, topicId),
   roundOfTopic: async (topicId) => (await tx.topic.findUnique({ where: { id: topicId }, select: { round: { select: { id: true, config: true } } } })).round,
   countLecturerActive: (lecturerId, roundId) => countLecturerActive(tx, lecturerId, roundId),
-  hasPending: async (topicId, type) => (await tx.changeRequest.count({ where: { topicId, type, status: 'PENDING' } })) > 0,
+  hasPending: async (topicId, type, extra = {}) => (await tx.changeRequest.count({ where: { topicId, type, status: 'PENDING', ...extra } })) > 0,
+  // FR21: thành viên hiện hành đọc sau khóa Topic (câu riêng)
+  currentMembers: (topicId) => tx.topicMember.findMany({ where: { topicId, leftAt: null }, select: { userId: true, role: true, user: { select: { code: true, fullName: true } } } }),
+  endMembership: (topicId, userId, at) => tx.topicMember.updateMany({ where: { topicId, userId, leftAt: null }, data: { leftAt: at } }),
   // Lưới an toàn change_request_one_pending (P2002) → 409 riêng, không thành DUPLICATE chung (§2.6)
   create: async (data) => {
     try {

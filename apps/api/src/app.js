@@ -12,7 +12,7 @@ import { notFound } from './lib/errors.js';
 import { catalogRouters } from './modules/catalog/routes.js';
 import { roundsRouter } from './modules/rounds/routes.js';
 import { accountsRouter } from './modules/accounts/routes.js';
-import { topicsRouter } from './modules/topics/routes.js';
+import { topicsRouter, meRouter } from './modules/topics/routes.js';
 import { advisorRequestsRouter, lecturersRouter } from './modules/topics/advisorRoutes.js';
 import { invitationsRouter } from './modules/topics/invitationRoutes.js';
 import { repositoryRouter } from './modules/topics/repositoryRoutes.js';
@@ -58,6 +58,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     const changeRequests = changeRequestRoutes({ repo: topicRepo, guard });
     app.use('/api/topics', topicsRouter({ repo: topicRepo, guard, logger, storage, folder, mountExtra: changeRequests.mountTopicRoutes }));
     app.use('/api/change-requests', changeRequests.router);
+    app.use('/api/me', meRouter({ repo: topicRepo, guard }));
     app.use('/api/advisor-requests', advisorRequestsRouter({ repo: topicRepo, guard }));
     app.use('/api/lecturers', lecturersRouter({ repo: topicRepo, guard }));
     app.use('/api/invitations', invitationsRouter({ repo: topicRepo, guard }));

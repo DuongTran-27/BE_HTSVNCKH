@@ -4,7 +4,7 @@ import { recordAudit } from '../audit/service.js';
 import { lockTopicForExecution, lockTopicRow, assertCurrentAdvisor } from './lock.js';
 import { notifyTopic } from '../notifications/notify.js';
 import { REQUIRED_REMOVED_WHERE } from '../topics/closeConditions.js';
-import { findFormerAdvisings } from '../topics/prismaRepo.js';
+import { findFormerAdvisings, findFormerMembers } from '../topics/prismaRepo.js';
 
 const person = { select: { id: true, fullName: true, role: true } };
 const VIEW_INCLUDE = {
@@ -73,7 +73,7 @@ export const createExecutionRepo = (prisma) => {
         advisings: { where: { endAt: null }, take: 1, select: { lecturerId: true } },
       },
     });
-    return t && { ...t, formerAdvisings: await findFormerAdvisings(prisma, id) };
+    return t && { ...t, formerAdvisings: await findFormerAdvisings(prisma, id), formerMembers: await findFormerMembers(prisma, id) };
   },
   findMilestoneTopicId: async (id) => (await prisma.milestone.findUnique({ where: { id }, select: { topicId: true } }))?.topicId ?? null,
   listMilestones: (topicId) => prisma.milestone.findMany({ where: { topicId }, orderBy: { order: 'asc' }, include: VIEW_INCLUDE }),
@@ -87,7 +87,7 @@ export const createExecutionRepo = (prisma) => {
   // Upload/link: khóa Topic rồi để service kiểm trạng thái theo stage (đề cương: DRAFT/NEEDS_REVISION; mốc: IN_PROGRESS)
   writeDocument: (topicId, fn) => withLockTx(prisma, async (tx) => fn(ops(tx), await lockTopicRow(tx, topicId))),
   findMilestoneBrief: (id) => prisma.milestone.findUnique({ where: { id }, select: { id: true, topicId: true, evaluation: true } }),
-  findDocument: (id) => prisma.document.findUnique({ where: { id }, select: { id: true, topicId: true, milestoneId: true, stage: true, kind: true, version: true, publicId: true, status: true, fileName: true } }),
+  findDocument: (id) => prisma.document.findUnique({ where: { id }, select: { id: true, topicId: true, milestoneId: true, stage: true, kind: true, version: true, publicId: true, status: true, fileName: true, uploadedAt: true } }),
   listFeedbacks: async (where, { skip, take }) => {
     const [items, total] = await Promise.all([
       prisma.feedback.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip, take, include: FEEDBACK_INCLUDE }),

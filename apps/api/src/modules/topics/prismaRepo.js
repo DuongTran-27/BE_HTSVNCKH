@@ -34,6 +34,10 @@ export const findFormerAdvisings = (db, topicId) => db.advising.findMany({
   where: { topicId, endAt: { not: null } }, orderBy: [{ endAt: 'asc' }, { id: 'asc' }],
   select: { lecturerId: true, startAt: true, endAt: true, readOnlyGranted: true, lecturer: { select: { fullName: true } } },
 });
+// FR21 (API_GD6 §5.4): dòng thành viên đã rời – câu riêng vì `members` đã include với leftAt null
+export const findFormerMembers = (db, topicId) => db.topicMember.findMany({
+  where: { topicId, leftAt: { not: null } }, orderBy: [{ joinedAt: 'asc' }, { id: 'asc' }], select: { userId: true, joinedAt: true, leftAt: true },
+});
 
 export const createTopicRepo = (prisma) => ({
   ...createGroupRepo(prisma),
@@ -50,7 +54,7 @@ export const createTopicRepo = (prisma) => ({
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, isActive: true } }),
   findDetail: async (id) => {
     const t = await prisma.topic.findUnique({ where: { id }, include: DETAIL_INCLUDE });
-    return t && { ...t, formerAdvisings: await findFormerAdvisings(prisma, id) };
+    return t && { ...t, formerAdvisings: await findFormerAdvisings(prisma, id), formerMembers: await findFormerMembers(prisma, id) };
   },
 
   // Tạo nháp + trưởng nhóm + AuditLog trong một transaction; mã lấy từ sequence (FR05)

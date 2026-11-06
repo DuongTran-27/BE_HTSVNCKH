@@ -1,12 +1,21 @@
 // Nhóm, lời mời, trưởng nhóm (FR03, API_GD2 §5.3–5.5). Quyền theo quan hệ tính từ DB; giới hạn kiểm SAU câu khóa.
-import { effectiveRoundConfig } from '@nckh/shared';
+import { effectiveRoundConfig, PRE_APPROVAL_STATUSES } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { topicName } from '../notifications/notify.js';
+import { inWindows } from './service.js';
 
 const FINISHED = ['REJECTED', 'CANCELLED', 'CLOSED'];
 const iso = (d) => d?.toISOString() ?? null;
 const isLeader = (g, userId) => g.members.some((m) => m.userId === userId && m.role === 'LEADER');
 const closed = () => conflict('INVITATION_CLOSED', 'Lời mời không còn hiệu lực');
+// FR21 (API_GD6 §5.1): lỗi rời nhóm theo vai trò/trạng thái; dùng cả trước transaction và dưới khóa
+const assertCanLeave = (g, userId) => {
+  const m = g.members.find((x) => x.userId === userId);
+  if (!m) throw forbidden();
+  if (m.role === 'LEADER') throw conflict('LEADER_CANNOT_LEAVE', 'Trưởng nhóm cần chuyển quyền trưởng nhóm trước khi rời nhóm');
+  if (['IN_PROGRESS', 'WAITING_CLOSE'].includes(g.status)) throw conflict('LEAVE_NEEDS_APPROVAL', 'Đề tài đã được duyệt, rời nhóm cần cán bộ khoa duyệt');
+  if (!PRE_APPROVAL_STATUSES.includes(g.status)) throw conflict('TOPIC_NOT_EDITABLE', 'Đề tài đã kết thúc, không rời nhóm được');
+};
 
 export const createGroupService = ({ repo, getTopic, now = () => new Date() }) => {
   const present = (i) => ({
@@ -103,6 +112,42 @@ export const createGroupService = ({ repo, getTopic, now = () => new Date() }) =
         }
       });
       return { invitation: present(await loadInvitation(id)) };
+    },
+
+    // POST /api/topics/:id/leave – trước duyệt rời ngay, không kiểm minMembers (G40)
+    async leave(user, topicId, body, ip) {
+      const pre = await repo.read.findGroup(topicId);
+      if (!pre) throw notFound();
+      assertCanLeave(pre, user.id);
+      await repo.lockTx(async (o) => {
+        if (!(await o.bumpTopic({ id: topicId, version: body.version, status: { in: PRE_APPROVAL_STATUSES } }))) {
+          assertCanLeave(await o.findGroup(topicId), user.id); // phân biệt lỗi trạng thái với lệch version
+          throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
+        }
+        assertCanLeave(await o.findGroup(topicId), user.id); // đọc lại SAU khóa
+        const leftAt = now();
+        const m = await o.leaveMember(topicId, user.id, leftAt);
+        await o.audit({ actorId: user.id, action: 'MEMBER_LEAVE', entityType: 'Topic', entityId: topicId, before: { userId: user.id, role: m.role }, after: { leftAt: leftAt.toISOString() }, ip });
+        await o.notify({ topicId, to: ['leader', 'advisor'], actorId: user.id, type: 'MEMBER_LEFT', key: `MEMBER_LEFT:${m.id}`, link: `/de-tai/${topicId}/nhom`, title: (x) => `${user.fullName} đã rời nhóm đề tài ${topicName(x)}` });
+      });
+      return { left: true, topicId };
+    },
+
+    // GET /api/me/past-topics (API_GD6 §5.4): số liệu và tên chỉ tính trong khoảng là thành viên
+    async pastTopics(user, q) {
+      const { items, total } = await repo.listPastTopics(user.id, { skip: (q.page - 1) * q.pageSize, take: q.pageSize });
+      return {
+        page: q.page, pageSize: q.pageSize, total,
+        items: items.map((t) => {
+          const w = t.members;
+          const subs = t.submissions.filter((s) => inWindows(s.createdAt, w)); // seq giảm dần → [0] là mới nhất
+          return {
+            topicId: t.id, code: t.code, title: subs[0]?.payload?.title ?? null,
+            windows: w.map((x) => ({ joinedAt: iso(x.joinedAt), leftAt: iso(x.leftAt) })),
+            submissionCount: subs.length, documentCount: t.documents.filter((d) => inWindows(d.uploadedAt, w)).length,
+          };
+        }),
+      };
     },
 
     async transferLeader(user, topicId, body, ip) {

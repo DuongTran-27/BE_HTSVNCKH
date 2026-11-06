@@ -1,4 +1,4 @@
-import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema } from '@nckh/shared';
+import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, leaveTopicSchema, paginationQuery, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { notFound } from '../../lib/errors.js';
@@ -56,6 +56,7 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   r.post('/:id/leader', student, validate(leaderTransferSchema), async (req, res) => {
     res.json(await group.transferLeader(req.user, req.params.id, req.body, req.ip));
   });
+  r.post('/:id/leave', student, validate(leaveTopicSchema), async (req, res) => res.json(await group.leave(req.user, req.params.id, req.body, req.ip)));
   r.get('/:id/similarity-checks/latest', requireRole('STAFF', 'LECTURER', 'STUDENT'), async (req, res) => res.json(await similarity.latest(req.user, req.params.id)));
   r.post('/:id/similarity-checks', student, similarityLimiter, validate(emptyBodySchema), async (req, res) => res.json(await similarity.check(req.user, req.params.id, req.ip)));
   // Endpoint chuyển trạng thái chung (§8.1); T210: nhánh FR16, T212a: gửi/xét duyệt; T405: đóng đề tài. Vai trò kiểm bằng TRANSITIONS.
@@ -69,5 +70,13 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   mountTopicDocumentRoutes(r, { repo, storage, folder, now, logger });
   mountTopicFeedbackRoutes(r, { repo, now });
   mountExtra?.(r); // GĐ6: yêu cầu thay đổi, quyền đọc GV cũ (changeRequests/routes.js)
+  return r;
+};
+
+// GET /api/me/past-topics – SV đã rời nhóm (FR21, API_GD6 §5.4)
+export const meRouter = ({ repo, now, guard }) => {
+  const group = createGroupService({ repo, now });
+  const r = businessRouter(guard);
+  r.get('/past-topics', requireRole('STUDENT'), validate(paginationQuery, 'query'), async (req, res) => res.json(await group.pastTopics(req.user, req.validated)));
   return r;
 };

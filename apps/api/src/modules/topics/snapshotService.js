@@ -1,7 +1,7 @@
 // Đọc snapshot hồ sơ và lịch sử trạng thái (FR17, API_GD2 §8.4). Chỉ đọc.
 import { forbidden, notFound } from '../../lib/errors.js';
 import { presentMatches } from '../similarity/service.js';
-import { relations, canReadExecution } from './service.js';
+import { relations, canReadExecution, versionReader } from './service.js';
 
 const iso = (d) => d.toISOString();
 const sameSet = (a, b) => ({ added: b.filter((k) => !a.includes(k)), removed: a.filter((k) => !b.includes(k)) });
@@ -24,12 +24,20 @@ export const createSnapshotService = ({ repo }) => {
     if (!canReadExecution(t, rel)) throw forbidden();
     return t;
   };
+  // Snapshot: thêm người đã rời nhóm, chỉ bản tạo trong khoảng là thành viên (FR21, API_GD6 §5.4)
+  const reader = async (user, id) => {
+    const t = await repo.findDetail(id);
+    if (!t) throw notFound();
+    const can = versionReader(t, relations(t, user));
+    if (!can) throw forbidden();
+    return can;
+  };
   const brief = (s) => ({ seq: s.seq, createdAt: iso(s.createdAt), payload: s.payload });
 
   return {
     async list(user, id) {
-      await load(user, id);
-      const rows = await repo.listSubmissions(id);
+      const can = await reader(user, id);
+      const rows = (await repo.listSubmissions(id)).filter((s) => can(s.createdAt));
       return {
         items: rows.map((s) => ({
           id: s.id, seq: s.seq, createdAt: iso(s.createdAt), createdBy: { fullName: s.createdBy.fullName },
@@ -40,9 +48,10 @@ export const createSnapshotService = ({ repo }) => {
     },
 
     async get(user, id, seq) {
-      await load(user, id);
+      const can = await reader(user, id);
       const [s] = await repo.findSubmissions(id, [seq]);
       if (!s) throw notFound();
+      if (!can(s.createdAt)) throw forbidden();
       const ids = s.payload.documentIds ?? [];
       const docs = ids.length ? await repo.findDocumentBriefs(ids) : [];
       return {
@@ -58,11 +67,12 @@ export const createSnapshotService = ({ repo }) => {
     },
 
     async diff(user, id, { from, to }) {
-      await load(user, id);
+      const can = await reader(user, id);
       const rows = await repo.findSubmissions(id, [from, to]);
       const a = rows.find((s) => s.seq === from);
       const b = rows.find((s) => s.seq === to);
       if (!a || !b) throw notFound();
+      if (!can(a.createdAt) || !can(b.createdAt)) throw forbidden();
       const p = a.payload;
       const q = b.payload;
       return {

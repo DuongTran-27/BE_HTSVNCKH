@@ -1,6 +1,6 @@
 // Hồ sơ đề tài (FR05, API_GD2 §5.1): tạo nháp, xem chi tiết, sửa khi Nháp/Cần chỉnh sửa. Quyền theo quan hệ tính từ DB.
 import { createHash } from 'node:crypto';
-import { effectiveRoundConfig, findTransition, availableActions, countWords, ENABLED_ACTIONS, ADVISOR_CHANGE_STATUSES } from '@nckh/shared';
+import { effectiveRoundConfig, findTransition, availableActions, countWords, ENABLED_ACTIONS, ADVISOR_CHANGE_STATUSES, PRE_APPROVAL_STATUSES } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { contentHash } from '../similarity/engine.js';
 import { evaluateClose } from './closeConditions.js';
@@ -25,7 +25,11 @@ export const presentFormerAdvisors = (rows) => rows.map((a) => ({
 }));
 const fail = (details) => badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', details);
 
+// FR21 (API_GD6 §5.4): khoảng [joinedAt, leftAt) – biên joinedAt được đọc, leftAt không
+export const inWindows = (at, windows) => windows.some((w) => w.joinedAt <= at && at < w.leftAt);
+
 // t.advisings: Advising hiện hành (endAt null); t.formerAdvisings: đã kết thúc (API_GD6 §1.1); t.changeRequests: PENDING
+// t.formerMembers: TopicMember đã rời (leftAt khác null) của mọi người
 export const relations = (t, user) => {
   const me = t.members.find((m) => m.userId === user.id);
   const isCurrentAdvisor = t.advisings.some((a) => a.lecturerId === user.id);
@@ -38,12 +42,21 @@ export const relations = (t, user) => {
     isFormerAdvisorReader: !isCurrentAdvisor && (t.formerAdvisings ?? []).some((a) => a.lecturerId === user.id && a.readOnlyGranted),
     // Chỉ GV mới của ADVISOR_CHANGE được xem chi tiết (MINOR m1 T600: SV đích của TOPIC_CHANGE xem qua ChangeRequestView)
     isChangeTarget: (t.changeRequests ?? []).some((c) => c.type === 'ADVISOR_CHANGE' && c.targetUserId === user.id),
+    // Chỉ khi không còn là thành viên hiện hành (§5.4); thành viên hiện hành đã đọc được mọi thứ
+    formerMemberWindows: me ? [] : (t.formerMembers ?? []).filter((m) => m.userId === user.id).map((m) => ({ joinedAt: m.joinedAt, leftAt: m.leftAt })),
   };
 };
 export const canView = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isRequestedLecturer || rel.isFormerAdvisorReader || rel.isChangeTarget
   || (rel.inStaffScope && t.status !== 'DRAFT');
 // Quyền đọc phần thực hiện + snapshot/lịch sử (API_GD45 §1.1, API_GD2 §8.4, API_GD6 §1.1) – một nơi duy nhất
 export const canReadExecution = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || (rel.inStaffScope && t.status !== 'DRAFT');
+// Quyền đọc "phiên bản" (snapshot hồ sơ, phiên bản tài liệu – G41): null = không được; còn lại là hàm at → được đọc bản tạo lúc at.
+// Người đã rời nhóm chỉ đọc bản trong khoảng còn là thành viên (FR21, API_GD6 §5.4)
+export const versionReader = (t, rel) => {
+  if (canReadExecution(t, rel)) return () => true;
+  const w = rel.formerMemberWindows;
+  return w.length ? (at) => inWindows(at, w) : null;
+};
 
 export const createTopicService = ({ repo, now = () => new Date() }) => {
   const present = (t, user, rel) => {
@@ -116,6 +129,8 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         // GĐ6 (API_GD6 §2.5); quyền của loại khác do task của loại đó thêm
         requestAdvisorChange: (rel.isLeader || rel.inStaffScope) && ADVISOR_CHANGE_STATUSES.includes(t.status),
         requestCancel: (rel.isLeader || rel.isCurrentAdvisor) && t.status === 'IN_PROGRESS',
+        leave: rel.isMember && !rel.isLeader && PRE_APPROVAL_STATUSES.includes(t.status),
+        requestLeave: rel.isMember && !rel.isLeader && t.status === 'IN_PROGRESS',
         manageFormerAdvisorAccess: rel.inStaffScope,
       },
       pendingChangeRequests: (t.changeRequests ?? []).filter((c) => rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope || c.targetUserId === user.id)

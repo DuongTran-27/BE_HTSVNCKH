@@ -31,6 +31,12 @@ export const groupOps = (db) => ({
     await db.topicMember.updateMany({ where: { topicId, userId: oldId, ...LIVE }, data: { role: 'MEMBER' } });
     await db.topicMember.updateMany({ where: { topicId, userId: newId, ...LIVE }, data: { role: 'LEADER' } });
   },
+  // FR21: đóng dòng thành viên hiện hành; trả dòng (id dùng cho dedupeKey MEMBER_LEFT) hoặc null
+  leaveMember: async (topicId, userId, leftAt) => {
+    const m = await db.topicMember.findFirst({ where: { topicId, userId, ...LIVE }, select: { id: true, role: true } });
+    if (m) await db.topicMember.update({ where: { id: m.id }, data: { leftAt } });
+    return m;
+  },
   audit: (entry) => recordAudit(db, entry),
   notify: (args) => notifyTopic(db, args), // FR13, cùng tx
 });
@@ -43,6 +49,23 @@ export const createGroupRepo = (prisma) => ({
     where: { id },
     include: { invitee: person, topic: { select: { id: true, code: true, title: true, status: true, members: { where: { ...LIVE, role: 'LEADER' }, select: { userId: true } } } } },
   }),
+  // FR21 (API_GD6 §5.4): đề tài me đã rời và hiện không còn là thành viên
+  listPastTopics: async (userId, { skip, take }) => {
+    const where = { members: { some: { userId, leftAt: { not: null } }, none: { userId, ...LIVE } } };
+    const [items, total] = await Promise.all([
+      prisma.topic.findMany({
+        where, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip, take,
+        select: {
+          id: true, code: true,
+          members: { where: { userId, leftAt: { not: null } }, orderBy: { joinedAt: 'asc' }, select: { joinedAt: true, leftAt: true } },
+          submissions: { orderBy: { seq: 'desc' }, select: { createdAt: true, payload: true } },
+          documents: { where: { status: 'READY' }, select: { uploadedAt: true } },
+        },
+      }),
+      prisma.topic.count({ where }),
+    ]);
+    return { items, total };
+  },
   listInvitations: async ({ inviteeId, status, skip, take }) => {
     const where = { inviteeId, ...(status && { status }) };
     const [items, total] = await Promise.all([
