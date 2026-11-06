@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export const btn = 'inline-flex min-h-11 items-center justify-center rounded-md px-4 font-medium disabled:opacity-60';
 export const btnPrimary = `${btn} bg-blue-700 text-white`;
@@ -25,10 +25,42 @@ export function Badge({ children, tone = 'slate' }) {
   return <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${t}`}>{children}</span>;
 }
 
+const FOCUSABLE = 'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+/**
+ * Hộp thoại truy cập được: focus vào phần tử đầu tiên khi mở, Tab/Shift+Tab xoay vòng trong hộp,
+ * Esc gọi onEscape (bỏ qua nếu không truyền), đóng thì trả focus về nút đã mở. Trả ref gắn vào hộp.
+ */
+export function useDialogA11y(onEscape) {
+  const ref = useRef(null);
+  const esc = useRef(onEscape);
+  esc.current = onEscape;
+  useEffect(() => {
+    const box = ref.current;
+    const opener = document.activeElement;
+    box?.querySelector(FOCUSABLE)?.focus();
+    const onKey = (e) => {
+      if (e.key === 'Escape' && esc.current) { e.preventDefault(); esc.current(); return; }
+      if (e.key !== 'Tab' || !box) return;
+      const items = [...box.querySelectorAll(FOCUSABLE)];
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!box.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); if (opener?.isConnected) opener.focus(); };
+  }, []);
+  return ref;
+}
+
 export function ConfirmDialog({ title, message, confirmLabel = 'Xác nhận', danger, busy, error, onConfirm, onCancel }) {
+  const ref = useDialogA11y(onCancel);
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md rounded-lg bg-white p-4 shadow-lg">
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md rounded-lg bg-white p-4 shadow-lg">
         <h2 className="text-lg font-bold">{title}</h2>
         <p className="mt-2 text-slate-700">{message}</p>
         {error && <p role="alert" className="mt-2 text-sm text-red-700 break-words">{error}</p>}

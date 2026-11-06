@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Component, Suspense, lazy } from 'react';
 import { Navigate, redirect } from 'react-router';
 import { bootstrapSession } from './lib/api.js';
 import { auth, useAuth } from './lib/auth.js';
@@ -40,6 +40,21 @@ const PastTopicsPage = lazy(() => import('./pages/topics/PastTopicsPage.jsx').th
 const PastTopicDetailPage = lazy(() => import('./pages/topics/PastTopicsPage.jsx').then((m) => ({ default: m.PastTopicDetailPage })));
 const ChangeRequestsPage = lazy(() => import('./pages/ChangeRequestsPage.jsx').then((m) => ({ default: m.ChangeRequestsPage })));
 const RoundFormPage = lazy(() => import('./pages/admin/RoundFormPage.jsx').then((m) => ({ default: m.RoundFormPage })));
+
+// Lỗi tải chunk lazy (mất mạng, bản mới đã thay file cũ) → thông báo + tải lại, thay vì trang trắng
+export class ChunkErrorBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div role="alert" className="m-4 rounded-md bg-red-50 p-3 text-red-800">
+        <p>Không tải được nội dung trang. Có thể do mất kết nối hoặc hệ thống vừa cập nhật.</p>
+        <button type="button" onClick={() => window.location.reload()} className="mt-2 inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-4 font-medium text-slate-900">Tải lại trang</button>
+      </div>
+    );
+  }
+}
 
 // Loader chạy ngay khi tạo router, trước khi phiên khởi động xong → phải chờ bootstrapSession trước khi đọc auth
 // (review T301-reviewer-v3 i1). Guard chỉ để dẫn đường; backend kiểm quyền thật (FR25).
@@ -166,7 +181,7 @@ export const routes = [
       { path: '/403', element: <Forbidden /> },
       ...SCREENS.map(([path, roles, title]) => ({
         path: `/${path}`,
-        element: <RequireRole roles={roles}><Suspense fallback={<p role="status" className="p-4">Đang tải…</p>}>{SCREEN_ELEMENT[path] ?? <Placeholder title={title} />}</Suspense></RequireRole>,
+        element: <RequireRole roles={roles}><ChunkErrorBoundary><Suspense fallback={<p role="status" className="p-4">Đang tải…</p>}>{SCREEN_ELEMENT[path] ?? <Placeholder title={title} />}</Suspense></ChunkErrorBoundary></RequireRole>,
       })),
       { path: '*', element: <NotFound /> },
     ],

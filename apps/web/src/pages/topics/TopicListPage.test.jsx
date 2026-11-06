@@ -91,3 +91,43 @@ describe('R25 kho đề tài', () => {
     expect(await screen.findByText('Đề tài không có trong kho')).toBeTruthy();
   });
 });
+
+describe('lỗi tải và lọc GVHD (T702)', async () => {
+  const { SubmitPage } = await import('./SubmitPage.jsx');
+  const { TopicEditPage } = await import('./TopicEditPage.jsx');
+  const { ChunkErrorBoundary } = await import('../../routes.jsx');
+
+  it('RepositoryPage lỗi tải hiện error.message và nút Thử lại', async () => {
+    api.mockRejectedValue(new Error('Máy chủ bận'));
+    mount(<RepositoryPage />, '/kho');
+    expect(await screen.findByText('Máy chủ bận')).toBeTruthy();
+    expect(screen.getByText('Thử lại')).toBeTruthy();
+  });
+
+  it('SubmitPage lỗi tải hiện error.message', async () => {
+    api.mockRejectedValue(new Error('Không tải được đề tài'));
+    mount(<SubmitPage />, '/de-tai/t1/gui', '/de-tai/:id/gui');
+    expect(await screen.findByText('Không tải được đề tài')).toBeTruthy();
+  });
+
+  it('TopicEditPage lỗi mạng hiện thông báo, không trắng trang', async () => {
+    api.mockRejectedValue(new Error('Mất kết nối mạng'));
+    mount(<TopicEditPage />, '/de-tai/t1/sua', '/de-tai/:id/sua');
+    expect(await screen.findByText('Mất kết nối mạng')).toBeTruthy();
+  });
+
+  it('ChunkErrorBoundary hiện thông báo tiếng Việt + nút tải lại khi con ném lỗi', () => {
+    const Boom = () => { throw new Error('chunk'); };
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<ChunkErrorBoundary><Boom /></ChunkErrorBoundary>);
+    spy.mockRestore();
+    expect(screen.getByText('Tải lại trang')).toBeTruthy();
+  });
+
+  it('STAFF: ô tìm giảng viên gọi /users với q', async () => {
+    auth.setSession({ accessToken: 'x', user: { id: 'u', role: 'STAFF' } });
+    mount(<TopicListPage />, '/de-tai');
+    expect(await screen.findByLabelText('Tìm giảng viên')).toBeTruthy();
+    expect(calls().some((u) => u.startsWith('/users') && u.includes('role=LECTURER'))).toBe(true);
+  });
+});

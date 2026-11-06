@@ -12,7 +12,7 @@ import { toast } from '../../lib/toast.js';
 import { useCooldown } from '../../lib/useCooldown.js';
 import { FormField, inputClass } from '../../components/FormField.jsx';
 import { SimilarityPanel } from '../../components/SimilarityPanel.jsx';
-import { ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
+import { ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary, useDialogA11y } from '../../components/ui.jsx';
 
 const FIELD_NAMES = ['title', 'summary', 'objectives', 'keywords', 'fieldId'];
 
@@ -36,6 +36,23 @@ function KeywordsInput({ value, max, onChange, error }) {
       <input type="text" value={text} disabled={value.length >= max} onChange={(e) => setText(e.target.value)} onBlur={add}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); } }} />
     </FormField>
+  );
+}
+
+// Không có Esc: phải chọn một trong hai để không mất/ghi đè dữ liệu ngoài ý muốn
+function ConflictDialog({ onTakeNew, onKeepMine }) {
+  const ref = useDialogA11y();
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+      <div ref={ref} role="dialog" aria-modal="true" aria-label="Hồ sơ vừa được cập nhật" className="w-full max-w-md space-y-3 rounded-lg bg-white p-4 shadow-lg">
+        <h2 className="text-lg font-bold">Hồ sơ vừa được thành viên khác cập nhật</h2>
+        <p>Chọn tải bản mới (bỏ thay đổi của bạn) hoặc giữ nội dung của bạn rồi lưu lại để ghi đè.</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button type="button" onClick={onTakeNew} className={btnGhost}>Tải bản mới (bỏ thay đổi của tôi)</button>
+          <button type="button" onClick={onKeepMine} className={btnPrimary}>Giữ nội dung của tôi</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -125,7 +142,7 @@ function EditForm({ topic }) {
 
   return (
     <section>
-      <p className="text-sm text-slate-700">{topic.code}</p>
+      <p data-testid="topic-code" className="text-sm text-slate-700">{topic.code}</p>
       <h1 className="text-xl font-bold">Soạn hồ sơ</h1>
       <form noValidate onSubmit={onSave} className="mt-3 max-w-2xl space-y-4">
         <FormField label="Tên đề tài" error={errors.title?.message}><input type="text" {...register('title')} /></FormField>
@@ -173,18 +190,7 @@ function EditForm({ topic }) {
         <div className="mt-4 max-w-2xl"><h2 className="mb-2 font-bold">Kết quả kiểm tra trùng lặp</h2><SimilarityPanel check={check ?? latest.data} /></div>
       )}
 
-      {conflict && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-          <div role="dialog" aria-modal="true" aria-label="Hồ sơ vừa được cập nhật" className="w-full max-w-md space-y-3 rounded-lg bg-white p-4 shadow-lg">
-            <h2 className="text-lg font-bold">Hồ sơ vừa được thành viên khác cập nhật</h2>
-            <p>Chọn tải bản mới (bỏ thay đổi của bạn) hoặc giữ nội dung của bạn rồi lưu lại để ghi đè.</p>
-            <div className="flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={takeNew} className={btnGhost}>Tải bản mới (bỏ thay đổi của tôi)</button>
-              <button type="button" onClick={keepMine} className={btnPrimary}>Giữ nội dung của tôi</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {conflict && <ConflictDialog onTakeNew={takeNew} onKeepMine={keepMine} />}
       {blocker.state === 'blocked' && (
         <ConfirmDialog title="Rời trang?" message="Bạn có thay đổi chưa lưu. Rời trang sẽ mất các thay đổi này." confirmLabel="Rời trang" danger
           onConfirm={() => blocker.proceed()} onCancel={() => blocker.reset()} />

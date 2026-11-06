@@ -36,7 +36,7 @@ function TopicDetail({ topic: t }) {
   return (
     <div className="space-y-4">
       <header>
-        <p className="text-sm text-slate-700">{t.code}</p>
+        <p data-testid="topic-code" className="text-sm text-slate-700">{t.code}</p>
         <h1 className="break-words text-xl font-bold">{t.title || '(Chưa đặt tên)'}</h1>
         <p className="mt-1 space-x-2 text-sm">
           <Badge>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Badge>

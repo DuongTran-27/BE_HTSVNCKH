@@ -3,13 +3,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { reasonSchema } from '@nckh/shared';
 import { applyServerErrors } from '../lib/forms.js';
 import { FormField } from './FormField.jsx';
-import { btnDanger, btnGhost } from './ui.jsx';
+import { btnDanger, btnGhost, useDialogA11y } from './ui.jsx';
 
 /** Hộp nhập lý do bắt buộc (reasonSchema 5–2000). onSubmit(reason) ném ApiError → hiện lỗi dưới ô hoặc ở hộp */
 export function ReasonDialog({ title, message, label = 'Lý do', confirmLabel, onSubmit, onCancel }) {
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(reasonSchema), defaultValues: { reason: '' },
   });
+  const ref = useDialogA11y(onCancel);
   const submit = async ({ reason }) => {
     try {
       await onSubmit(reason);
@@ -19,7 +20,7 @@ export function ReasonDialog({ title, message, label = 'Lý do', confirmLabel, o
   };
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <form role="dialog" aria-modal="true" aria-label={title} noValidate onSubmit={handleSubmit(submit)} className="w-full max-w-md space-y-3 rounded-lg bg-white p-4 shadow-lg">
+      <form ref={ref} role="dialog" aria-modal="true" aria-label={title} noValidate onSubmit={handleSubmit(submit)} className="w-full max-w-md space-y-3 rounded-lg bg-white p-4 shadow-lg">
         <h2 className="text-lg font-bold">{title}</h2>
         {message && <p className="text-slate-700">{message}</p>}
         <FormField label={label} error={errors.reason?.message}><textarea rows={4} {...register('reason')} /></FormField>

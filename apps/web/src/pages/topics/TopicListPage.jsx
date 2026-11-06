@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { FINAL_RESULT_LABEL, TOPIC_STATUS_LABEL } from '@nckh/shared';
@@ -30,8 +31,11 @@ export function TopicListPage() {
   };
   const rounds = useQuery({ queryKey: ['rounds', 'all'], queryFn: async () => (await api('/rounds?pageSize=100')).items });
   const fields = useCatalog('fields');
-  // shortcut: 100 GV đầu tiên (đủ cho một khoa); nâng thành ô chọn có tìm kiếm khi khoa có hơn 100 GV
-  const lecturers = useQuery({ queryKey: ['users', 'lecturers-filter'], enabled: isStaff, queryFn: async () => (await api('/users?role=LECTURER&pageSize=100')).items });
+  const [lecturerQ, setLecturerQ] = useState(''); // UI §4.4: ô tìm kiếm gọi API `q`, không giới hạn 100 GV đầu
+  const lecturers = useQuery({ queryKey: ['users', 'lecturers-filter', lecturerQ], enabled: isStaff, queryFn: async () => (await api(`/users${qs({ role: 'LECTURER', q: lecturerQ, pageSize: 50 })}`)).items });
+  const lecturerOptions = (lecturers.data ?? []).map((l) => ({ value: l.id, label: `${l.code} – ${l.fullName}` }));
+  // GV đang lọc (từ URL) có thể không nằm trong kết quả tìm → vẫn giữ làm lựa chọn để ô chọn khớp bộ lọc
+  if (params.lecturerId && !lecturerOptions.some((o) => o.value === params.lecturerId)) lecturerOptions.unshift({ value: params.lecturerId, label: 'Giảng viên đang lọc' });
   const invitations = useQuery({ queryKey: ['invitations', 'banner'], enabled: isStudent, queryFn: () => api('/invitations?status=PENDING&pageSize=1') });
   const query = useQuery({
     queryKey: ['topics', 'list', params],
@@ -52,8 +56,10 @@ export function TopicListPage() {
       <FilterSelect label="Lĩnh vực" value={params.fieldId} onChange={(v) => u.set('fieldId', v)} placeholder="Mọi lĩnh vực"
         options={(fields.data ?? []).map((f) => ({ value: f.id, label: f.name }))} />
       {isStaff && (
-        <FilterSelect label="Giảng viên hướng dẫn" value={params.lecturerId} onChange={(v) => u.set('lecturerId', v)} placeholder="Mọi giảng viên"
-          options={(lecturers.data ?? []).map((l) => ({ value: l.id, label: `${l.code} – ${l.fullName}` }))} />
+        <div>
+          <DebouncedInput label="Tìm giảng viên" value={lecturerQ} onCommit={setLecturerQ} placeholder="Mã hoặc họ tên" />
+          <FilterSelect label="Giảng viên hướng dẫn" value={params.lecturerId} onChange={(v) => u.set('lecturerId', v)} placeholder="Mọi giảng viên" options={lecturerOptions} />
+        </div>
       )}
       <FilterSelect label="Trạng thái" value={params.status} onChange={(v) => u.set('status', v)} placeholder="Mọi trạng thái" options={toOptions(TOPIC_STATUS_LABEL)} />
       <FilterSelect label="Kết quả" value={params.result} onChange={(v) => u.set('result', v)} placeholder="Mọi kết quả" options={toOptions(FINAL_RESULT_LABEL)} />

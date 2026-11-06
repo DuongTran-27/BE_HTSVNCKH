@@ -33,7 +33,7 @@ test.describe('M1/M5 luồng đầy đủ', () => {
     await page.getByRole('button', { name: 'Tạo nháp' }).click();
     await expect(page.getByRole('heading', { name: 'Soạn hồ sơ' })).toBeVisible();
     topicId = page.url().match(/de-tai\/([^/]+)\/sua/)[1];
-    code = (await page.locator('p.text-sm').first().innerText()).trim();
+    code = (await page.getByTestId('topic-code').innerText()).trim();
 
     await page.getByLabel('Tóm tắt').fill(S.main.summary);
     await page.getByLabel('Mục tiêu').fill(S.main.objectives);
