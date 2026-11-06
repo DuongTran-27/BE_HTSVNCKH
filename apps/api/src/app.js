@@ -21,6 +21,7 @@ import { milestonesRouter, progressRouter, documentsRouter } from './modules/exe
 import { notificationsRouter, cronRouter } from './modules/notifications/routes.js';
 import { statsRouter } from './modules/stats/routes.js';
 import { changeRequestRoutes } from './modules/changeRequests/routes.js';
+import { buildOpenApi, swaggerHtml, swaggerInit } from './openapi/spec.js';
 
 /**
  * Tạo ứng dụng với phụ thuộc được tiêm vào để test không cần database thật.
@@ -43,6 +44,13 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     const db = await checkDb().catch(() => false);
     res.status(db ? 200 : 503).json({ status: db ? 'ok' : 'degraded', db });
   });
+  // NFR08: tài liệu API chỉ có ngoài production; production rơi xuống 404 chuẩn.
+  if (env.NODE_ENV !== 'production') {
+    const doc = buildOpenApi();
+    app.get('/api/openapi.json', (_req, res) => res.json(doc));
+    app.get('/api/docs', (_req, res) => res.set('Content-Security-Policy', "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:; connect-src 'self'").type('html').send(swaggerHtml));
+    app.get('/api/docs/init.js', (_req, res) => res.type('js').send(swaggerInit));
+  }
   app.use('/api/auth', authRouter({ authService, requireAuth, env }));
 
   // Router nghiệp vụ nhận `guard` và tự gắn đầu router (lib/router.js), mount ở tiền tố riêng.
