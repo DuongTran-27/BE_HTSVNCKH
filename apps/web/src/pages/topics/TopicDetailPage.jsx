@@ -8,6 +8,7 @@ import { useSimilarityLatest } from '../../lib/queries.js';
 import { ExecTabs, TopicQuery } from '../../components/ExecShell.jsx';
 import { ResultSection } from '../../components/ResultSection.jsx';
 import { TopicActionBar } from '../../components/TopicActionBar.jsx';
+import { FormerAdvisors, LeaveGroupButton, ReadOnlyBanner } from '../../components/MembershipActions.jsx';
 import { SimilarityBadge, SimilarityPanel } from '../../components/SimilarityPanel.jsx';
 
 const NOTICE_STATUSES = ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR'];
@@ -28,6 +29,7 @@ function TopicDetail({ topic: t }) {
   // UI §5.3 ngoại lệ 2: GV chưa là GVHD không đọc được lịch sử (API §8.4)
   const canHistory = !(user.role === 'LECTURER' && t.advisor?.id !== user.id);
   const max = t.round.effectiveConfig?.maxMembers;
+  const pending = t.pendingChangeRequests?.length ?? 0;
   const [showSim, setShowSim] = useState(false);
   const sim = useSimilarityLatest(t.id, showSim);
   return (
@@ -44,6 +46,7 @@ function TopicDetail({ topic: t }) {
         <div className="mt-2"><ExecTabs topic={t} /></div>
       </header>
 
+      <ReadOnlyBanner topic={t} />
       {showReason && (
         <div role="note" className="rounded-md border-2 border-amber-500 bg-amber-50 p-3">
           <p className="font-bold">{t.status === 'REJECTED' ? 'Đề tài bị từ chối' : 'Cần chỉnh sửa'}</p>
@@ -75,12 +78,14 @@ function TopicDetail({ topic: t }) {
         <div className="flex flex-wrap gap-1">{t.keywords.length ? t.keywords.map((k) => <Badge key={k}>{k}</Badge>) : '—'}</div>
       </div>
       <Block title="Giảng viên hướng dẫn">{t.advisor?.fullName ?? 'Chưa có'}</Block>
+      <FormerAdvisors topic={t} />
       <div>
         <h2 className="font-bold">Nhóm ({t.members.length}{max ? `/${max}` : ''})</h2>
         <ul className="list-disc pl-5">
           {t.members.map((m) => <li key={m.userId}>{m.fullName} ({m.code}){m.role === 'LEADER' && ' – trưởng nhóm'}</li>)}
         </ul>
         <Link to={`/de-tai/${t.id}/nhom`} className="text-blue-800 underline">Quản lý nhóm</Link>
+        <div className="mt-2"><LeaveGroupButton topic={t} /></div>
       </div>
       <div>
         <h2 className="font-bold">Kiểm tra trùng lặp</h2>
@@ -95,6 +100,7 @@ function TopicDetail({ topic: t }) {
       <p className="space-x-4">
         {sub && <Link to={`/de-tai/${t.id}/lan-gui/${sub.seq}`} className="text-blue-800 underline">Lần gửi gần nhất (lần {sub.seq})</Link>}
         {canHistory && <Link to={`/de-tai/${t.id}/lich-su`} className="text-blue-800 underline">Lịch sử</Link>}
+        <Link to={`/de-tai/${t.id}/yeu-cau`} className="text-blue-800 underline">Yêu cầu thay đổi{pending > 0 && ` (${pending} đang chờ)`}</Link>
         {t.permissions?.edit && <Link to={`/de-tai/${t.id}/sua`} className="text-blue-800 underline">Sửa hồ sơ</Link>}
       </p>
       <ResultSection topic={t} />

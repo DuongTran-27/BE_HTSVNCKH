@@ -35,6 +35,10 @@ const CatalogPage = lazy(() => import('./pages/admin/CatalogPage.jsx').then((m) 
 const RoundsPage = lazy(() => import('./pages/admin/RoundsPage.jsx').then((m) => ({ default: m.RoundsPage })));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx').then((m) => ({ default: m.NotificationsPage })));
 const StatsPage = lazy(() => import('./pages/stats/StatsPage.jsx').then((m) => ({ default: m.StatsPage })));
+const TopicRequestsPage = lazy(() => import('./pages/topics/TopicRequestsPage.jsx').then((m) => ({ default: m.TopicRequestsPage })));
+const PastTopicsPage = lazy(() => import('./pages/topics/PastTopicsPage.jsx').then((m) => ({ default: m.PastTopicsPage })));
+const PastTopicDetailPage = lazy(() => import('./pages/topics/PastTopicsPage.jsx').then((m) => ({ default: m.PastTopicDetailPage })));
+const ChangeRequestsPage = lazy(() => import('./pages/ChangeRequestsPage.jsx').then((m) => ({ default: m.ChangeRequestsPage })));
 const RoundFormPage = lazy(() => import('./pages/admin/RoundFormPage.jsx').then((m) => ({ default: m.RoundFormPage })));
 
 // Loader chạy ngay khi tạo router, trước khi phiên khởi động xong → phải chờ bootstrapSession trước khi đọc auth
@@ -78,6 +82,10 @@ const SCREENS = [
   ['de-tai/:id/moc', [S, L, F], 'Mốc thực hiện'],
   ['de-tai/:id/tien-do', [S, L, F], 'Tiến độ'],
   ['de-tai/:id/tai-lieu', [S, L, F], 'Tài liệu'],
+  ['de-tai/:id/yeu-cau', [S, L, F], 'Yêu cầu thay đổi'],
+  ['yeu-cau', [S, L, F], 'Yêu cầu thay đổi'],
+  ['lich-su-tham-gia', [S], 'Lịch sử tham gia'],
+  ['lich-su-tham-gia/:topicId', [S], 'Phiên bản đã tham gia'],
   ['loi-moi', [S], 'Lời mời'],
   ['de-nghi-huong-dan', [L, F], 'Đề nghị hướng dẫn'],
   ['xet-duyet', [F], 'Xét duyệt'],
@@ -119,6 +127,10 @@ const SCREEN_ELEMENT = {
   'de-tai/:id/moc': <MilestonesPage />,
   'de-tai/:id/tien-do': <ProgressPage />,
   'de-tai/:id/tai-lieu': <DocumentsPage />,
+  'de-tai/:id/yeu-cau': <TopicRequestsPage />,
+  'yeu-cau': <ChangeRequestsPage />,
+  'lich-su-tham-gia': <PastTopicsPage />,
+  'lich-su-tham-gia/:topicId': <PastTopicDetailPage />,
   'xet-duyet': <ReviewQueuePage />,
   'xet-duyet/:id': <ReviewPage />,
   'loi-moi': <InvitationsPage />,

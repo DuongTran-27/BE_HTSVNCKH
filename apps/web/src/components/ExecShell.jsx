@@ -33,6 +33,7 @@ export function ExecTabs({ topic: t }) {
       {exec && <NavLink to={`${base}/moc`} className={tab}>Mốc</NavLink>}
       {exec && <NavLink to={`${base}/tien-do`} className={tab}>Tiến độ</NavLink>}
       <NavLink to={`${base}/tai-lieu`} className={tab}>Tài liệu</NavLink>
+      <NavLink to={`${base}/yeu-cau`} className={tab}>Yêu cầu</NavLink>
     </nav>
   );
 }
