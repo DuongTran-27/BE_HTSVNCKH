@@ -88,6 +88,7 @@ export const NOTIFICATION_TYPES = Object.freeze([
   'MILESTONE_DUE_SOON', 'MILESTONE_OVERDUE', 'ADVISOR_REQUEST_REMINDER',
   // GĐ6 (API_GD6 §11b) – khung yêu cầu thay đổi, thay GV
   'CHANGE_REQUESTED', 'CHANGE_TARGET_INVITED', 'CHANGE_TARGET_ACCEPTED', 'CHANGE_DECIDED', 'CHANGE_WITHDRAWN', 'ADVISOR_HANDOVER', 'RESULT_CORRECTED',
+  'MILESTONE_REOPENED', // T606: FR22
 ]);
 
 // GĐ6 (API_GD6 §2): yêu cầu thay đổi (khớp enum ChangeType của Prisma); stage suy ra, không lưu

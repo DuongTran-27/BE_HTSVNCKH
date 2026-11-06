@@ -9,7 +9,8 @@ import { findFormerAdvisings, findFormerMembers } from '../topics/prismaRepo.js'
 const person = { select: { id: true, fullName: true, role: true } };
 const VIEW_INCLUDE = {
   documents: { where: { status: 'READY' }, orderBy: { version: 'desc' }, take: 1, select: { id: true, version: true, uploadedAt: true, isLate: true } },
-  _count: { select: { dueChanges: true } },
+  _count: { select: { dueChanges: true, reopens: true } },
+  reopens: { orderBy: [{ reopenedAt: 'desc' }, { id: 'desc' }], take: 1, select: { reason: true, reopenedAt: true, reopenedBy: { select: { fullName: true } } } },
 };
 
 const ops = (tx) => ({
@@ -19,6 +20,9 @@ const ops = (tx) => ({
   findMilestone: (id) => tx.milestone.findUnique({ where: { id } }),
   // Khóa lạc quan theo version của mốc; count 0 = lệch
   updateVersioned: async (id, version, data) => (await tx.milestone.updateMany({ where: { id, version }, data: { ...data, version: { increment: 1 } } })).count === 1,
+  // FR22: điều kiện PASSED + version trong cùng một câu UPDATE; false = lệch hoặc không còn Đạt
+  reopenPassed: async (id, version) => (await tx.milestone.updateMany({ where: { id, version, evaluation: 'PASSED' }, data: { evaluation: 'NEEDS_WORK', version: { increment: 1 } } })).count === 1,
+  createReopen: (data) => tx.milestoneReopen.create({ data, include: { reopenedBy: person } }),
   createDueChange: (data) => tx.milestoneDueChange.create({ data }),
   audit: (entry) => recordAudit(tx, entry),
   notify: (args) => notifyTopic(tx, args), // FR13, cùng tx
@@ -81,6 +85,7 @@ export const createExecutionRepo = (prisma) => {
   listDueChanges: (milestoneId) => prisma.milestoneDueChange.findMany({ where: { milestoneId }, orderBy: [{ changedAt: 'desc' }, { id: 'desc' }], include: { changedBy: person } }),
   // Số mốc đã bị bỏ cờ bắt buộc khi chưa Đạt (m3); cột + index thay vì đọc AuditLog. T405 dùng cho closeReadiness.
   countRequiredRemoved: (topicId) => prisma.milestone.count({ where: { topicId, ...REQUIRED_REMOVED_WHERE } }),
+  listReopens: (milestoneId) => prisma.milestoneReopen.findMany({ where: { milestoneId }, orderBy: [{ reopenedAt: 'desc' }, { id: 'desc' }], include: { reopenedBy: person } }),
   writeMilestone: write,
   writeProgress: write,
   writeFeedback: write,

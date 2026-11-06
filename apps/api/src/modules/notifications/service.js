@@ -36,7 +36,8 @@ export const createNotificationService = ({ repo, now = () => new Date() }) => (
  */
 export const awaitingSubmission = (m) => {
   const doc = m.documents[0]?.uploadedAt;
-  const needsWork = m.feedbacks[0]?.createdAt;
+  // FR22: mở lại mốc cũng là một lần "Cần bổ sung"; lấy lần muộn hơn
+  const needsWork = [m.feedbacks[0]?.createdAt, m.reopens?.[0]?.reopenedAt].filter(Boolean).sort((a, b) => b - a)[0];
   if (!doc) return true;
   return !!needsWork && doc <= needsWork;
 };

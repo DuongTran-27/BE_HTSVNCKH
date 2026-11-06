@@ -121,6 +121,8 @@ export const milestoneCreateSchema = z.object({ name: msName, output: msOutput, 
 export const milestoneUpdateSchema = z.strictObject({ version, name: msName.optional(), output: msOutput.optional(), required: z.boolean().optional() })
   .refine((v) => v.name !== undefined || v.output !== undefined || v.required !== undefined, { message: 'Cần ít nhất một trường để sửa', path: ['name'] });
 export const milestoneDueChangeSchema = reasonSchema.extend({ version, newDueAt: isoDateTime });
+// FR22 (API_GD6 §8): mở lại mốc đã Đạt
+export const milestoneReopenSchema = z.strictObject({ ...reasonSchema.shape, version });
 
 // FR10 (API_GD45 §4.2): % tự khai 0–100; sửa = partial, strict, ít nhất một trường
 const pgDone = z.string().trim().min(1, 'Nhập việc đã làm').max(3000);

@@ -1,4 +1,4 @@
-import { milestoneCreateSchema, milestoneUpdateSchema, milestoneDueChangeSchema, progressCreateSchema, progressUpdateSchema, paginationQuery, idSchema, documentUploadFieldsSchema, documentLinkSchema, documentListQuerySchema, emptyBodySchema, documentFeedbackSchema, progressFeedbackSchema, feedbackListQuerySchema, finalResultSchema, resultCorrectionSchema } from '@nckh/shared';
+import { milestoneCreateSchema, milestoneUpdateSchema, milestoneDueChangeSchema, milestoneReopenSchema, progressCreateSchema, progressUpdateSchema, paginationQuery, idSchema, documentUploadFieldsSchema, documentLinkSchema, documentListQuerySchema, emptyBodySchema, documentFeedbackSchema, progressFeedbackSchema, feedbackListQuerySchema, finalResultSchema, resultCorrectionSchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { notFound, badRequest } from '../../lib/errors.js';
@@ -31,6 +31,8 @@ export const milestonesRouter = ({ repo, now, guard }) => {
   r.patch('/:id', roles, validate(milestoneUpdateSchema), async (req, res) => res.json(await svc.update(req.user, req.params.id, req.body, req.ip)));
   r.get('/:id/due-changes', roles, async (req, res) => res.json(await svc.listDueChanges(req.user, req.params.id)));
   r.post('/:id/due-changes', roles, validate(milestoneDueChangeSchema), async (req, res) => res.status(201).json(await svc.changeDue(req.user, req.params.id, req.body, req.ip)));
+  r.post('/:id/reopen', roles, validate(milestoneReopenSchema), async (req, res) => res.status(201).json(await svc.reopen(req.user, req.params.id, req.body, req.ip)));
+  r.get('/:id/reopens', roles, async (req, res) => res.json(await svc.listReopens(req.user, req.params.id)));
   return r;
 };
 

@@ -13,7 +13,9 @@ export const presentMilestone = (m, n) => {
     id: m.id, topicId: m.topicId, order: m.order, name: m.name, output: m.output, dueAt: iso(m.dueAt), required: m.required,
     evaluation: m.evaluation, version: m.version, isOverdue: m.evaluation !== 'PASSED' && n > m.dueAt,
     latestDocument: doc ? { id: doc.id, version: doc.version, uploadedAt: iso(doc.uploadedAt), isLate: doc.isLate } : null,
-    dueChangeCount: m._count?.dueChanges ?? 0, createdAt: iso(m.createdAt),
+    dueChangeCount: m._count?.dueChanges ?? 0,
+    reopenCount: m._count?.reopens ?? 0,
+    lastReopen: m.reopens?.[0] ? { reason: m.reopens[0].reason, reopenedAt: iso(m.reopens[0].reopenedAt), reopenedBy: { fullName: m.reopens[0].reopenedBy.fullName } } : null, createdAt: iso(m.createdAt),
   };
 };
 const presentDueChange = (c) => ({
@@ -21,14 +23,19 @@ const presentDueChange = (c) => ({
   changedBy: { id: c.changedBy.id, fullName: c.changedBy.fullName, role: c.changedBy.role }, changedAt: iso(c.changedAt),
 });
 
+const presentReopen = (r) => ({ id: r.id, reason: r.reason, reopenedBy: { id: r.reopenedBy.id, fullName: r.reopenedBy.fullName }, reopenedAt: iso(r.reopenedAt) });
+
 export const createMilestoneService = ({ repo, now = () => new Date() }) => {
   // Thứ tự §1.1: tải đề tài → quyền đọc (403) → quyền ghi (403) → trạng thái (409)
-  const load = async (user, topicId, { write }) => {
+  const load = async (user, topicId, { write, advisorOnly = false }) => {
     const t = await repo.findExecTopic(topicId);
     if (!t) throw notFound();
     const rel = relations({ ...t, advisorRequests: [] }, user);
     if (!canReadExecution(t, rel)) throw forbidden();
-    if (write) {
+    if (write && advisorOnly) { // FR22: chỉ GVHD hiện hành; cán bộ cũng bị 403
+      if (user.role !== 'LECTURER' || !rel.isCurrentAdvisor) throw forbidden('Chỉ giảng viên hướng dẫn hiện hành được mở lại mốc');
+      if (t.status !== 'IN_PROGRESS') throw conflict('TOPIC_NOT_IN_PROGRESS', 'Chỉ thực hiện được khi đề tài đang thực hiện');
+    } else if (write) {
       const ok = (user.role === 'LECTURER' && rel.isCurrentAdvisor) || (user.role === 'STAFF' && rel.inStaffScope);
       if (!ok) throw forbidden('Chỉ giảng viên hướng dẫn hoặc cán bộ khoa được quản lý mốc');
       if (t.status !== 'IN_PROGRESS') throw conflict('TOPIC_NOT_IN_PROGRESS', 'Chỉ thực hiện được khi đề tài đang thực hiện');
@@ -110,6 +117,29 @@ export const createMilestoneService = ({ repo, now = () => new Date() }) => {
         milestone: await view(id),
         dueChange: presentDueChange({ ...change, changedBy: { id: user.id, fullName: user.fullName, role: user.role } }),
       };
+    },
+
+    // FR22 (API_GD6 §8): mở lại mốc đã Đạt → Cần bổ sung, bắt buộc lý do; kiểm lại GVHD + IN_PROGRESS dưới khóa Topic
+    async reopen(user, id, body, ip) {
+      const topicId = await topicIdOf(id);
+      await load(user, topicId, { write: true, advisorOnly: true });
+      const r = await repo.writeMilestone(topicId, async (o) => {
+        const m = await o.findMilestone(id);
+        if (!(await o.reopenPassed(id, body.version))) {
+          if (m.evaluation !== 'PASSED') throw conflict('MILESTONE_NOT_PASSED', 'Chỉ mở lại được mốc đã Đạt');
+          throw stale();
+        }
+        const row = await o.createReopen({ milestoneId: id, reason: body.reason, reopenedById: user.id, reopenedAt: now() });
+        await o.audit({ actorId: user.id, action: 'MILESTONE_REOPEN', entityType: 'Milestone', entityId: id, before: { evaluation: 'PASSED', version: m.version }, after: { evaluation: 'NEEDS_WORK', version: m.version + 1, reason: body.reason }, ip });
+        await o.notify({ topicId, to: ['members'], actorId: user.id, type: 'MILESTONE_REOPENED', key: `MILESTONE_REOPENED:${row.id}`, link: `/de-tai/${topicId}/moc`, title: (x) => `Mốc "${m.name}" được mở lại – đề tài ${topicName(x)}` });
+        return row;
+      }, lockOpts(user));
+      return { milestone: await view(id), reopen: presentReopen(r) };
+    },
+
+    async listReopens(user, id) {
+      await load(user, await topicIdOf(id), { write: false });
+      return { items: (await repo.listReopens(id)).map(presentReopen) };
     },
 
     async listDueChanges(user, id) {

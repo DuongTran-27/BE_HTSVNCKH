@@ -64,6 +64,7 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   FEEDBACK_CREATED: 'Nhận xét mới',
   RESULT_ENTERED: 'Kết quả cuối',
   RESULT_CORRECTED: 'Kết quả cuối được sửa',
+  MILESTONE_REOPENED: 'Mốc được mở lại',
   CLOSE_REQUESTED: 'Đề nghị đóng đề tài',
   CLOSE_RETURNED: 'Hồ sơ đóng bị trả lại',
   TOPIC_CLOSED: 'Đề tài đã đóng',

@@ -132,6 +132,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         requestCancel: (rel.isLeader || rel.isCurrentAdvisor) && t.status === 'IN_PROGRESS',
         leave: rel.isMember && !rel.isLeader && PRE_APPROVAL_STATUSES.includes(t.status),
         requestLeave: rel.isMember && !rel.isLeader && t.status === 'IN_PROGRESS',
+        reopenMilestone: rel.isCurrentAdvisor && t.status === 'IN_PROGRESS',
         correctResult: rel.inStaffScope && t.status === 'CLOSED',
         manageFormerAdvisorAccess: rel.inStaffScope,
       },

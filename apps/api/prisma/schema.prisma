@@ -165,6 +165,7 @@ model User {
   statusChanges          StatusHistory[]      @relation("StatusHistoryActor")
   milestonesCreated      Milestone[]          @relation("MilestoneCreatedBy")
   dueChangesMade         MilestoneDueChange[] @relation("DueChangeBy")
+  milestoneReopens       MilestoneReopen[]    @relation("MilestoneReopenBy")
   progressUpdates        ProgressUpdate[]     @relation("ProgressAuthor")
   documentsUploaded      Document[]           @relation("DocumentUploadedBy")
   feedbacksWritten       Feedback[]           @relation("FeedbackLecturer")
@@ -340,6 +341,7 @@ model Milestone {
   topic             Topic                @relation(fields: [topicId], references: [id])
   createdBy         User                 @relation("MilestoneCreatedBy", fields: [createdById], references: [id])
   dueChanges        MilestoneDueChange[]
+  reopens           MilestoneReopen[]
   documents         Document[]
   feedbacks         Feedback[]
 
@@ -358,6 +360,19 @@ model MilestoneDueChange {
   changedAt   DateTime  @default(now()) @db.Timestamptz(6)
   milestone   Milestone @relation(fields: [milestoneId], references: [id])
   changedBy   User      @relation("DueChangeBy", fields: [changedById], references: [id])
+}
+
+// FR22 (API_GD6 §8): mỗi lần mở lại mốc đã Đạt; chỉ thêm (trigger)
+model MilestoneReopen {
+  id           String    @id @default(cuid())
+  milestoneId  String
+  reason       String
+  reopenedById String
+  reopenedAt   DateTime  @default(now()) @db.Timestamptz(6)
+  milestone    Milestone @relation(fields: [milestoneId], references: [id])
+  reopenedBy   User      @relation("MilestoneReopenBy", fields: [reopenedById], references: [id])
+
+  @@index([milestoneId, reopenedAt])
 }
 
 model ProgressUpdate {

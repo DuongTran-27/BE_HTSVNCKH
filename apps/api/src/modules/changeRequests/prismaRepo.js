@@ -72,6 +72,7 @@ const ops = (tx) => ({
 });
 
 export const createChangeRequestRepo = (prisma) => ({
+  hasPending: (topicId, type, extra = {}) => ops(prisma).hasPending(topicId, type, extra), // đọc ngoài tx (m1 T605)
   changeRequestTx: (fn) => withLockTx(prisma, (tx) => fn(ops(tx))),
   findChangeRequest: (id, viewerId) => prisma.changeRequest.findUnique({ where: { id }, include: crInclude(viewerId) }),
   findChangeRequestWhere: (where, viewerId) => prisma.changeRequest.findFirst({ where, include: crInclude(viewerId) }),

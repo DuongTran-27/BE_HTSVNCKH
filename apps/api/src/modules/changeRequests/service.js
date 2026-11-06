@@ -6,11 +6,12 @@ import { relations, canView, presentFormerAdvisors, inWindows } from '../topics/
 import { topicName } from '../notifications/notify.js';
 import { similarityView } from '../similarity/service.js';
 import { advisorChange } from './advisorChange.js';
+import { pendingExists } from './prismaRepo.js';
 import { cancel } from './cancel.js';
 import { leaveGroup } from './leaveGroup.js';
 import { topicChange } from './topicChange.js';
 
-const TYPES = { TOPIC_CHANGE: topicChange, ADVISOR_CHANGE: advisorChange, CANCEL: cancel, LEAVE_GROUP: leaveGroup };
+export const TYPES = { TOPIC_CHANGE: topicChange, ADVISOR_CHANGE: advisorChange, CANCEL: cancel, LEAVE_GROUP: leaveGroup };
 const ACTION_ORDER = ['ACCEPT', 'APPROVE', 'DECLINE', 'WITHDRAW'];
 const iso = (d) => d?.toISOString() ?? null;
 const closed = () => conflict('CHANGE_REQUEST_CLOSED', 'Yêu cầu không còn ở trạng thái chờ xử lý');
@@ -112,6 +113,8 @@ export const createChangeRequestService = ({ repo, getTopic, now = () => new Dat
       const h = TYPES[body.type];
       if (!h.canCreate(rel, user)) throw forbidden();
       h.checkStatus(t.status);
+      // m1 T605: trả 409 sớm, không chạy FR06 (tốn thời gian, ghi SimilarityCheck mồ côi); kiểm lại dưới khóa bên dưới
+      if (await repo.hasPending(topicId, body.type, h.pendingScope?.(user))) throw pendingExists();
       const pre = await h.precheck?.(repo, t, body, user, ip); // TOPIC_CHANGE: FR06 ngoài transaction (§6.2)
       const id = await repo.changeRequestTx(async (o) => {
         const lock = await o.lockTopic(topicId);

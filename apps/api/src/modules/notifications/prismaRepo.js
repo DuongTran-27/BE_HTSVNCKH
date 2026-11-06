@@ -29,6 +29,7 @@ export const createNotificationRepo = (prisma) => ({
       topic: { select: { code: true, title: true, round: { select: { config: true } }, members: person, advisings: { where: { endAt: null }, select: { lecturerId: true } } } },
       documents: { where: { status: 'READY' }, orderBy: { uploadedAt: 'desc' }, take: 1, select: { uploadedAt: true } },
       feedbacks: { where: { evaluation: 'NEEDS_WORK' }, orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+      reopens: { orderBy: { reopenedAt: 'desc' }, take: 1, select: { reopenedAt: true } },
     },
   }),
   findStaleAdvisorRequests: (before, take) => prisma.advisorRequest.findMany({
