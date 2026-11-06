@@ -42,7 +42,8 @@ describe('§11b – index và trigger viết bằng SQL thô', () => {
     expect(def.topic_title_trgm_idx).toMatch(/USING gin .*immutable_unaccent\(title\).*gin_trgm_ops/);
   });
 
-  it('đủ 5 trigger chỉ-thêm BEFORE UPDATE OR DELETE gọi forbid_mutation()', async () => {
+  // T609 (API_GD6 §9.7): submission_immutable giữ tên nhưng gọi submission_guard() – chỉ nới cột similarityCheckId (test T609-similarity-bypass)
+  it('đủ 5 trigger chỉ-thêm BEFORE UPDATE OR DELETE (Submission gọi submission_guard, còn lại forbid_mutation())', async () => {
     const rows = await prisma.$queryRaw`
       SELECT t.tgname, c.relname, p.proname, t.tgtype FROM pg_trigger t
       JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_proc p ON p.oid = t.tgfoid WHERE NOT t.tgisinternal`;
@@ -55,7 +56,7 @@ describe('§11b – index và trigger viết bằng SQL thô', () => {
       similarity_check_immutable: 'SimilarityCheck',
     };
     for (const [name, table] of Object.entries(expected)) {
-      expect(byName[name], `thiếu trigger ${name}`).toMatchObject({ relname: table, proname: 'forbid_mutation' });
+      expect(byName[name], `thiếu trigger ${name}`).toMatchObject({ relname: table, proname: name === 'submission_immutable' ? 'submission_guard' : 'forbid_mutation' });
       // tgtype: 1 = ROW, 2 = BEFORE, 8 = DELETE, 16 = UPDATE
       expect(byName[name].tgtype & 27).toBe(27);
     }

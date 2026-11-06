@@ -123,6 +123,8 @@ export const milestoneUpdateSchema = z.strictObject({ version, name: msName.opti
 export const milestoneDueChangeSchema = reasonSchema.extend({ version, newDueAt: isoDateTime });
 // FR22 (API_GD6 §8): mở lại mốc đã Đạt
 export const milestoneReopenSchema = z.strictObject({ ...reasonSchema.shape, version });
+// G5 (API_GD6 §9.2): cán bộ cho phép gửi khi FR06 lỗi, bắt buộc lý do
+export const similarityBypassCreateSchema = z.strictObject(reasonSchema.shape);
 
 // FR10 (API_GD45 §4.2): % tự khai 0–100; sửa = partial, strict, ít nhất một trường
 const pgDone = z.string().trim().min(1, 'Nhập việc đã làm').max(3000);

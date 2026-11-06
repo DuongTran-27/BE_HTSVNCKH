@@ -166,6 +166,7 @@ model User {
   milestonesCreated      Milestone[]          @relation("MilestoneCreatedBy")
   dueChangesMade         MilestoneDueChange[] @relation("DueChangeBy")
   milestoneReopens       MilestoneReopen[]    @relation("MilestoneReopenBy")
+  similarityBypasses     SimilarityBypass[]   @relation("SimilarityBypassGrantedBy")
   progressUpdates        ProgressUpdate[]     @relation("ProgressAuthor")
   documentsUploaded      Document[]           @relation("DocumentUploadedBy")
   feedbacksWritten       Feedback[]           @relation("FeedbackLecturer")
@@ -202,35 +203,36 @@ model RefreshToken {
 
 // ---------- Đề tài (FR03, FR05, FR16, FR17) ----------
 model Topic {
-  id               String            @id @default(cuid())
-  code             String            @unique
-  roundId          String
-  facultyId        String
-  fieldId          String?
-  title            String            @default("")
-  summary          String            @default("")
-  objectives       String            @default("")
-  keywords         String[]
-  status           TopicStatus       @default(DRAFT)
-  version          Int               @default(0) // khóa lạc quan
-  createdAt        DateTime          @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime          @updatedAt @db.Timestamptz(6)
-  round            Round             @relation(fields: [roundId], references: [id])
-  faculty          Faculty           @relation(fields: [facultyId], references: [id])
-  field            Field?            @relation(fields: [fieldId], references: [id])
-  members          TopicMember[]
-  invitations      Invitation[]
-  advisorRequests  AdvisorRequest[]
-  advisings        Advising[]
-  submissions      Submission[]
-  milestones       Milestone[]
-  progressUpdates  ProgressUpdate[]
-  documents        Document[]
-  feedbacks        Feedback[]
-  results          ResultVersion[]
-  statusHistory    StatusHistory[]
-  similarityChecks SimilarityCheck[]
-  changeRequests   ChangeRequest[]
+  id                 String             @id @default(cuid())
+  code               String             @unique
+  roundId            String
+  facultyId          String
+  fieldId            String?
+  title              String             @default("")
+  summary            String             @default("")
+  objectives         String             @default("")
+  keywords           String[]
+  status             TopicStatus        @default(DRAFT)
+  version            Int                @default(0) // khóa lạc quan
+  createdAt          DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime           @updatedAt @db.Timestamptz(6)
+  round              Round              @relation(fields: [roundId], references: [id])
+  faculty            Faculty            @relation(fields: [facultyId], references: [id])
+  field              Field?             @relation(fields: [fieldId], references: [id])
+  members            TopicMember[]
+  invitations        Invitation[]
+  advisorRequests    AdvisorRequest[]
+  advisings          Advising[]
+  submissions        Submission[]
+  milestones         Milestone[]
+  progressUpdates    ProgressUpdate[]
+  documents          Document[]
+  feedbacks          Feedback[]
+  results            ResultVersion[]
+  statusHistory      StatusHistory[]
+  similarityChecks   SimilarityCheck[]
+  similarityBypasses SimilarityBypass[]
+  changeRequests     ChangeRequest[]
 
   @@index([roundId, status])
   @@index([facultyId, status])
@@ -475,6 +477,19 @@ model SimilarityCheck {
   topic            Topic            @relation(fields: [topicId], references: [id])
   submission       Submission?
   changeRequest    ChangeRequest?
+
+  @@index([topicId, createdAt])
+}
+
+// G5 (API_GD6 §9): cán bộ cho phép gửi một lần khi FR06 lỗi. Chỉ thêm (trigger); hiệu lực suy ra (§9.3)
+model SimilarityBypass {
+  id          String   @id @default(cuid())
+  topicId     String
+  reason      String
+  grantedById String
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  topic       Topic    @relation(fields: [topicId], references: [id])
+  grantedBy   User     @relation("SimilarityBypassGrantedBy", fields: [grantedById], references: [id])
 
   @@index([topicId, createdAt])
 }

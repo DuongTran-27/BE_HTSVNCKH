@@ -109,7 +109,7 @@ describe('nhắc hạn – unit', () => {
 describe('shared – hằng và schema thông báo', () => {
   it('mỗi type có nhãn tiếng Việt; query unread chỉ nhận true/false', () => {
     expect(NOTIFICATION_TYPES.filter((t) => !NOTIFICATION_TYPE_LABEL[t])).toEqual([]);
-    expect(NOTIFICATION_TYPES).toHaveLength(28); // T601: API_GD6 §11b thêm 6 loại (CHANGE_*, ADVISOR_HANDOVER); T604 thêm RESULT_CORRECTED; T606 thêm MILESTONE_REOPENED
+    expect(NOTIFICATION_TYPES).toHaveLength(30); // T601: API_GD6 §11b thêm 6 loại (CHANGE_*, ADVISOR_HANDOVER); T604 thêm RESULT_CORRECTED; T606 thêm MILESTONE_REOPENED; T609 thêm SIMILARITY_BYPASS_GRANTED, SIMILARITY_RECHECKED
     expect(notificationListQuerySchema.safeParse({ unread: 'yes' }).success).toBe(false);
     expect(notificationListQuerySchema.parse({})).toEqual({ page: 1, pageSize: 20 });
   });

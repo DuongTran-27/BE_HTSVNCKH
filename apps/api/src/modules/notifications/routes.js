@@ -5,6 +5,7 @@ import { createLimiter } from '../../middlewares/rateLimit.js';
 import { notFound, unauthorized } from '../../lib/errors.js';
 import { businessRouter } from '../../lib/router.js';
 import { createNotificationService, createReminderService } from './service.js';
+import { createSimilarityRecheckService } from '../similarity/recheck.js';
 
 // FR13 (API_GD45 §8.1): mọi vai trò đã đăng nhập (kể cả ADMIN – danh sách rỗng), chỉ thông báo của chính mình. Không ghi AuditLog.
 export const notificationsRouter = ({ repo, now, guard }) => {
@@ -42,10 +43,13 @@ export const requireCronSecret = (secret) => (req, _res, next) => {
 // Không qua guard người dùng: "guard" của router này là limiter theo IP + bí mật CRON_SECRET.
 export const cronRouter = ({ repo, env, now, logger }) => {
   const reminders = createReminderService({ repo, now, logger });
+  const rechecks = createSimilarityRecheckService({ repo, now, logger });
   const r = businessRouter([createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'ip' }), requireCronSecret(env.CRON_SECRET)]);
   r.post('/reminders', async (_req, res) => {
     const out = await reminders.run();
     res.set('Cache-Control', 'no-store').json(out);
   });
+  // G5 (API_GD6 §9.5): chạy lại FR06 cho lần gửi "chưa kiểm tra" (m5 reviews/T600-reviewer-v1.md)
+  r.post('/similarity-rechecks', async (_req, res) => res.set('Cache-Control', 'no-store').json(await rechecks.run()));
   return r;
 };

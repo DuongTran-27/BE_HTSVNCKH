@@ -2,6 +2,7 @@
 import { recordAudit } from '../audit/service.js';
 import { applyTransition } from './stateMachine.js';
 import { notifyTopic } from '../notifications/notify.js';
+import { activeBypass } from '../similarity/prismaRepo.js';
 
 const ops = (db) => ({
   nextSeq: async (topicId) => ((await db.submission.aggregate({ where: { topicId }, _max: { seq: true } }))._max.seq ?? 0) + 1,
@@ -9,6 +10,7 @@ const ops = (db) => ({
   createDecision: (data) => db.reviewDecision.create({ data }),
   audit: (entry) => recordAudit(db, entry),
   notify: (args) => notifyTopic(db, args), // FR13, cùng tx
+  activeBypass: (topicId) => activeBypass(db, topicId), // G5 §9.4
   // FR17: bản đề cương mới nhất (Document bất biến nên snapshot không đổi theo thời gian)
   latestProposalDocumentIds: async (topicId) => (await db.document.findMany({ where: { topicId, stage: 'PROPOSAL', status: 'READY' }, orderBy: { version: 'desc' }, take: 1, select: { id: true } })).map((d) => d.id),
 });
@@ -18,7 +20,7 @@ const person = { select: { id: true, fullName: true } };
 export const createReviewRepo = (prisma) => ({
   listSubmissions: (topicId) => prisma.submission.findMany({
     where: { topicId }, orderBy: { seq: 'desc' },
-    include: { createdBy: person, decision: true, similarityCheck: { select: { level: true, status: true } } },
+    include: { createdBy: person, decision: true, similarityCheck: { select: { level: true, status: true } } }, // status: cờ "chưa kiểm tra" (G5)
   }),
   findSubmissions: (topicId, seqs) => prisma.submission.findMany({
     where: { topicId, seq: { in: seqs } },

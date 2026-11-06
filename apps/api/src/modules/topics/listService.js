@@ -1,4 +1,6 @@
 // Danh sách đề tài theo phạm vi vai trò (FR08, FR25, API_GD2 §9.1). Phạm vi áp ở WHERE, trước phân trang và total.
+import { isUnchecked } from '../similarity/service.js';
+
 const iso = (d) => d.toISOString();
 const SORTS = {
   updatedAt_desc: [{ updatedAt: 'desc' }, { id: 'asc' }],
@@ -29,9 +31,10 @@ export const createListService = ({ repo, now = () => new Date() }) => {
       advisor: adv ? { id: adv.lecturer.id, fullName: adv.lecturer.fullName } : null,
       leader: leader ? { code: leader.user.code, fullName: leader.user.fullName } : null,
       memberCount: t.members.length,
-      latestSubmission: sub ? { seq: sub.seq, createdAt: iso(sub.createdAt) } : null,
+      latestSubmission: sub ? { seq: sub.seq, createdAt: iso(sub.createdAt), unchecked: isUnchecked(sub) } : null,
       result: t.status === 'CLOSED' ? (t.results[0]?.result ?? null) : null, // G27: kết quả chính thức chỉ khi đã đóng
       latestSimilarityLevel: sim?.status === 'OK' ? sim.level : null,
+      latestSimilarityStatus: sim?.status ?? null, // cùng dòng với latestSimilarityLevel (API_GD6 §9.6)
       updatedAt: iso(t.updatedAt),
     };
   };

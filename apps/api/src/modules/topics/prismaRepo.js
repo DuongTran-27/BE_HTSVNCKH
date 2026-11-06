@@ -20,8 +20,10 @@ const DETAIL_INCLUDE = {
   invitations: { where: { status: 'PENDING' }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], include: { invitee: person } },
   advisings: { where: { endAt: null }, take: 1, include: { lecturer: person } },
   advisorRequests: { where: { status: 'PENDING' }, take: 1, include: { lecturer: person } },
-  submissions: { orderBy: { seq: 'desc' }, take: 1, include: { decision: { include: { decidedBy: person } } } },
+  submissions: { orderBy: { seq: 'desc' }, take: 1, include: { decision: { include: { decidedBy: person } }, similarityCheck: { select: { status: true } } } },
   similarityChecks: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1 },
+  // G5 (API_GD6 §9.3): quyền cho phép mới nhất; hiệu lực suy ra cùng submissions[0]
+  similarityBypasses: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1, include: { grantedBy: { select: { fullName: true } } } },
   // T405 (API_GD45 §7.4): closeReadiness + currentResult
   milestones: { where: { required: true }, orderBy: { order: 'asc' }, select: { id: true, name: true, evaluation: true } },
   results: { where: { isCurrent: true }, take: 1, select: { version: true, result: true, summary: true, createdById: true, createdAt: true } },

@@ -7,7 +7,7 @@ import { withLockTx } from '../../lib/tx.js';
 /**
  * ctx (do service tính sẵn từ DB):
  *  isLeader, isRequestedLecturer, isCurrentAdvisor, inStaffScope,
- *  similarity: {status, level} | null, cfg,
+ *  similarity: {status, level} | null, cfg, similarityBypass (G5),
  *  đóng đề tài (closeConditions.js): requiredMilestoneCount, requiredMilestonesPassed, pendingMilestones, hasFinalResult, closeConditionsMet, roundEnded
  */
 export const checkTransition = ({ topic, action, actor, reason, justification, ctx = {}, skipSimilarity = false }) => {
@@ -25,7 +25,10 @@ export const checkTransition = ({ topic, action, actor, reason, justification, c
     throw badRequest('REASON_REQUIRED', 'Thao tác này bắt buộc nhập lý do');
   }
 
-  if (t.needsSimilarity && !skipSimilarity) { // skipSimilarity: bước kiểm rẻ trước khi chạy thuật toán (API_GD2 §8.2)
+  // skipSimilarity: bước kiểm rẻ trước khi chạy thuật toán (API_GD2 §8.2).
+  // ctx.similarityBypass (G5, API_GD6 §9.4): cán bộ đã cho phép gửi khi FR06 lỗi – chỉ bỏ qua khi kết quả không OK; mức chưa biết nên không đòi giải trình
+  const bypassed = ctx.similarityBypass && ctx.similarity?.status !== 'OK';
+  if (t.needsSimilarity && !skipSimilarity && !bypassed) {
     const cfg = ctx.cfg ?? DEFAULT_ROUND_CONFIG;
     const sim = ctx.similarity;
     // Lỗi kiểm tra không bao giờ được coi là "không trùng" (FR06)

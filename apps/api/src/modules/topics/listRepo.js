@@ -7,7 +7,7 @@ const LIST_INCLUDE = {
   field: { select: { id: true, name: true } },
   members: { where: { leftAt: null }, select: { role: true, user: person } },
   advisings: { where: { endAt: null }, take: 1, include: { lecturer: person } },
-  submissions: { orderBy: { seq: 'desc' }, take: 1, select: { seq: true, createdAt: true } },
+  submissions: { orderBy: { seq: 'desc' }, take: 1, select: { seq: true, createdAt: true, similarityCheck: { select: { status: true } } } },
   similarityChecks: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1, select: { status: true, level: true } },
   results: { where: { isCurrent: true }, take: 1, select: { result: true } },
 };

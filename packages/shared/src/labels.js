@@ -65,6 +65,8 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   RESULT_ENTERED: 'Kết quả cuối',
   RESULT_CORRECTED: 'Kết quả cuối được sửa',
   MILESTONE_REOPENED: 'Mốc được mở lại',
+  SIMILARITY_BYPASS_GRANTED: 'Được phép gửi khi chưa kiểm tra trùng lặp',
+  SIMILARITY_RECHECKED: 'Đã kiểm tra lại trùng lặp',
   CLOSE_REQUESTED: 'Đề nghị đóng đề tài',
   CLOSE_RETURNED: 'Hồ sơ đóng bị trả lại',
   TOPIC_CLOSED: 'Đề tài đã đóng',

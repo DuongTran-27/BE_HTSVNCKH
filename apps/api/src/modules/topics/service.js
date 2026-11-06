@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { effectiveRoundConfig, findTransition, availableActions, countWords, ENABLED_ACTIONS, ADVISOR_CHANGE_STATUSES, PRE_APPROVAL_STATUSES } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { contentHash } from '../similarity/engine.js';
+import { activeBypassOf, isUnchecked, presentBypass } from '../similarity/service.js';
 import { evaluateClose } from './closeConditions.js';
 
 const EDITABLE = ['DRAFT', 'NEEDS_REVISION'];
@@ -67,6 +68,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
     const sub = t.submissions[0];
     const sim = t.similarityChecks[0];
     const res = t.results[0];
+    const bypass = activeBypassOf(t.similarityBypasses?.[0], sub); // G5 §9.3
     const running = t.status === 'IN_PROGRESS';
     const actions = availableActions(t.status, user.role).filter((a) => {
       const tr = findTransition(a);
@@ -97,7 +99,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         : null,
       latestSubmission: sub
         ? {
-            id: sub.id, seq: sub.seq, createdAt: iso(sub.createdAt),
+            id: sub.id, seq: sub.seq, createdAt: iso(sub.createdAt), unchecked: isUnchecked(sub),
             decision: sub.decision
               ? { action: sub.decision.action, reason: sub.decision.reason, decidedAt: iso(sub.decision.decidedAt), decidedBy: { fullName: sub.decision.decidedBy.fullName } }
               : null,
@@ -106,6 +108,8 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
       latestSimilarity: sim
         ? { id: sim.id, status: sim.status, level: sim.level, createdAt: iso(sim.createdAt), isStale: sim.contentHash !== contentHash(t) }
         : null,
+      // G5 (API_GD6 §9.3): thành viên, GVHD hiện hành, cán bộ trong phạm vi
+      similarityBypass: bypass && (rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope) ? presentBypass(bypass) : null,
       availableActions: actions,
       currentResult: res ? { version: res.version, result: res.result, createdAt: iso(res.createdAt) } : null,
       closeReadiness: CLOSING.includes(t.status) && (rel.isCurrentAdvisor || rel.inStaffScope)
@@ -135,6 +139,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         reopenMilestone: rel.isCurrentAdvisor && t.status === 'IN_PROGRESS',
         correctResult: rel.inStaffScope && t.status === 'CLOSED',
         manageFormerAdvisorAccess: rel.inStaffScope,
+        grantSimilarityBypass: rel.inStaffScope && ['HAS_ADVISOR', 'NEEDS_REVISION'].includes(t.status) && sim?.status === 'ERROR' && !bypass,
       },
       pendingChangeRequests: (t.changeRequests ?? []).filter((c) => rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope || c.targetUserId === user.id)
         .map((c) => ({ id: c.id, type: c.type, stage: c.targetUserId && !c.targetAcceptedAt ? 'TARGET' : 'STAFF', createdAt: iso(c.createdAt) })),

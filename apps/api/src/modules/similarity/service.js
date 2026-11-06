@@ -33,12 +33,23 @@ export const similarityView = (check, viewerRole) => {
   return {
     ...head, level: check.level,
     justificationRequired: check.level === 'HIGH', justification: check.justification ?? null,
+    justificationMissing: justificationMissing(check),
     matches: presentMatches(Array.isArray(check.matches) ? check.matches : [], viewerRole),
   };
 };
 
 export const needsJustification = (level, justification, cfg = DEFAULT_ROUND_CONFIG) =>
   level === 'HIGH' && countWords(justification ?? '') < cfg.similarity.minJustificationWords;
+
+// G5 (API_GD6 §9.5): kết quả chạy lại HIGH mà SV chưa giải trình – chỉ cảnh báo; ngưỡng lấy từ dòng kiểm (thresholds lúc kiểm)
+export const justificationMissing = (check) => check.status === 'OK'
+  && needsJustification(check.level, check.justification, { similarity: { ...DEFAULT_ROUND_CONFIG.similarity, ...check.thresholds } });
+
+// G5 §9.1, §9.3: cờ "chưa kiểm tra" và hiệu lực quyền cho phép đều suy ra, không có cột
+export const isUnchecked = (submission) => submission.similarityCheck?.status !== 'OK';
+// bypass: SimilarityBypass mới nhất của đề tài; latestSubmission: Submission seq lớn nhất. Còn hiệu lực = chưa có lần gửi nào sau khi cấp
+// (>=: trùng mốc ms coi như đã dùng – thà bắt cán bộ cấp lại còn hơn dùng một quyền hai lần)
+export const activeBypassOf = (bypass, latestSubmission) => (bypass && !(latestSubmission && latestSubmission.createdAt >= bypass.createdAt) ? bypass : null);
 
 /**
  * Chạy kiểm tra. repo cung cấp loadCorpus, loadSynonyms, saveCheck (tách để test được không cần DB).
@@ -62,3 +73,4 @@ export const runSimilarityCheck = async ({ repo, topic, cfg = DEFAULT_ROUND_CONF
     }, audit);
   }
 };
+export const presentBypass = (b) => ({ id: b.id, reason: b.reason, grantedBy: { fullName: b.grantedBy.fullName }, createdAt: b.createdAt.toISOString() });

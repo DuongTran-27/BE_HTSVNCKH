@@ -1,7 +1,7 @@
 // Gửi/gửi lại hồ sơ và quyết định xét duyệt (FR06, FR07, FR17, API_GD2 §8.2–8.3).
 import { effectiveRoundConfig } from '@nckh/shared';
 import { AppError, conflict, forbidden, notFound } from '../../lib/errors.js';
-import { runSimilarityCheck, similarityView } from '../similarity/service.js';
+import { runSimilarityCheck, similarityView, activeBypassOf } from '../similarity/service.js';
 import { checkTransition } from './stateMachine.js';
 import { relations, canView } from './service.js';
 import { assertTopicComplete } from './advisorService.js';
@@ -39,9 +39,11 @@ export const createReviewService = ({ repo, getTopic, logger, now = () => new Da
       audit: (r) => ({ actorId: user.id, action: 'SIMILARITY_CHECK', entityType: 'SimilarityCheck', entityId: r.id, before: null, after: { topicId: t.id, status: r.status, level: r.level, forSubmit: true }, ip }),
     });
     const view = similarityView(row, user.role);
+    // G5 (API_GD6 §9.4): FR06 lỗi + cán bộ đã cho phép (đọc trước transaction, kiểm lại dưới khóa) → gửi với cờ "chưa kiểm tra"
+    const bypass = row.status !== 'OK' ? activeBypassOf(t.similarityBypasses?.[0], t.submissions[0]) : null;
     let transition;
     try { // 5. lỗi FR06 không bao giờ thành "không trùng"
-      transition = checkTransition({ ...args, justification: body.justification, ctx: { ...rel, cfg, similarity: { status: row.status, level: row.level } } });
+      transition = checkTransition({ ...args, justification: body.justification, ctx: { ...rel, cfg, similarity: { status: row.status, level: row.level }, similarityBypass: !!bypass } });
     } catch (e) {
       if (e instanceof AppError && ['SIMILARITY_NOT_CHECKED', 'JUSTIFICATION_REQUIRED'].includes(e.code)) e.details = { similarityCheck: view };
       throw e;
@@ -49,13 +51,17 @@ export const createReviewService = ({ repo, getTopic, logger, now = () => new Da
     // 6.
     let submission;
     await repo.applyReview({ topic: { id: t.id, version: body.version }, transition, actor: user }, async (o) => {
+      // Dòng Topic đã khóa bởi updateMany: gửi đôi dùng cùng quyền thì lần sau thấy quyền đã hết hiệu lực
+      if (bypass && (await o.activeBypass(t.id))?.id !== bypass.id) {
+        throw new AppError(409, 'SIMILARITY_NOT_CHECKED', 'Chưa kiểm tra được trùng lặp, vui lòng thử lại', { similarityCheck: view });
+      }
       submission = await o.createSubmission({
         topicId: t.id, seq: await o.nextSeq(t.id), createdById: user.id, similarityCheckId: row.id,
-        payload: { title: t.title, summary: t.summary, objectives: t.objectives, keywords: t.keywords, fieldId: t.fieldId, fieldName: t.field?.name ?? null, documentIds: await o.latestProposalDocumentIds(t.id) },
+        payload: { title: t.title, summary: t.summary, objectives: t.objectives, keywords: t.keywords, fieldId: t.fieldId, fieldName: t.field?.name ?? null, documentIds: await o.latestProposalDocumentIds(t.id), ...(bypass && { similarityBypassId: bypass.id }) },
       });
       await o.audit({ actorId: user.id, action: 'TOPIC_SUBMIT', entityType: 'Submission', entityId: submission.id, before: { status: t.status }, after: { topicId: t.id, seq: submission.seq, action: body.action }, ip });
     });
-    return { ...(await readAfter(user, t, transition, body)), submission: { id: submission.id, seq: submission.seq, createdAt: submission.createdAt.toISOString() }, similarityCheck: view };
+    return { ...(await readAfter(user, t, transition, body)), submission: { id: submission.id, seq: submission.seq, createdAt: submission.createdAt.toISOString(), unchecked: row.status !== 'OK' }, similarityCheck: view };
   };
 
   const decide = async (t, rel, user, body, ip) => {

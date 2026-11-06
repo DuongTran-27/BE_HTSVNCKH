@@ -1,4 +1,4 @@
-import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, leaveTopicSchema, paginationQuery, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema } from '@nckh/shared';
+import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, leaveTopicSchema, paginationQuery, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema, similarityBypassCreateSchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { notFound } from '../../lib/errors.js';
@@ -12,6 +12,7 @@ import { createGroupService } from './groupService.js';
 import { createSnapshotService } from './snapshotService.js';
 import { createListService } from './listService.js';
 import { createSimilarityService } from './similarityService.js';
+import { createSimilarityBypassService } from './similarityBypassService.js';
 import { mountTopicMilestoneRoutes, mountTopicProgressRoutes, mountTopicDocumentRoutes, mountTopicFeedbackRoutes } from '../execution/routes.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
@@ -25,6 +26,7 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   const group = createGroupService({ repo, now, getTopic: svc.get });
   const snapshots = createSnapshotService({ repo });
   const similarity = createSimilarityService({ repo });
+  const bypass = createSimilarityBypassService({ repo });
   const similarityLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'user' });
   const r = businessRouter(guard);
   const student = requireRole('STUDENT');
@@ -59,6 +61,8 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   r.post('/:id/leave', student, validate(leaveTopicSchema), async (req, res) => res.json(await group.leave(req.user, req.params.id, req.body, req.ip)));
   r.get('/:id/similarity-checks/latest', requireRole('STAFF', 'LECTURER', 'STUDENT'), async (req, res) => res.json(await similarity.latest(req.user, req.params.id)));
   r.post('/:id/similarity-checks', student, similarityLimiter, validate(emptyBodySchema), async (req, res) => res.json(await similarity.check(req.user, req.params.id, req.ip)));
+  // G5 (API_GD6 §9.2): cán bộ cho phép gửi khi FR06 lỗi; phạm vi khoa ở service
+  r.post('/:id/similarity-bypasses', requireRole('STAFF'), validate(similarityBypassCreateSchema), async (req, res) => res.status(201).json(await bypass.grant(req.user, req.params.id, req.body, req.ip)));
   // Endpoint chuyển trạng thái chung (§8.1); T210: nhánh FR16, T212a: gửi/xét duyệt; T405: đóng đề tài. Vai trò kiểm bằng TRANSITIONS.
   r.post('/:id/actions', requireRole('STUDENT', 'LECTURER', 'STAFF'), actionLimiter, validate(topicActionSchema), async (req, res) => {
     const a = req.body.action;
