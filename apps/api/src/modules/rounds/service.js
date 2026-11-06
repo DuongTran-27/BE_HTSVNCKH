@@ -1,6 +1,6 @@
 // Đợt NCKH (FR04, API_GD2 §4.3). Chỉ STAFF ghi; LECTURER/STUDENT chỉ đọc đợt của khoa mình; ADMIN không có quyền (FR25).
-import { effectiveRoundConfig, validateRoundFields } from '@nckh/shared';
-import { badRequest, forbidden, notFound } from '../../lib/errors.js';
+import { effectiveRoundConfig, validateRoundFields, topicSubmitSchema } from '@nckh/shared';
+import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 
 const DATE_FIELDS = ['regOpenAt', 'regCloseAt', 'reviewDeadline', 'endAt'];
 // Phần lưu vào AuditLog: mốc và config (API_GD2 §4.3)
@@ -11,6 +11,18 @@ const snapshot = (r) => ({
   config: r.config ?? {},
 });
 const fail = (details) => badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', details);
+// G45 (API_GD6 §10): tham số hồ sơ mà đề tài WAITING_ADVISOR/HAS_ADVISOR không sửa được để đáp ứng
+const PROFILE_KEYS = ['minSummaryWords', 'minKeywords', 'maxKeywords'];
+const passes = (cfg, t) => topicSubmitSchema(cfg).safeParse({ ...t, fieldId: t.fieldId ?? '' }).success;
+const assertNoStuckTopics = async (oldCfg, newCfg, q) => {
+  if (PROFILE_KEYS.every((k) => oldCfg[k] === newCfg[k])) return; // không đổi tham số hồ sơ → không quét
+  // Chỉ đề tài trở nên không đạt vì thay đổi này; đề tài đã không đạt từ trước không chặn việc nới tham số
+  const bad = (await q.pendingTopics()).filter((t) => passes(oldCfg, t) && !passes(newCfg, t));
+  if (bad.length) {
+    throw conflict('ROUND_CONFIG_BLOCKS_TOPICS', `Thay đổi này làm ${bad.length} đề tài đang chờ/đã có GVHD không còn đủ điều kiện gửi xét duyệt mà nhóm không sửa được hồ sơ`,
+      { codes: bad.slice(0, 50).map((t) => t.code), total: bad.length });
+  }
+};
 
 export const createRoundService = ({ repo, now = () => new Date() }) => {
   const present = (r, user) => {
@@ -81,12 +93,13 @@ export const createRoundService = ({ repo, now = () => new Date() }) => {
 
     async update(user, id, body, ip) {
       // Thứ tự theo hợp đồng §2: id không tồn tại -> 404, tồn tại nhưng ngoài phạm vi -> 403
-      const row = await repo.updateLocked(id, (before) => {
+      const row = await repo.updateLocked(id, async (before, q) => {
         if (!before) throw notFound();
         if (user.role !== 'STAFF' || !user.staffFacultyIds?.includes(before.facultyId)) throw forbidden();
         // Gộp với giá trị hiện tại rồi kiểm lại thứ tự mốc + cấu hình hiệu lực; config gửi lên thay hẳn bản cũ
         const errors = validateRoundFields({ ...snapshot(before), ...body });
         if (Object.keys(errors).length) throw fail(errors);
+        if (body.config !== undefined) await assertNoStuckTopics(effectiveRoundConfig(before.config), effectiveRoundConfig(body.config), q);
         return {
           data: toDates(body),
           buildAudit: (r) => ({

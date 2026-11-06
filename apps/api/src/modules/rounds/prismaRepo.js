@@ -26,7 +26,12 @@ export const createRoundRepo = (prisma) => ({
   updateLocked: (id, compute) =>
     prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "Round" WHERE id = ${id} FOR NO KEY UPDATE`;
-      const { data, buildAudit } = await compute(await tx.round.findUnique({ where: { id } }));
+      // G45 (API_GD6 §10): đề tài chờ/đã có GVHD của đợt – nhóm không sửa được hồ sơ ở các trạng thái này
+      const pendingTopics = () => tx.topic.findMany({
+        where: { roundId: id, status: { in: ['WAITING_ADVISOR', 'HAS_ADVISOR'] } }, orderBy: { code: 'asc' },
+        select: { code: true, title: true, summary: true, objectives: true, keywords: true, fieldId: true },
+      });
+      const { data, buildAudit } = await compute(await tx.round.findUnique({ where: { id } }), { pendingTopics });
       const row = await tx.round.update({ where: { id }, data });
       await recordAudit(tx, buildAudit(row));
       return row;

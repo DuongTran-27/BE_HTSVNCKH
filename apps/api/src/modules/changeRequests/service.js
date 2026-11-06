@@ -1,14 +1,16 @@
 // Khung yêu cầu thay đổi dùng chung FR18–FR21 (API_GD6 §2). Vòng đời chung ở đây; điều kiện + hiệu lực theo loại ở TYPES.
-// T605 (TOPIC_CHANGE) thêm handler cùng hình dạng advisorChange.js / cancel.js / leaveGroup.js.
+// Handler: { canCreate, checkStatus, precheck? (ngoài tx), prepare (dưới khóa), pendingScope?, onAccept?, apply }.
 import { CHANGE_TYPE_LABEL } from '@nckh/shared';
 import { conflict, forbidden, notFound } from '../../lib/errors.js';
-import { relations, canView, presentFormerAdvisors } from '../topics/service.js';
+import { relations, canView, presentFormerAdvisors, inWindows } from '../topics/service.js';
 import { topicName } from '../notifications/notify.js';
+import { similarityView } from '../similarity/service.js';
 import { advisorChange } from './advisorChange.js';
 import { cancel } from './cancel.js';
 import { leaveGroup } from './leaveGroup.js';
+import { topicChange } from './topicChange.js';
 
-const TYPES = { ADVISOR_CHANGE: advisorChange, CANCEL: cancel, LEAVE_GROUP: leaveGroup };
+const TYPES = { TOPIC_CHANGE: topicChange, ADVISOR_CHANGE: advisorChange, CANCEL: cancel, LEAVE_GROUP: leaveGroup };
 const ACTION_ORDER = ['ACCEPT', 'APPROVE', 'DECLINE', 'WITHDRAW'];
 const iso = (d) => d?.toISOString() ?? null;
 const closed = () => conflict('CHANGE_REQUEST_CLOSED', 'Yêu cầu không còn ở trạng thái chờ xử lý');
@@ -33,14 +35,15 @@ export const availableCrActions = (cr, user) => {
   return ACTION_ORDER.filter((a) => set.has(a));
 };
 
-export const presentChangeRequest = (cr, user) => ({
+// title: tên đề tài người xem được thấy (titleFor)
+export const presentChangeRequest = (cr, user, title = cr.topic.title) => ({
   id: cr.id, type: cr.type, status: cr.status, stage: stageOf(cr),
-  topic: { id: cr.topic.id, code: cr.topic.code, title: cr.topic.title },
+  topic: { id: cr.topic.id, code: cr.topic.code, title },
   reason: cr.reason, payload: cr.payload,
   createdBy: person(cr.createdBy), createdAt: iso(cr.createdAt),
   target: person(cr.target), targetAcceptedAt: iso(cr.targetAcceptedAt),
   decidedBy: person(cr.decidedBy), decisionReason: cr.decisionNote ?? null, decidedAt: iso(cr.decidedAt),
-  similarityCheck: null, // chỉ TOPIC_CHANGE (T605)
+  similarityCheck: cr.similarityCheck ? similarityView(cr.similarityCheck, user.role) : null, // chỉ TOPIC_CHANGE đổi tên/tóm tắt
   availableActions: availableCrActions(cr, user),
 });
 
@@ -68,10 +71,22 @@ export const createChangeRequestService = ({ repo, getTopic, now = () => new Dat
     if (!cr) throw notFound();
     return cr;
   };
-  const view = async (id, user) => ({ changeRequest: presentChangeRequest(await repo.findChangeRequest(id), user) });
+  // m1 T603-bao-mat (FR18, §5.4): người không còn quan hệ hiện hành với đề tài (đã rời nhóm, GV cũ không được cấp quyền đọc,
+  // người đích đã quyết định) không thấy tên hiện tại – chỉ tên snapshot trong khoảng còn là thành viên, không có thì null
+  const titleFor = async (cr, user) => {
+    const t = cr.topic;
+    const current = inScope(user, t.facultyId) || t.members.some((m) => !m.leftAt) || t.advisings.length > 0
+      || (cr.status === 'PENDING' && cr.targetUserId === user.id);
+    if (current) return t.title;
+    const w = t.members.filter((m) => m.leftAt);
+    if (!w.length) return null;
+    return (await repo.submissionTitles(t.id)).find((s) => inWindows(s.createdAt, w))?.payload?.title ?? null;
+  };
+  const present = async (cr, user) => presentChangeRequest(cr, user, await titleFor(cr, user));
+  const view = async (id, user) => ({ changeRequest: await present(await repo.findChangeRequest(id, user.id), user) });
   const page = async (where, q, user) => {
-    const { items, total } = await repo.listChangeRequests({ where, skip: (q.page - 1) * q.pageSize, take: q.pageSize });
-    return { items: items.map((cr) => presentChangeRequest(cr, user)), page: q.page, pageSize: q.pageSize, total };
+    const { items, total } = await repo.listChangeRequests({ where, skip: (q.page - 1) * q.pageSize, take: q.pageSize, viewerId: user.id });
+    return { items: await Promise.all(items.map((cr) => present(cr, user))), page: q.page, pageSize: q.pageSize, total };
   };
   const loadTopic = async (user, topicId) => {
     const t = await repo.findDetail(topicId);
@@ -97,12 +112,13 @@ export const createChangeRequestService = ({ repo, getTopic, now = () => new Dat
       const h = TYPES[body.type];
       if (!h.canCreate(rel, user)) throw forbidden();
       h.checkStatus(t.status);
+      const pre = await h.precheck?.(repo, t, body, user, ip); // TOPIC_CHANGE: FR06 ngoài transaction (§6.2)
       const id = await repo.changeRequestTx(async (o) => {
         const lock = await o.lockTopic(topicId);
         h.checkStatus(lock.status); // kiểm lại dưới khóa
         if (await o.hasPending(topicId, body.type, h.pendingScope?.(user))) throw conflict('CHANGE_REQUEST_PENDING', 'Đề tài đã có yêu cầu cùng loại đang chờ xử lý');
-        const { payload, targetUserId = null, targetAcceptedAt = null } = await h.prepare(o, { ...t, status: lock.status }, body, user, now());
-        const cr = await o.create({ topicId, type: body.type, payload, reason: body.reason, createdById: user.id, targetUserId, targetAcceptedAt });
+        const { payload, targetUserId = null, targetAcceptedAt = null, similarityCheckId = null } = await h.prepare(o, { ...t, status: lock.status }, body, user, now(), pre);
+        const cr = await o.create({ topicId, type: body.type, payload, reason: body.reason, createdById: user.id, targetUserId, targetAcceptedAt, similarityCheckId });
         await o.audit({ actorId: user.id, action: 'CHANGE_REQUEST_CREATE', entityType: 'ChangeRequest', entityId: cr.id, before: null, after: { topicId, type: cr.type, payload, reason: cr.reason }, ip });
         await o.notify({ topicId, to: ['members', 'advisor', 'staff'], actorId: user.id, type: 'CHANGE_REQUESTED', key: `CHANGE_REQUESTED:${cr.id}`, link: decidedLink(cr), title: (x) => `Yêu cầu ${label(cr)} – đề tài ${topicName(x)}` });
         if (stageOf(cr) === 'TARGET') { // MINOR m3 T600: chỉ khi thật sự chờ người đích (LEAVE_GROUP vào thẳng STAFF)
@@ -170,8 +186,7 @@ export const createChangeRequestService = ({ repo, getTopic, now = () => new Dat
       if (!inScope(user, cr.topic.facultyId)) throw forbidden();
       if (cr.status !== 'PENDING') throw closed();
       if (stageOf(cr) === 'TARGET') throw conflict('CHANGE_NOT_READY', 'Người được đề xuất chưa đồng ý');
-      const h = TYPES[cr.type];
-      if (!h) throw conflict('CHANGE_NOT_READY', 'Loại yêu cầu này chưa được hỗ trợ duyệt'); // TOPIC_CHANGE: T605
+      const h = TYPES[cr.type]; // mọi ChangeType đều có handler (T605)
       await repo.changeRequestTx(async (o) => {
         const lock = await o.lockTopic(cr.topicId);
         const at = now(); // sau khóa: mọi ghi của GV cũ commit trước đó đều có thời điểm sớm hơn endAt
@@ -201,12 +216,12 @@ export const createChangeRequestService = ({ repo, getTopic, now = () => new Dat
     },
 
     async get(user, id) {
-      const cr = await repo.findChangeRequestWhere({ AND: [scopeWhere(user), { id }] });
+      const cr = await repo.findChangeRequestWhere({ AND: [scopeWhere(user), { id }] }, user.id);
       if (!cr) {
         await load(id); // 404 nếu không tồn tại, còn lại 403
         throw forbidden();
       }
-      return { changeRequest: presentChangeRequest(cr, user) };
+      return { changeRequest: await present(cr, user) };
     },
 
     // PUT /api/topics/:id/former-advisors/:lecturerId/read-access (§3.5) – FR19.4

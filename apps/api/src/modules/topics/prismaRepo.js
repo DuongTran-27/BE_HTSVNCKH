@@ -51,7 +51,7 @@ export const createTopicRepo = (prisma) => ({
   ...createStatsRepo(prisma),
   ...createChangeRequestRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
-  findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, isActive: true } }),
+  findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, name: true, isActive: true } }),
   findDetail: async (id) => {
     const t = await prisma.topic.findUnique({ where: { id }, include: DETAIL_INCLUDE });
     return t && { ...t, formerAdvisings: await findFormerAdvisings(prisma, id), formerMembers: await findFormerMembers(prisma, id) };

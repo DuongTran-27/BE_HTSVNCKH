@@ -13,7 +13,7 @@ const CLOSING = ['IN_PROGRESS', 'WAITING_CLOSE'];
 const iso = (d) => d.toISOString();
 
 // summary ghi dạng digest + số từ để log không phình (API_GD2 §5.1). Không đặt khóa tên "...hash": redact() sẽ lọc mất.
-const snapshot = (t) => ({
+export const topicSnapshot = (t) => ({
   title: t.title,
   objectives: t.objectives,
   keywords: t.keywords,
@@ -127,6 +127,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         enterResult: rel.isCurrentAdvisor && running,
         readExecution: canReadExecution(t, rel),
         // GĐ6 (API_GD6 §2.5); quyền của loại khác do task của loại đó thêm
+        requestTopicChange: rel.isLeader && t.status === 'IN_PROGRESS',
         requestAdvisorChange: (rel.isLeader || rel.inStaffScope) && ADVISOR_CHANGE_STATUSES.includes(t.status),
         requestCancel: (rel.isLeader || rel.isCurrentAdvisor) && t.status === 'IN_PROGRESS',
         leave: rel.isMember && !rel.isLeader && PRE_APPROVAL_STATUSES.includes(t.status),
@@ -179,7 +180,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
       const fieldId = await checkContent(body, effectiveRoundConfig(round.config));
       const id = await repo.create({ round, userId: user.id, data: content(body, fieldId) }, (t) => ({
         actorId: user.id, action: 'TOPIC_CREATE', entityType: 'Topic', entityId: t.id,
-        before: null, after: { code: t.code, roundId: round.id, ...snapshot(t) }, ip,
+        before: null, after: { code: t.code, roundId: round.id, ...topicSnapshot(t) }, ip,
       }));
       return get(user, id);
     },
@@ -192,7 +193,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
       const data = content(body, fieldId);
       const ok = await repo.update({ id, version: body.version, editableStatuses: EDITABLE, data }, () => ({
         actorId: user.id, action: 'TOPIC_UPDATE', entityType: 'Topic', entityId: id,
-        before: snapshot(t), after: snapshot(data), ip,
+        before: topicSnapshot(t), after: topicSnapshot(data), ip,
       }));
       if (!ok) throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
       return get(user, id);

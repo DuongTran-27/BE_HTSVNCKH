@@ -193,12 +193,25 @@ export const statsQuerySchema = z.object({
   facultyId: opt(z.string().trim().max(64)),
 });
 
-// GĐ6 (API_GD6 §2.7): khung yêu cầu thay đổi. Mỗi loại một nhánh; đã có ADVISOR_CHANGE (T601), CANCEL (T602), LEAVE_GROUP (T603); T605 (TOPIC_CHANGE) thêm nhánh.
+// GĐ6 (API_GD6 §2.7): khung yêu cầu thay đổi. Mỗi loại một nhánh; ADVISOR_CHANGE (T601), CANCEL (T602), LEAVE_GROUP (T603), TOPIC_CHANGE (T605).
 const crReason = z.string().trim().min(5, 'Lý do tối thiểu 5 ký tự').max(2000);
 export const changeRequestCreateSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('ADVISOR_CHANGE'), reason: crReason, newLecturerId: idSchema }),
   z.strictObject({ type: z.literal('CANCEL'), reason: crReason }), // T602 (FR20)
   z.strictObject({ type: z.literal('LEAVE_GROUP'), reason: crReason }), // T603 (FR21): chỉ cho chính mình, không chọn người
+  // T605 (FR18, API_GD6 §6.1): giới hạn tĩnh như topicSubmitSchema; giới hạn theo đợt kiểm ở service trên nội dung sau khi gộp
+  z.strictObject({
+    type: z.literal('TOPIC_CHANGE'), reason: crReason,
+    changes: z.strictObject({
+      title: title.min(10, 'Tên đề tài tối thiểu 10 ký tự').optional(),
+      summary: z.string().trim().max(SUMMARY_MAX).optional(),
+      objectives: objectives.min(20, 'Mục tiêu tối thiểu 20 ký tự').optional(),
+      keywords: z.array(keyword).max(KEYWORDS_HARD_MAX, `Tối đa ${KEYWORDS_HARD_MAX} từ khóa`).optional(),
+      fieldId: idSchema.optional(),
+    }).optional(),
+    addMemberCode: z.string().trim().min(1).max(64).optional(),
+    justification: z.string().trim().max(5000).optional(),
+  }).refine((v) => Object.values(v.changes ?? {}).some((x) => x !== undefined) || v.addMemberCode !== undefined, 'Yêu cầu phải có ít nhất một thay đổi'),
 ], { error: 'Loại yêu cầu không hợp lệ' });
 // FR21 rời nhóm trước duyệt (API_GD6 §5.1)
 export const leaveTopicSchema = z.strictObject({ version: z.int().min(0) });

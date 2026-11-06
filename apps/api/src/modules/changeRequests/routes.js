@@ -18,11 +18,14 @@ const validId = (_req, _res, next, id) => {
 export const changeRequestRoutes = ({ repo, now, guard }) => {
   const svc = createChangeRequestService({ repo, now, getTopic: createTopicService({ repo, now }).get });
   const limiter = createLimiter({ windowMs: 15 * 60e3, limit: 30, keyBy: 'user' });
+  // §6.2: limiter FR06 10/15 phút áp thêm khi TOPIC_CHANGE có đổi tên/tóm tắt (có thể chạy thuật toán)
+  const fr06Limiter = createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'user' });
+  const fr06Limit = (req, res, next) => (req.body.changes?.title !== undefined || req.body.changes?.summary !== undefined ? fr06Limiter(req, res, next) : next());
 
   // Route con của /api/topics/:id (đã sau guard + param :id hợp lệ)
   const mountTopicRoutes = (r) => {
     r.get('/:id/change-requests', roles, validate(paginationQuery, 'query'), async (req, res) => res.json(await svc.listForTopic(req.user, req.params.id, req.validated)));
-    r.post('/:id/change-requests', roles, limiter, validate(changeRequestCreateSchema), async (req, res) => res.status(201).json(await svc.create(req.user, req.params.id, req.body, req.ip)));
+    r.post('/:id/change-requests', roles, limiter, validate(changeRequestCreateSchema), fr06Limit, async (req, res) => res.status(201).json(await svc.create(req.user, req.params.id, req.body, req.ip)));
     r.put('/:id/former-advisors/:lecturerId/read-access', requireRole('STAFF'), validate(formerAdvisorAccessSchema), async (req, res) => {
       if (!idSchema.safeParse(req.params.lecturerId).success) throw notFound();
       res.json(await svc.setFormerAdvisorAccess(req.user, req.params.id, req.params.lecturerId, req.body, req.ip));

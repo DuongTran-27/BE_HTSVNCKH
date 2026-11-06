@@ -61,10 +61,10 @@ describe('POST /api/topics', () => {
     expect(t.facultyId).toBeUndefined();
     expect(t.members).toMatchObject([{ userId: U.sv1.id, role: 'LEADER' }]);
     expect(t.round).toMatchObject({ registrationOpen: true, effectiveConfig: { maxKeywords: 3, minMembers: 1 } });
-    // T405: API_GD45 §7.4 thêm 7 quyền GĐ4; T601: API_GD6 §2.5 thêm 2 quyền thay GV; T602: requestCancel; T603: leave, requestLeave – vẫn so khớp toàn bộ
+    // T405: API_GD45 §7.4 thêm 7 quyền GĐ4; T601: API_GD6 §2.5 thêm 2 quyền thay GV; T602: requestCancel; T603: leave, requestLeave; T605: requestTopicChange – vẫn so khớp toàn bộ
     expect(t.permissions).toEqual({ edit: true, invite: true, transferLeader: true, checkSimilarity: true, viewHistory: true,
       manageMilestones: false, addProgress: false, uploadProposal: true, uploadMilestone: false, giveFeedback: false, enterResult: false, readExecution: true,
-      requestAdvisorChange: false, requestCancel: false, leave: false, requestLeave: false, correctResult: false, manageFormerAdvisorAccess: false });
+      requestTopicChange: false, requestAdvisorChange: false, requestCancel: false, leave: false, requestLeave: false, correctResult: false, manageFormerAdvisorAccess: false });
     expect(t.availableActions).toEqual(['REQUEST_ADVISOR']);
     expect(t.latestSimilarity).toBeNull();
     const [a, ...rest] = await audits(t.id);
