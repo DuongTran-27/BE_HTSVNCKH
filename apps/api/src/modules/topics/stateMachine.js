@@ -53,17 +53,20 @@ export const checkTransition = ({ topic, action, actor, reason, justification, c
 };
 
 /**
- * Áp dụng chuyển trạng thái trong transaction, có khóa lạc quan theo topic.version
+ * Áp dụng chuyển trạng thái trên tx có sẵn, có khóa lạc quan theo topic.version
  * để hai người bấm cùng lúc không ghi đè nhau. Ghi lịch sử (FR15).
+ * Dùng thẳng khi chuyển trạng thái là một bước của transaction lớn hơn (duyệt đề nghị hủy – API_GD6 §4.2).
  */
-export const applyTransition = async (prisma, { topic, transition, actor, reason, extra }) =>
-  withLockTx(prisma, async (tx) => { // lock_timeout đặt TRƯỚC updateMany (API_GD2 §1.8)
-    const updated = await tx.topic.updateMany({
-      where: { id: topic.id, version: topic.version, status: transition.from },
-      data: { status: transition.to, version: { increment: 1 } },
-    });
-    if (updated.count !== 1) throw conflict('CONCURRENT_UPDATE', 'Đề tài vừa được người khác cập nhật, vui lòng tải lại');
-    await recordStatus(tx, { topicId: topic.id, from: transition.from, to: transition.to, action: transition.action, actorId: actor.id, reason });
-    if (extra) await extra(tx);
-    return tx.topic.findUnique({ where: { id: topic.id } });
+export const applyTransitionTx = async (tx, { topic, transition, actor, reason, extra }) => {
+  const updated = await tx.topic.updateMany({
+    where: { id: topic.id, version: topic.version, status: transition.from },
+    data: { status: transition.to, version: { increment: 1 } },
   });
+  if (updated.count !== 1) throw conflict('CONCURRENT_UPDATE', 'Đề tài vừa được người khác cập nhật, vui lòng tải lại');
+  await recordStatus(tx, { topicId: topic.id, from: transition.from, to: transition.to, action: transition.action, actorId: actor.id, reason });
+  if (extra) await extra(tx);
+  return tx.topic.findUnique({ where: { id: topic.id } });
+};
+
+// lock_timeout đặt TRƯỚC updateMany (API_GD2 §1.8)
+export const applyTransition = async (prisma, args) => withLockTx(prisma, (tx) => applyTransitionTx(tx, args));

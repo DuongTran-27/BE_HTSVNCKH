@@ -1,6 +1,6 @@
 // T505 (FR14, M4): số trên API thống kê khớp CSV với cùng bộ lọc. Độc lập với T503: dữ liệu ngẫu nhiên (seed cố định),
 // "đáp án" tính bằng JS từ DB (không dùng SQL của sản phẩm), tổ hợp bộ lọc nhiều chiều, ô CSV nguy hiểm, và số liệu sau
-// các sự kiện đổi dữ liệu (nhập/sửa kết quả, đề nghị đóng, xác nhận đóng, hủy).
+// các sự kiện đổi dữ liệu (nhập/sửa kết quả, đề nghị đóng, xác nhận đóng, hủy qua API đề nghị + duyệt).
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { parseCsv, STATS_GROUP_BY } from '@nckh/shared';
@@ -167,11 +167,14 @@ describe('TC-FR14 số liệu sau sự kiện đổi dữ liệu', () => {
     expect(await n({ status: 'WAITING_CLOSE' })).toBe(waitBefore);
     await all();
 
-    // FR20: hủy vẫn được đếm, chuyển nhóm (CANCEL chưa có API – T602 – nên đổi thẳng DB)
+    // FR20: hủy vẫn được đếm, chuyển nhóm – qua API đề nghị + duyệt hủy (T602, API_GD6 §4.4 ca 6)
     const c = await mkTopic('s2', S.round, { status: 'IN_PROGRESS' });
     const inProg = await n({ status: 'IN_PROGRESS' });
     const total = await n({});
-    await prisma.topic.update({ where: { id: c.id }, data: { status: 'CANCELLED' } });
+    const cr = await post('s2', `/api/topics/${c.id}/change-requests`, { type: 'CANCEL', reason: 'Nhóm không thể tiếp tục đề tài' });
+    expect(cr.status, JSON.stringify(cr.body)).toBe(201);
+    const ap = await post('staff1', `/api/change-requests/${cr.body.changeRequest.id}/approve`, { reason: 'Đồng ý hủy theo đề nghị của nhóm' });
+    expect([ap.status, ap.body.topic?.status], JSON.stringify(ap.body)).toEqual([200, 'CANCELLED']);
     expect(await n({ status: 'IN_PROGRESS' })).toBe(inProg - 1);
     expect(await n({})).toBe(total);
     await all();

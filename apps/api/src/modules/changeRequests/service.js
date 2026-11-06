@@ -1,12 +1,13 @@
 // Khung yêu cầu thay đổi dùng chung FR18–FR21 (API_GD6 §2). Vòng đời chung ở đây; điều kiện + hiệu lực theo loại ở TYPES.
-// T602 (CANCEL), T603 (LEAVE_GROUP), T605 (TOPIC_CHANGE) thêm handler cùng hình dạng advisorChange.js.
+// T603 (LEAVE_GROUP), T605 (TOPIC_CHANGE) thêm handler cùng hình dạng advisorChange.js / cancel.js.
 import { CHANGE_TYPE_LABEL } from '@nckh/shared';
 import { conflict, forbidden, notFound } from '../../lib/errors.js';
 import { relations, canView, presentFormerAdvisors } from '../topics/service.js';
 import { topicName } from '../notifications/notify.js';
 import { advisorChange } from './advisorChange.js';
+import { cancel } from './cancel.js';
 
-const TYPES = { ADVISOR_CHANGE: advisorChange };
+const TYPES = { ADVISOR_CHANGE: advisorChange, CANCEL: cancel };
 const ACTION_ORDER = ['ACCEPT', 'APPROVE', 'DECLINE', 'WITHDRAW'];
 const iso = (d) => d?.toISOString() ?? null;
 const closed = () => conflict('CHANGE_REQUEST_CLOSED', 'Yêu cầu không còn ở trạng thái chờ xử lý');
@@ -80,8 +81,8 @@ export const createChangeRequestService = ({ repo, getTopic, now = () => new Dat
   };
   const decidedLink = (cr) => `/de-tai/${cr.topicId}/yeu-cau`;
   // CHANGE_DECIDED (§11b): thành viên + GVHD hiện hành (đọc sau hiệu lực), người tạo, người đích; extra theo loại
-  const notifyDecided = async (o, cr, user, verb, extra) => {
-    const n = { topicId: cr.topicId, actorId: user.id, type: 'CHANGE_DECIDED', key: `CHANGE_DECIDED:${cr.id}`, title: (x) => `Yêu cầu ${label(cr)} đã ${verb} – đề tài ${topicName(x)}` };
+  const notifyDecided = async (o, cr, user, verb, extra, title) => {
+    const n = { topicId: cr.topicId, actorId: user.id, type: 'CHANGE_DECIDED', key: `CHANGE_DECIDED:${cr.id}`, title: title ?? ((x) => `Yêu cầu ${label(cr)} đã ${verb} – đề tài ${topicName(x)}`) };
     await o.notify({ ...n, to: ['members', 'advisor'], userIds: [cr.createdById], link: decidedLink(cr) });
     if (cr.targetUserId) await o.notify({ ...n, userIds: [cr.targetUserId], link: verb === 'được duyệt' ? decidedLink(cr) : '/yeu-cau' });
     for (const e of extra) await o.notify({ ...n, userIds: e.userIds, link: e.link });
@@ -165,15 +166,15 @@ export const createChangeRequestService = ({ repo, getTopic, now = () => new Dat
       if (cr.status !== 'PENDING') throw closed();
       if (stageOf(cr) === 'TARGET') throw conflict('CHANGE_NOT_READY', 'Người được đề xuất chưa đồng ý');
       const h = TYPES[cr.type];
-      if (!h) throw conflict('CHANGE_NOT_READY', 'Loại yêu cầu này chưa được hỗ trợ duyệt'); // CANCEL/LEAVE_GROUP/TOPIC_CHANGE: T602–T605
+      if (!h) throw conflict('CHANGE_NOT_READY', 'Loại yêu cầu này chưa được hỗ trợ duyệt'); // LEAVE_GROUP/TOPIC_CHANGE: T603, T605
       await repo.changeRequestTx(async (o) => {
         const lock = await o.lockTopic(cr.topicId);
         const at = now(); // sau khóa: mọi ghi của GV cũ commit trước đó đều có thời điểm sớm hơn endAt
         const ok = await o.transition({ id, status: 'PENDING', ...STAFF_STAGE }, { status: 'ACCEPTED', decidedById: user.id, decidedAt: at, decisionNote: body.reason ?? null });
         if (!ok) throw closed();
-        const { decidedExtra = [] } = (await h.apply(o, cr, { lock, user, at, reason: body.reason, ip })) ?? {};
+        const { decidedExtra = [], decidedTitle } = (await h.apply(o, cr, { lock, user, at, reason: body.reason, ip })) ?? {};
         await o.audit({ actorId: user.id, action: 'CHANGE_REQUEST_APPROVE', entityType: 'ChangeRequest', entityId: id, before: { status: 'PENDING' }, after: { status: 'ACCEPTED', reason: body.reason ?? null }, ip });
-        await notifyDecided(o, cr, user, 'được duyệt', decidedExtra);
+        await notifyDecided(o, cr, user, 'được duyệt', decidedExtra, decidedTitle);
       });
       return { ...(await view(id, user)), topic: (await getTopic(user, cr.topicId)).topic };
     },

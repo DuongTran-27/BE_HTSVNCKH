@@ -74,7 +74,7 @@ export const topicActionSchema = z.discriminatedUnion('action', [
   ...['SUBMIT_FOR_REVIEW', 'RESUBMIT'].map((a) => z.object({ action: z.literal(a), version, justification: z.string().trim().max(5000, 'Giải trình tối đa 5000 ký tự').optional() })),
   ...['REQUEST_REVISION', 'REJECT'].map((a) => reasonSchema.extend({ action: z.literal(a), version, submissionId: z.string().trim().min(1).max(64) })),
   z.object({ action: z.literal('APPROVE'), version, submissionId: z.string().trim().min(1).max(64) }),
-  // T405 (API_GD45 §7.1): đóng đề tài; CANCEL vẫn ngoài union cho tới T602
+  // T405 (API_GD45 §7.1): đóng đề tài; CANCEL không gọi qua /actions – chỉ khi cán bộ duyệt đề nghị hủy (API_GD6 §4)
   ...['REQUEST_CLOSE', 'CONFIRM_CLOSE'].map((a) => z.object({ action: z.literal(a), version })),
   ...['RETURN_TO_ADVISOR', 'CLOSE_EXPIRED'].map((a) => reasonSchema.extend({ action: z.literal(a), version })),
 ]);
@@ -185,10 +185,11 @@ export const statsQuerySchema = z.object({
   facultyId: opt(z.string().trim().max(64)),
 });
 
-// GĐ6 (API_GD6 §2.7): khung yêu cầu thay đổi. Mỗi loại một nhánh; T602 (CANCEL), T603 (LEAVE_GROUP), T605 (TOPIC_CHANGE) thêm nhánh.
+// GĐ6 (API_GD6 §2.7): khung yêu cầu thay đổi. Mỗi loại một nhánh; đã có ADVISOR_CHANGE (T601), CANCEL (T602); T603 (LEAVE_GROUP), T605 (TOPIC_CHANGE) thêm nhánh.
 const crReason = z.string().trim().min(5, 'Lý do tối thiểu 5 ký tự').max(2000);
 export const changeRequestCreateSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('ADVISOR_CHANGE'), reason: crReason, newLecturerId: idSchema }),
+  z.strictObject({ type: z.literal('CANCEL'), reason: crReason }), // T602 (FR20)
 ], { error: 'Loại yêu cầu không hợp lệ' });
 export const changeRequestApproveSchema = z.preprocess((v) => v ?? {}, z.strictObject({ reason: crReason.optional() }));
 export const changeRequestDeclineSchema = z.strictObject({ reason: crReason });

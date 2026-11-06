@@ -417,7 +417,7 @@ export async function seed(prisma, { now = new Date() } = {}) {
               data: {
                 topicId: topic.id,
                 type: 'CANCEL',
-                payload: {},
+                payload: { topicStatus: 'IN_PROGRESS', requesterRole: 'STUDENT' }, // API_GD6 §2.1
                 reason,
                 status: 'ACCEPTED',
                 createdById: leader.id,

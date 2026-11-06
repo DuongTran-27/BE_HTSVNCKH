@@ -115,6 +115,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         readExecution: canReadExecution(t, rel),
         // GĐ6 (API_GD6 §2.5); quyền của loại khác do task của loại đó thêm
         requestAdvisorChange: (rel.isLeader || rel.inStaffScope) && ADVISOR_CHANGE_STATUSES.includes(t.status),
+        requestCancel: (rel.isLeader || rel.isCurrentAdvisor) && t.status === 'IN_PROGRESS',
         manageFormerAdvisorAccess: rel.inStaffScope,
       },
       pendingChangeRequests: (t.changeRequests ?? []).filter((c) => rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope || c.targetUserId === user.id)

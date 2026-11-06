@@ -6,6 +6,7 @@ import { notifyTopic } from '../notifications/notify.js';
 import { lockTopicRow } from '../execution/lock.js';
 import { countLecturerActive, lockUsers } from '../topics/advisorRepo.js';
 import { findFormerAdvisings } from '../topics/prismaRepo.js';
+import { applyTransitionTx } from '../topics/stateMachine.js';
 
 const person = { select: { id: true, fullName: true, role: true } };
 export const CR_INCLUDE = {
@@ -37,6 +38,7 @@ const ops = (tx) => ({
   // advising_one_current không deferrable: kết thúc bản cũ TRƯỚC khi tạo bản mới (§3.4 bước 4)
   endAdvising: (topicId, at) => tx.advising.updateMany({ where: { topicId, endAt: null }, data: { endAt: at } }),
   createAdvising: (data) => tx.advising.create({ data }),
+  applyTransition: (args) => applyTransitionTx(tx, args), // FR20: chuyển trạng thái trong tx duyệt (API_GD6 §4.2)
   bumpTopicVersion: (topicId) => tx.topic.updateMany({ where: { id: topicId }, data: { version: { increment: 1 } } }),
   // G36: bản mới nhất mỗi chuỗi mốc chưa Đạt, chưa có nhận xét nào
   pendingDocumentIds: async (topicId) => {

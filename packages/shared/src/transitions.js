@@ -19,7 +19,7 @@ export const TRANSITIONS = Object.freeze([
   { action: 'CLOSE_EXPIRED', from: S.IN_PROGRESS, to: S.CLOSED, actors: [R.STAFF], reasonRequired: true, forcesFail: true, fr: ['FR27'] },
 ]);
 
-// Action đã có API (API_GD45 §7.4); CANCEL mở ở T602
+// Action gọi qua POST /actions; CANCEL chỉ chạy khi cán bộ duyệt đề nghị hủy (API_GD6 §4)
 export const ENABLED_ACTIONS = Object.freeze(TRANSITIONS.map((t) => t.action).filter((a) => a !== 'CANCEL'));
 
 export const findTransition = (action) => TRANSITIONS.find((t) => t.action === action) ?? null;

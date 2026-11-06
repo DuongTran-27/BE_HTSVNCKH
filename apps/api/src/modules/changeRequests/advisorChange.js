@@ -46,7 +46,8 @@ export const advisorChange = {
     if (cur?.lecturerId !== from.lecturerId) throw stale();
     await o.lockUsers([to.lecturerId]); // thứ tự Topic → User
     const lec = await o.findUser(to.lecturerId);
-    if (!lec || lec.isLocked || lec.role !== 'LECTURER') throw stale('Giảng viên mới không còn hoạt động');
+    // MINOR m2 T601-bao-mat: GV có thể đã chuyển khoa giữa lúc tạo và lúc duyệt
+    if (!lec || lec.isLocked || lec.role !== 'LECTURER' || lec.facultyId !== cr.topic.facultyId) throw stale('Giảng viên mới không còn hoạt động');
     await assertQuota(o, to.lecturerId, cr.topicId);
     await o.endAdvising(cr.topicId, at);
     await o.createAdvising({ topicId: cr.topicId, lecturerId: to.lecturerId, startAt: at });
