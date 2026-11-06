@@ -9,6 +9,7 @@ import { useAuth } from '../../lib/auth.js';
 import { execSubmit } from '../../lib/execution.js';
 import { fmtDateTime, qs } from '../../lib/format.js';
 import { toast } from '../../lib/toast.js';
+import { useCooldown } from '../../lib/useCooldown.js';
 import { ExecShell } from '../../components/ExecShell.jsx';
 import { FeedbackForm, FeedbackList } from '../../components/Feedback.jsx';
 import { FormField } from '../../components/FormField.jsx';
@@ -76,15 +77,19 @@ const FIELDS = ['done', 'issues', 'nextPlan', 'percent'];
 
 function ProgressForm({ topic, p, onDone }) {
   const qc = useQueryClient();
+  const cd = useCooldown();
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(p ? progressUpdateSchema : progressCreateSchema),
     defaultValues: p ? { done: p.done, issues: p.issues, nextPlan: p.nextPlan, percent: p.percent } : { done: '', issues: '', nextPlan: '', percent: '' },
   });
-  const submit = (body) => execSubmit(qc, topic.id, setError, FIELDS, async () => {
-    await api(p ? `/progress/${p.id}` : `/topics/${topic.id}/progress`, { method: p ? 'PATCH' : 'POST', body });
-    toast(p ? 'Đã sửa cập nhật tiến độ' : 'Đã gửi cập nhật tiến độ', { type: 'success' });
-    onDone();
-  });
+  const submit = async (body) => {
+    const err = await execSubmit(qc, topic.id, setError, FIELDS, async () => {
+      await api(p ? `/progress/${p.id}` : `/topics/${topic.id}/progress`, { method: p ? 'PATCH' : 'POST', body });
+      toast(p ? 'Đã sửa cập nhật tiến độ' : 'Đã gửi cập nhật tiến độ', { type: 'success' });
+      onDone();
+    });
+    if (err?.status === 429) cd.start(err.retryAfter); // khóa nút đến hết Retry-After
+  };
   return (
     <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-3 rounded-md bg-slate-50 p-3" aria-label={p ? 'Sửa tiến độ' : 'Cập nhật tiến độ'}>
       <FormField label="Việc đã làm" error={errors.done?.message}><textarea rows={3} {...register('done')} /></FormField>
@@ -94,8 +99,9 @@ function ProgressForm({ topic, p, onDone }) {
         <input type="number" min={0} max={100} step={1} inputMode="numeric" {...register('percent', { valueAsNumber: true })} />
       </FormField>
       <FormError error={errors.root?.message} />
+      {cd.active && <p role="status" className="text-sm text-amber-900">{cd.message}</p>}
       <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={isSubmitting} className={btnPrimary}>{isSubmitting ? 'Đang xử lý…' : 'Lưu'}</button>
+        <button type="submit" disabled={isSubmitting || cd.active} className={btnPrimary}>{isSubmitting ? 'Đang xử lý…' : 'Lưu'}</button>
         <button type="button" onClick={onDone} className={btnGhost}>Hủy</button>
       </div>
     </form>

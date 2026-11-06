@@ -57,7 +57,7 @@ export function ReviewQueuePage() {
                       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                         <span>Gửi lúc {fmtDateTime(t.latestSubmission?.createdAt)} (lần {t.latestSubmission?.seq})</span>
                         <span className={late ? 'font-medium text-red-700' : ''}>Hạn xét duyệt {fmtDateTime(t.round.reviewDeadline)}</span>
-                        <SimilarityLevelCell level={t.latestSimilarityLevel} />
+                        <SimilarityLevelCell level={t.latestSimilarityLevel} status={t.latestSimilarityStatus} unchecked={t.latestSubmission?.unchecked} />
                       </p>
                     </li>
                   );

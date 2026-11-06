@@ -5,7 +5,7 @@ import { ACTION_LABEL, ROLE_LABEL, TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { fmtDateTime } from '../../lib/format.js';
 import { useSubmissions } from '../../lib/queries.js';
-import { SimilarityBadge } from '../../components/SimilarityPanel.jsx';
+import { SimilarityBadge, UncheckedFlag } from '../../components/SimilarityPanel.jsx';
 import { QueryBox, btnPrimary } from '../../components/ui.jsx';
 
 // R11 – API_GD2 §8.4: danh sách lần gửi + lịch sử trạng thái
@@ -37,7 +37,8 @@ export function SubmissionHistoryPage() {
                     </label>
                     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                       <span>{fmtDateTime(s.createdAt)} · {s.createdBy?.fullName}</span>
-                      <SimilarityBadge similarity={{ level: s.similarityLevel }} />
+                      <SimilarityBadge similarity={{ level: s.similarityLevel, status: s.similarityStatus }} />
+                      {s.unchecked && <UncheckedFlag />}
                       <span>{s.decision ? `${ACTION_LABEL[s.decision.action] ?? s.decision.action} · ${fmtDateTime(s.decision.decidedAt)}` : 'Chưa xử lý'}</span>
                     </p>
                   </li>

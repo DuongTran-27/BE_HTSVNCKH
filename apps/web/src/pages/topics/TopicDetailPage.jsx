@@ -9,7 +9,8 @@ import { ExecTabs, TopicQuery } from '../../components/ExecShell.jsx';
 import { ResultSection } from '../../components/ResultSection.jsx';
 import { TopicActionBar } from '../../components/TopicActionBar.jsx';
 import { FormerAdvisors, LeaveGroupButton, ReadOnlyBanner } from '../../components/MembershipActions.jsx';
-import { SimilarityBadge, SimilarityPanel } from '../../components/SimilarityPanel.jsx';
+import { SimilarityBadge, SimilarityPanel, UncheckedFlag } from '../../components/SimilarityPanel.jsx';
+import { BypassNote, GrantBypass } from '../../components/SimilarityBypass.jsx';
 
 const NOTICE_STATUSES = ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR'];
 const Block = ({ title, children }) => (
@@ -90,11 +91,13 @@ function TopicDetail({ topic: t }) {
       <div>
         <h2 className="font-bold">Kiểm tra trùng lặp</h2>
         <SimilarityBadge similarity={t.latestSimilarity} />
+        {sub?.unchecked && <> <UncheckedFlag /></>}
         {t.latestSimilarity && (
           <button type="button" className="ml-2 min-h-11 text-blue-800 underline" aria-expanded={showSim} onClick={() => setShowSim((v) => !v)}>
             {showSim ? 'Ẩn chi tiết' : 'Xem chi tiết'}
           </button>
         )}
+        <div className="mt-2 space-y-2"><BypassNote bypass={t.similarityBypass} /><GrantBypass topic={t} /></div>
         {showSim && <div className="mt-2">{sim.isPending ? <p role="status">Đang tải…</p> : sim.isError ? <p role="alert" className="text-red-800">{sim.error.message}</p> : <SimilarityPanel check={sim.data} />}</div>}
       </div>
       <p className="space-x-4">

@@ -18,8 +18,17 @@ export function SimilarityBadge({ similarity }) {
   );
 }
 
-/** Ô mức trong danh sách (UI §4.13): danh sách không phân biệt "chưa kiểm" với "kiểm lỗi" nên null → "—", không đoán */
-export function SimilarityLevelCell({ level }) {
+/** Cờ G5 (API_GD6 §9.1): lần gửi chưa có kết quả FR06 hợp lệ – không bao giờ trình bày như "không trùng" */
+export const UncheckedFlag = () => (
+  <Badge tone="amber"><span title="Hồ sơ được gửi khi chưa kiểm tra được trùng lặp; hệ thống sẽ tự kiểm tra lại">Gửi khi chưa kiểm tra</span></Badge>
+);
+
+/** Ô mức trong danh sách (UI §4.13, API_GD6 §9.6): ERROR → "Chưa kiểm tra được"; null → "—"; không bao giờ "Không trùng" */
+export function SimilarityLevelCell({ level, status, unchecked }) {
+  if (unchecked || status === 'ERROR') {
+    const noResult = status === 'ERROR' || !level; // có mức hợp lệ (đã kiểm lại) thì hiện cả mức lẫn cờ
+    return <>{noResult ? <Badge>Chưa kiểm tra được</Badge> : <Badge tone={LEVEL_TONE[level]}>{SIMILARITY_LEVEL_LABEL[level]}</Badge>}{unchecked && <UncheckedFlag />}</>;
+  }
   if (!level) return <span title="Chưa có mức trùng lặp ở danh sách; mở hồ sơ để xem">—<span className="sr-only"> Chưa có mức trùng lặp</span></span>;
   return <Badge tone={LEVEL_TONE[level]}>{SIMILARITY_LEVEL_LABEL[level]}</Badge>;
 }
@@ -67,6 +76,7 @@ export function SimilarityPanel({ check }) {
         <span className="text-sm font-normal text-slate-700">{fmtDateTime(check.createdAt)}</span>
       </p>
       {err && <p>{check.message ?? 'Chưa kiểm tra được'}. Hệ thống không kết luận hồ sơ có trùng hay không.</p>}
+      {check.justificationMissing && <p><Badge tone="red">Chưa có giải trình</Badge> Kết quả kiểm tra lại là nghi trùng cao nhưng nhóm chưa giải trình.</p>}
       {check.isStale && <p className="text-sm text-amber-900">Kết quả cũ – nội dung đã đổi sau lần kiểm này</p>}
       {!err && check.level === 'NONE' && <p>Không phát hiện đề tài tương tự đáng kể.</p>}
       {check.matches?.length > 0 && <ul className="space-y-2">{check.matches.slice(0, 5).map((m, i) => <Match key={m.code ?? i} m={m} />)}</ul>}

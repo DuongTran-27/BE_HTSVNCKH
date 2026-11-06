@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router';
 import { fmtDateTime } from '../../lib/format.js';
 import { useSubmission } from '../../lib/queries.js';
 import { DecisionBox, SnapshotBody } from '../../components/Snapshot.jsx';
-import { SimilarityPanel } from '../../components/SimilarityPanel.jsx';
+import { SimilarityPanel, UncheckedFlag } from '../../components/SimilarityPanel.jsx';
 import { QueryBox } from '../../components/ui.jsx';
 
 // R12 – API_GD2 §8.4: snapshot một lần gửi (nội dung + FR06 + giải trình + quyết định)
@@ -21,7 +21,16 @@ export function SubmissionPage() {
               {s.seq > 1 && <Link to={`/de-tai/${id}/so-sanh?from=${s.seq - 1}&to=${s.seq}`} className="text-blue-800 underline">So sánh với lần trước</Link>}
             </header>
             <SnapshotBody payload={s.payload} />
-            <div><h2 className="font-bold">Kiểm tra trùng lặp</h2><SimilarityPanel check={s.similarityCheck} /></div>
+            <div>
+              <h2 className="font-bold">Kiểm tra trùng lặp {s.unchecked && <UncheckedFlag />}</h2>
+              <SimilarityPanel check={s.similarityCheck} />
+              {s.similarityBypass && (
+                <p role="note" className="mt-2 break-words rounded-md bg-amber-50 p-3">
+                  {s.similarityBypass.grantedBy?.fullName} đã cho phép gửi khi chưa kiểm tra được trùng lặp ({fmtDateTime(s.similarityBypass.createdAt)}).
+                  {s.similarityBypass.reason && <> Lý do: {s.similarityBypass.reason}</>}
+                </p>
+              )}
+            </div>
             <DecisionBox decision={s.decision} />
           </div>
         )}

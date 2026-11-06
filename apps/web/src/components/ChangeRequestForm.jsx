@@ -9,6 +9,7 @@ import { qs } from '../lib/format.js';
 import { useCatalog } from '../lib/queries.js';
 import { toast } from '../lib/toast.js';
 import { useCooldown } from '../lib/useCooldown.js';
+import { DebouncedInput } from './ListFilters.jsx';
 import { FormField } from './FormField.jsx';
 import { SimilarityPanel } from './SimilarityPanel.jsx';
 import { FormError, Options, btnGhost, btnPrimary } from './ui.jsx';
@@ -20,16 +21,21 @@ const HINT = {
   TOPIC_CHANGE: 'Chỉ điền hoặc sửa phần muốn thay đổi. Đổi tên hoặc tóm tắt sẽ được kiểm tra trùng lặp lại. Thêm thành viên cần sinh viên đó đồng ý. Nếu bị từ chối, hồ sơ giữ nguyên.',
 };
 
+// Ô tìm gọi API có `q` (không giới hạn 100 GV đầu); đổi từ khóa thì danh sách chọn đổi theo
 function LecturerSelect({ topic, register, error }) {
-  const list = useQuery({ queryKey: ['lecturers', topic.round.id, 'for-change'], queryFn: () => api(`/lecturers${qs({ roundId: topic.round.id, pageSize: 100 })}`) });
+  const [q, setQ] = useState('');
+  const list = useQuery({ queryKey: ['lecturers', topic.round.id, 'for-change', q], queryFn: () => api(`/lecturers${qs({ roundId: topic.round.id, q, pageSize: 100 })}`) });
   const items = (list.data?.items ?? []).filter((l) => l.id !== topic.advisor?.id);
   return (
+    <>
+    <DebouncedInput label="Tìm giảng viên" value={q} onCommit={setQ} placeholder="Mã hoặc họ tên" />
     <FormField label="Giảng viên mới" error={error ?? (list.isError ? list.error.message : undefined)}>
       <select {...register('newLecturerId')}>
         <Options placeholder={list.isPending ? 'Đang tải…' : 'Chọn giảng viên'}
           options={items.map((l) => ({ value: l.id, label: `${l.code} – ${l.fullName} (đã nhận ${l.activeTopicCount}/${l.maxTopics})` }))} />
       </select>
     </FormField>
+    </>
   );
 }
 

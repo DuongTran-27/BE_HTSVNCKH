@@ -6,10 +6,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MILESTONE_EVAL_LABEL, milestoneCreateSchema, milestoneDueChangeSchema, milestoneUpdateSchema } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { fmtDateTime, fromLocalInput, toLocalInput } from '../../lib/format.js';
-import { execSubmit, useMilestones } from '../../lib/execution.js';
+import { execSubmit, invalidateExec, useMilestones } from '../../lib/execution.js';
 import { toast } from '../../lib/toast.js';
 import { ExecShell } from '../../components/ExecShell.jsx';
 import { FormField } from '../../components/FormField.jsx';
+import { ReasonDialog } from '../../components/ReasonDialog.jsx';
 import { Badge, FormError, QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
 
 export const EVAL_TONE = { PENDING: 'slate', PASSED: 'green', NEEDS_WORK: 'amber' };
@@ -35,7 +36,8 @@ function Milestones({ topic: t }) {
 }
 
 function MilestoneCard({ topic: t, m }) {
-  const [mode, setMode] = useState(null); // 'edit' | 'due' | 'history'
+  const qc = useQueryClient();
+  const [mode, setMode] = useState(null); // 'edit' | 'due' | 'history' | 'reopens' | 'reopen'
   const toggle = (x) => setMode((v) => (v === x ? null : x));
   const d = m.latestDocument;
   return (
@@ -52,7 +54,15 @@ function MilestoneCard({ topic: t, m }) {
         Bản nộp mới nhất: {d ? <>phiên bản {d.version} lúc {fmtDateTime(d.uploadedAt)} {d.isLate && <Badge tone="red">Nộp muộn</Badge>}</> : 'chưa nộp'}
         {' · '}<Link to={`/de-tai/${t.id}/tai-lieu`} className="text-blue-800 underline">Tài liệu</Link>
       </p>
+      {m.reopenCount > 0 && (
+        <p className="break-words text-sm" data-testid="reopen-note">
+          <Badge tone="amber">Đã mở lại {m.reopenCount} lần</Badge>
+          {m.lastReopen && <> Lần gần nhất {fmtDateTime(m.lastReopen.reopenedAt)}{m.lastReopen.reopenedBy?.fullName && ` bởi ${m.lastReopen.reopenedBy.fullName}`}: {m.lastReopen.reason}</>}
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
+        {t.permissions?.reopenMilestone && m.evaluation === 'PASSED' && <button type="button" className={btnGhost} onClick={() => setMode('reopen')}>Mở lại mốc</button>}
+        {m.reopenCount > 0 && <button type="button" className={btnGhost} aria-expanded={mode === 'reopens'} onClick={() => toggle('reopens')}>Lịch sử mở lại</button>}
         {t.permissions?.manageMilestones && <button type="button" className={btnGhost} aria-expanded={mode === 'edit'} onClick={() => toggle('edit')}>Sửa mốc</button>}
         {t.permissions?.manageMilestones && <button type="button" className={btnGhost} aria-expanded={mode === 'due'} onClick={() => toggle('due')}>Đổi hạn</button>}
         {m.dueChangeCount > 0 && <button type="button" className={btnGhost} aria-expanded={mode === 'history'} onClick={() => toggle('history')}>Lịch sử đổi hạn</button>}
@@ -60,6 +70,20 @@ function MilestoneCard({ topic: t, m }) {
       {mode === 'edit' && <MilestoneForm topic={t} m={m} onDone={() => setMode(null)} />}
       {mode === 'due' && <DueChangeForm topic={t} m={m} onDone={() => setMode(null)} />}
       {mode === 'history' && <DueHistory m={m} />}
+      {mode === 'reopens' && <ReopenHistory m={m} />}
+      {mode === 'reopen' && (
+        <ReasonDialog title="Mở lại mốc" confirmLabel="Mở lại" message="Mốc về trạng thái Cần bổ sung để sinh viên nộp bản mới; hạn không tự đổi. Nhập lý do."
+          onCancel={() => setMode(null)}
+          onSubmit={async (reason) => {
+            try {
+              await api(`/milestones/${m.id}/reopen`, { method: 'POST', body: { reason, version: m.version } }); // version lúc gửi
+            } finally {
+              invalidateExec(qc, t.id); // 409 cũng cần dữ liệu mới
+            }
+            setMode(null);
+            toast('Đã mở lại mốc', { type: 'success' });
+          }} />
+      )}
     </li>
   );
 }
@@ -76,7 +100,8 @@ function MilestoneForm({ topic, m, onDone }) {
     defaultValues: m ? { name: m.name, output: m.output, required: m.required, version: m.version } : { name: '', output: '', dueAt: '', required: true },
   });
   const submit = (body) => execSubmit(qc, topic.id, setError, ['name', 'output', 'dueAt', 'required'], async () => {
-    await api(m ? `/milestones/${m.id}` : `/topics/${topic.id}/milestones`, { method: m ? 'PATCH' : 'POST', body });
+    // version lấy từ m lúc gửi (m đổi sau khi tải lại), không từ defaultValues (MINOR T406)
+    await api(m ? `/milestones/${m.id}` : `/topics/${topic.id}/milestones`, { method: m ? 'PATCH' : 'POST', body: m ? { ...body, version: m.version } : body });
     toast(m ? 'Đã cập nhật mốc' : 'Đã thêm mốc', { type: 'success' });
     onDone();
   });
@@ -102,7 +127,7 @@ function DueChangeForm({ topic, m, onDone }) {
     resolver: dueResolver, defaultValues: { newDueAt: toLocalInput(m.dueAt), reason: '', version: m.version },
   });
   const submit = (body) => execSubmit(qc, topic.id, setError, ['newDueAt', 'reason'], async () => {
-    await api(`/milestones/${m.id}/due-changes`, { method: 'POST', body });
+    await api(`/milestones/${m.id}/due-changes`, { method: 'POST', body: { ...body, version: m.version } });
     toast('Đã đổi hạn mốc', { type: 'success' });
     onDone();
   });
@@ -129,6 +154,24 @@ function DueHistory({ m }) {
             <li key={c.id} className="break-words rounded-md bg-slate-50 p-2">
               {fmtDateTime(c.oldDueAt)} → {fmtDateTime(c.newDueAt)} · {c.changedBy?.fullName} · {fmtDateTime(c.changedAt)}
               <p className="whitespace-pre-wrap">Lý do: {c.reason}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </QueryBox>
+  );
+}
+
+function ReopenHistory({ m }) {
+  const q = useQuery({ queryKey: ['reopens', m.id], queryFn: async () => (await api(`/milestones/${m.id}/reopens`)).items });
+  return (
+    <QueryBox query={q} empty="Chưa mở lại lần nào." isEmpty={(d) => d.length === 0}>
+      {(items) => (
+        <ul className="space-y-2 text-sm">
+          {items.map((r) => (
+            <li key={r.id} className="break-words rounded-md bg-slate-50 p-2">
+              {fmtDateTime(r.reopenedAt)} · {r.reopenedBy?.fullName}
+              <p className="whitespace-pre-wrap">Lý do: {r.reason}</p>
             </li>
           ))}
         </ul>

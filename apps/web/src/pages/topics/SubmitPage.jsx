@@ -10,6 +10,7 @@ import { toast } from '../../lib/toast.js';
 import { useCooldown } from '../../lib/useCooldown.js';
 import { FormField } from '../../components/FormField.jsx';
 import { SimilarityPanel } from '../../components/SimilarityPanel.jsx';
+import { BypassNote } from '../../components/SimilarityBypass.jsx';
 import { QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
 
 // R10 – UI §4.10, API §8.2
@@ -57,7 +58,7 @@ function Submit({ topic: t }) {
     onMutate: () => setError(''),
     onSuccess: (r) => {
       qc.setQueryData(['topic', t.id], r.topic);
-      toast(`Đã gửi hồ sơ lần ${r.submission.seq}`, { type: 'success' });
+      toast(`Đã gửi hồ sơ lần ${r.submission.seq}${r.submission.unchecked ? ' (chưa kiểm tra được trùng lặp, hệ thống sẽ tự kiểm tra lại)' : ''}`, { type: 'success' });
       navigate(`/de-tai/${t.id}`);
     },
     onError: (err) => {
@@ -101,6 +102,7 @@ function Submit({ topic: t }) {
         <>
           <div className="space-y-2">
             <h2 className="font-bold">2. Kiểm tra trùng lặp</h2>
+            <BypassNote bypass={t.similarityBypass} />
             {run.isPending || latest.isPending ? <p role="status">Đang kiểm tra trùng lặp…</p>
               : latest.isError && !fresh ? (
                 <div role="alert" className="rounded-md bg-red-50 p-3 text-red-800">
@@ -125,7 +127,7 @@ function Submit({ topic: t }) {
           <div>
             <h2 className="font-bold">4. Gửi</h2>
             {error && <p role="alert" className="mb-2 break-words rounded-md bg-red-50 p-3 text-red-800">{error}</p>}
-            <button type="button" className={btnPrimary} disabled={submit.isPending || run.isPending || st.kind === 'unchecked' || !st.ok} onClick={() => submit.mutate()}>
+            <button type="button" className={btnPrimary} disabled={submit.isPending || run.isPending || (!st.ok && !(st.kind === 'unchecked' && t.similarityBypass))} onClick={() => submit.mutate()}>
               {submit.isPending ? 'Đang xử lý…' : label}
             </button>
           </div>

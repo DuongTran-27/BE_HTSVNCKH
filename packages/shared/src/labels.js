@@ -79,6 +79,7 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   CHANGE_DECIDED: 'Yêu cầu thay đổi đã có quyết định',
   CHANGE_WITHDRAWN: 'Yêu cầu thay đổi bị rút',
   ADVISOR_HANDOVER: 'Bàn giao bản nộp chờ nhận xét',
+  MEMBER_LEFT: 'Thành viên rời nhóm',
 });
 
 // GĐ6 (API_GD6 §2.7)

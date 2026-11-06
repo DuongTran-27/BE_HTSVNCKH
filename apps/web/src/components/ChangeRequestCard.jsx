@@ -43,6 +43,15 @@ function Payload({ cr }) {
   );
 }
 
+/** Hậu quả của việc duyệt, nêu trong hộp xác nhận theo loại (MINOR T607a) */
+const approveMessage = (cr) => {
+  const p = cr.payload ?? {};
+  if (cr.type === 'ADVISOR_CHANGE') return `${p.to?.fullName} sẽ là giảng viên hướng dẫn mới; ${p.from?.fullName} mất mọi quyền với đề tài (trừ khi được cấp quyền đọc). Có hiệu lực ngay.`;
+  if (cr.type === 'LEAVE_GROUP') return `${p.member?.fullName} sẽ rời nhóm ngay và chỉ xem được các phiên bản hồ sơ, tài liệu trong thời gian đã tham gia.`;
+  if (cr.type === 'TOPIC_CHANGE') return `Hồ sơ đề tài được cập nhật theo nội dung "sau"${p.addMember ? `; ${p.addMember.fullName} được thêm vào nhóm` : ''}. Không tạo lần gửi mới. Có hiệu lực ngay.`;
+  return 'Duyệt yêu cầu này? Thay đổi có hiệu lực ngay.';
+};
+
 /** Thẻ một yêu cầu + nút theo `availableActions` của server (API_GD6 §2.2) */
 export function ChangeRequestCard({ cr, linkTopic = true }) {
   const qc = useQueryClient();
@@ -111,7 +120,7 @@ export function ChangeRequestCard({ cr, linkTopic = true }) {
       {dlg === 'APPROVE' && (needReason
         ? <ReasonDialog title="Duyệt hủy đề tài" message="Đề tài sẽ chuyển sang Đã hủy (không bị xóa). Nhập lý do quyết định." confirmLabel="Duyệt hủy"
           onSubmit={(reason) => run('approve', { reason })} onCancel={() => setDlg(null)} />
-        : <ConfirmDialog title="Duyệt yêu cầu" message="Duyệt yêu cầu này? Thay đổi có hiệu lực ngay." confirmLabel="Duyệt" busy={act.isPending} error={error}
+        : <ConfirmDialog title="Duyệt yêu cầu" message={approveMessage(cr)} confirmLabel="Duyệt" busy={act.isPending} error={error}
           onConfirm={confirm('approve')} onCancel={() => setDlg(null)} />)}
       {dlg === 'DECLINE' && (
         <ReasonDialog title="Từ chối yêu cầu" message="Mọi thứ giữ nguyên. Nhập lý do từ chối." confirmLabel="Từ chối"

@@ -96,7 +96,7 @@ export function TopicListPage() {
                       {t.round?.name} · {t.field?.name} · GVHD: {t.advisor?.fullName ?? 'Chưa có'} · Trưởng nhóm: {t.leader?.fullName} · {t.memberCount} thành viên
                     </p>
                     <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                      <span>Trùng lặp: <SimilarityLevelCell level={t.latestSimilarityLevel} /></span>
+                      <span>Trùng lặp: <SimilarityLevelCell level={t.latestSimilarityLevel} status={t.latestSimilarityStatus} unchecked={t.latestSubmission?.unchecked} /></span>
                       <span>Cập nhật {fmtDateTime(t.updatedAt)}</span>
                     </p>
                   </li>

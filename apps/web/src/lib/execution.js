@@ -12,7 +12,7 @@ export const useMilestones = (topicId, enabled = true) => useQuery({
 
 /** Tải lại mọi dữ liệu GĐ4 của đề tài (sau ghi thành công hoặc lỗi 403/404/409 – UI §7) */
 export const invalidateExec = (qc, topicId) => [
-  ['topic', topicId], ['milestones', topicId], ['due-changes'], ['progress', topicId],
+  ['topic', topicId], ['milestones', topicId], ['due-changes'], ['reopens'], ['progress', topicId],
   ['documents', topicId], ['feedbacks', topicId], ['results', topicId],
 ].forEach((queryKey) => qc.invalidateQueries({ queryKey }));
 

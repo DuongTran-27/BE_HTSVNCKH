@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DEFAULT_ROUND_CONFIG, DOCUMENT_STAGE_LABEL, MILESTONE_EVAL_LABEL, documentLinkSchema, documentUploadFieldsSchema } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { execSubmit, fileError, fmtSize, useMilestones } from '../../lib/execution.js';
@@ -11,7 +11,7 @@ import { useCooldown } from '../../lib/useCooldown.js';
 import { ExecShell } from '../../components/ExecShell.jsx';
 import { FeedbackForm, FeedbackList } from '../../components/Feedback.jsx';
 import { FormField } from '../../components/FormField.jsx';
-import { Badge, FormError, Options, QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
+import { Badge, FormError, Options, Pager, QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
 
 // Tab Tài liệu – FR11, FR24 (API_GD45 §5), nhận xét bản nộp + đánh giá mốc FR12 (§6.1)
 export function DocumentsPage() {
@@ -93,11 +93,16 @@ function DocumentRow({ topic: t, d, milestone }) {
 }
 
 function DocFeedbacks({ topicId, documentId }) {
+  const [page, setPage] = useState(1);
   const q = useQuery({
-    queryKey: ['feedbacks', topicId, { documentId }],
-    queryFn: () => api(`/topics/${topicId}/feedbacks${qs({ documentId, pageSize: 100 })}`),
+    queryKey: ['feedbacks', topicId, { documentId, page }], placeholderData: keepPreviousData,
+    queryFn: () => api(`/topics/${topicId}/feedbacks${qs({ documentId, page, pageSize: 100 })}`),
   });
-  return <QueryBox query={q}>{(d) => <FeedbackList items={d.items} />}</QueryBox>;
+  return (
+    <QueryBox query={q}>
+      {(d) => (<><FeedbackList items={d.items} />{d.total > d.pageSize && <Pager page={d.page} pageSize={d.pageSize} total={d.total} onPage={setPage} />}</>)}
+    </QueryBox>
+  );
 }
 
 const FIELDS = ['stage', 'milestoneId', 'file', 'title', 'url'];

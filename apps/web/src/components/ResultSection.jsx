@@ -1,13 +1,14 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FINAL_RESULT, FINAL_RESULT_LABEL, finalResultSchema } from '@nckh/shared';
+import { FINAL_RESULT, FINAL_RESULT_LABEL, finalResultSchema, resultCorrectionSchema } from '@nckh/shared';
 import { api } from '../lib/api.js';
 import { EXEC_STATUSES, execSubmit } from '../lib/execution.js';
 import { fmtDateTime } from '../lib/format.js';
 import { toast } from '../lib/toast.js';
 import { FormField } from './FormField.jsx';
-import { Badge, FormError, Options, QueryBox, btnPrimary } from './ui.jsx';
+import { Badge, FormError, Options, QueryBox, btnGhost, btnPrimary } from './ui.jsx';
 
 const ResultLine = ({ r }) => (
   <>
@@ -16,6 +17,7 @@ const ResultLine = ({ r }) => (
       <span className="text-sm text-slate-700">Phiên bản {r.version} · {r.createdBy?.fullName} · {fmtDateTime(r.createdAt)}</span>
     </p>
     <p className="whitespace-pre-wrap break-words">{r.summary}</p>
+    {r.reason && <p className="whitespace-pre-wrap break-words text-sm">Lý do sửa: {r.reason}</p>}
   </>
 );
 
@@ -42,6 +44,7 @@ export function ResultSection({ topic: t }) {
               </details>
             )}
             {t.permissions?.enterResult && <ResultForm topic={t} expectedVersion={current?.version ?? 0} />}
+            {t.permissions?.correctResult && current && <CorrectResult topic={t} current={current} />}
           </>
         )}
       </QueryBox>
@@ -89,3 +92,48 @@ function ResultForm({ topic, expectedVersion }) {
     </form>
   );
 }
+
+/** FR23 – cán bộ sửa sai kết quả đã đóng (permissions.correctResult): tạo phiên bản mới kèm lý do, API_GD6 §7 */
+function CorrectResult({ topic, current }) {
+  const [open, setOpen] = useState(false);
+  if (!open) return <button type="button" className={btnGhost} onClick={() => setOpen(true)}>Sửa kết quả</button>;
+  return <CorrectionForm topic={topic} current={current} onClose={() => setOpen(false)} />;
+}
+
+function CorrectionForm({ topic, current, onClose }) {
+  const qc = useQueryClient();
+  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
+    // summary bỏ trống / không đổi = giữ nhận xét tổng kết hiện hành (không gửi)
+    resolver: (v, c, o) => zodResolver(resultCorrectionSchema)(strip(v, current), c, o),
+    defaultValues: { result: current.result, summary: current.summary, reason: '' },
+  });
+  const submit = async (v) => {
+    // expectedVersion = phiên bản hiện hành cán bộ đang thấy lúc bấm gửi (khóa lạc quan)
+    const err = await execSubmit(qc, topic.id, setError, ['result', 'summary', 'reason'], async () => {
+      await api(`/topics/${topic.id}/result-corrections`, { method: 'POST', body: { ...strip(v, current), expectedVersion: current.version } });
+      toast('Đã sửa kết quả, tạo phiên bản mới', { type: 'success' });
+      onClose();
+    });
+    if (err?.status === 429) setError('root', { message: err.message });
+  };
+  return (
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-3 rounded-md bg-slate-50 p-3" aria-label="Sửa kết quả">
+      <p className="font-medium">Sửa kết quả (tạo phiên bản {current.version + 1}, phiên bản cũ vẫn được lưu)</p>
+      <FormField label="Kết quả" error={errors.result?.message}>
+        <select {...register('result')}><Options options={Object.values(FINAL_RESULT).map((v) => ({ value: v, label: FINAL_RESULT_LABEL[v] }))} /></select>
+      </FormField>
+      <FormField label="Nhận xét tổng kết" hint="Giữ nguyên nếu không cần đổi" error={errors.summary?.message}><textarea rows={4} {...register('summary')} /></FormField>
+      <FormField label="Lý do sửa" error={errors.reason?.message}><textarea rows={3} {...register('reason')} /></FormField>
+      <FormError error={errors.root?.message} />
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={isSubmitting} className={btnPrimary}>{isSubmitting ? 'Đang xử lý…' : 'Lưu phiên bản mới'}</button>
+        <button type="button" onClick={onClose} className={btnGhost}>Hủy</button>
+      </div>
+    </form>
+  );
+}
+
+const strip = (v, current) => {
+  const summary = v.summary?.trim();
+  return { result: v.result, reason: v.reason, expectedVersion: current.version, ...(summary && summary !== current.summary?.trim() ? { summary } : {}) };
+};
