@@ -53,7 +53,7 @@ Workflow `.github/workflows/ci.yml` không cần secret nào (DB test là servic
 File: `.github/workflows/backup.yml`, `.github/workflows/cleanup-orphans.yml`, `apps/api/scripts/backup-prune.js`, `apps/api/scripts/cleanup-orphans.js`.
 
 ### 3.1 Thiết lập (một lần, con người làm)
-1. Supabase > Project Settings > Database > Connection string, chọn **Session pooler** (cổng 5432; pg_dump không chạy qua Transaction pooler 6543). **Bắt buộc dùng role chỉ đọc** (job dọn mồ côi dùng lại secret này, chạy sau `npm ci`). Tạo bằng SQL Editor: `CREATE ROLE backup_ro LOGIN BYPASSRLS PASSWORD '<mật khẩu mạnh>'; GRANT CONNECT ON DATABASE postgres TO backup_ro; GRANT USAGE ON SCHEMA public TO backup_ro; GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup_ro; GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO backup_ro; ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT ON TABLES TO backup_ro; ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT ON SEQUENCES TO backup_ro;` `BYPASSRLS` là bắt buộc: mọi bảng `public` bật RLS không có policy (migration `20261101000100`), thiếu nó pg_dump báo lỗi còn job dọn mồ côi thấy 0 dòng mà không lỗi. Nếu Supabase từ chối `BYPASSRLS` cho role `postgres` thì báo devops, đừng bỏ cờ này. `ALTER DEFAULT PRIVILEGES` giúp bảng tạo ở migration sau vẫn đọc được. pg_dump chỉ dump schema `public` (`--schema=public`). (với pooler, user là `backup_ro.<ref>`).
+1. Supabase > Project Settings > Database > Connection string, chọn **Session pooler** (cổng 5432; pg_dump không chạy qua Transaction pooler 6543). **Bắt buộc dùng role chỉ đọc** (job dọn mồ côi dùng lại secret này, chạy sau `npm ci`). Tạo bằng SQL Editor: `CREATE ROLE backup_ro LOGIN BYPASSRLS PASSWORD '<mật khẩu mạnh>'; GRANT CONNECT ON DATABASE postgres TO backup_ro; GRANT USAGE ON SCHEMA public TO backup_ro; GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup_ro; GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO backup_ro; ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT ON TABLES TO backup_ro; ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT ON SEQUENCES TO backup_ro;` `BYPASSRLS` là bắt buộc: mọi bảng `public` bật RLS không có policy (migration `20261101000100`), thiếu nó pg_dump báo lỗi còn job dọn mồ côi thấy 0 dòng mà không lỗi. Nếu Supabase từ chối `BYPASSRLS` cho role `postgres` thì báo devops, đừng bỏ cờ này. `ALTER DEFAULT PRIVILEGES` giúp bảng tạo ở migration sau vẫn đọc được; câu này chỉ đúng khi migration chạy bằng role `postgres` (workflow `migrate.yml`, §6.3) – đổi role chạy migration thì sửa `FOR ROLE` ở đây và ở §5.1. pg_dump chỉ dump schema `public` (`--schema=public`). (với pooler, user là `backup_ro.<ref>`).
 2. GitHub repo phải là **private** (workflow tự từ chối chạy nếu repo public). Settings > Secrets and variables > Actions > New repository secret: `BACKUP_DATABASE_URL` = chuỗi trên; `BACKUP_PASSPHRASE` = cụm mật khẩu dài ngẫu nhiên (>= 32 ký tự) dùng mã hóa dump. Cất `BACKUP_PASSPHRASE` ở nơi an toàn thứ hai (trình quản lý mật khẩu): mất nó là không giải mã được mọi bản sao lưu.
 3. Settings > Actions > General > Workflow permissions: workflow tự khai `actions: write` để xóa artifact cũ; nếu tổ chức chặn thì chọn "Read and write permissions".
 4. Đẩy lên GitHub. Tab Actions > "Backup" > Run workflow (chạy tay lần đầu).
@@ -69,7 +69,7 @@ File: `.github/workflows/backup.yml`, `.github/workflows/cleanup-orphans.yml`, `
 Làm trên **DB thử**, không bao giờ trên DB production (project Supabase thứ hai hoặc Postgres cục bộ).
 1. Tải artifact từ tab Actions, giải nén ra `nckh-backup-....dump.gpg`, rồi giải mã: `gpg --batch --pinentry-mode loopback --passphrase '<BACKUP_PASSPHRASE>' -d -o nckh-backup.dump nckh-backup-....dump.gpg` (gõ trên máy cá nhân, tránh để cụm mật khẩu trong lịch sử shell; hoặc bỏ `--passphrase` để gpg hỏi). Các lệnh dưới dùng `nckh-backup.dump`.
 2. Ghi giờ bắt đầu. Tạo DB trống, rồi (nếu trên Supabase hai extension nằm ở schema `extensions` thì tạo `CREATE SCHEMA IF NOT EXISTS extensions;` và thêm `WITH SCHEMA extensions` vào các lệnh sau) `CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS unaccent;`
-3. `pg_restore --no-owner --no-privileges --clean --if-exists -d "<URL DB thử>" nckh-backup.dump` (hoặc `docker run --rm -i postgres:17 pg_restore ... < file`). Cảnh báo về schema hệ thống Supabase có thể bỏ qua; lỗi ở bảng `public` thì không.
+3. `pg_restore --no-owner --no-privileges -d "<URL DB thử>" nckh-backup.dump` (hoặc `docker run --rm -i postgres:17 pg_restore ... < file`). Không dùng `--clean`: DB thử luôn trống, còn `--clean` với dump `--schema=public` sinh lỗi `DROP/CREATE SCHEMA public` vô hại nhưng dễ gây hiểu nhầm. Cảnh báo về schema hệ thống Supabase có thể bỏ qua; lỗi ở bảng `public` thì không. Ghi mọi lỗi gặp phải vào biên bản.
 4. Chạy truy vấn sau ở cả DB gốc và DB thử, so sánh (lệch nhỏ là bình thường nếu DB gốc có ghi sau thời điểm dump; ghi lại):
    `SELECT 'User',count(*) FROM "User" UNION ALL SELECT 'Topic',count(*) FROM "Topic" UNION ALL SELECT 'Document',count(*) FROM "Document" UNION ALL SELECT 'StatusHistory',count(*) FROM "StatusHistory" UNION ALL SELECT 'AuditLog',count(*) FROM "AuditLog";`
 5. Kiểm trigger và index còn nguyên: `SELECT count(*) FROM pg_trigger WHERE tgname LIKE '%immutable%';` (kỳ vọng >= 3), `SELECT count(*) FROM pg_indexes WHERE indexdef ILIKE '%gin%';` (> 0).
@@ -84,9 +84,9 @@ Làm trên **DB thử**, không bao giờ trên DB production (project Supabase 
 ## 4. Nhắc hạn theo lịch (T502, FR13)
 File: `.github/workflows/reminders.yml` (08:00 giờ VN hằng ngày + chạy tay), gọi `POST /api/cron/reminders` (T501).
 1. Render: đặt biến môi trường `CRON_SECRET` (>= 32 ký tự ngẫu nhiên, ví dụ `openssl rand -base64 48`), deploy lại. Chưa đặt thì endpoint trả 404.
-2. GitHub > Settings > Secrets and variables > Actions > New repository secret: `CRON_SECRET` (cùng giá trị) và `API_BASE_URL` (ví dụ `https://<app>.onrender.com`, không có `/api`, không dấu `/` cuối). Có thể trỏ qua domain Vercel nếu proxy `/api/*` đã bật.
+2. GitHub > Settings > Secrets and variables > Actions > New repository secret: `CRON_SECRET` (cùng giá trị) và `API_BASE_URL` = **domain Vercel** (ví dụ `https://<app>.vercel.app`, không có `/api`, không dấu `/` cuối). Không trỏ thẳng `onrender.com`: từ T706 API chỉ nhận request có header bí mật do middleware Vercel gắn, gọi thẳng nhận 404 (§6).
 3. Tab Actions > "Reminders" > Run workflow. Xanh: log in `HTTP 200` và JSON số thông báo đã tạo. Chạy lần hai: số mới ~0 (chống trùng).
-4. Lỗi: 404 = chưa đặt `CRON_SECRET` trên Render; 401 = hai giá trị lệch nhau; 429 = gọi quá 10 lần/15 phút. Workflow tự thử lại 4 lần (cách 30 giây) cho trường hợp Render đang khởi động.
+4. Lỗi (workflow in thân phản hồi lỗi ra log, không thử lại 401/404): 404 = chưa đặt `CRON_SECRET` trên Render hoặc `API_BASE_URL` đang trỏ thẳng Render; 503 `SERVICE_UNAVAILABLE` = thiếu `API_ORIGIN`/`ORIGIN_SECRET` trên Vercel; 401 = hai giá trị lệch nhau; 429 = gọi quá 10 lần/15 phút. Workflow tự thử lại 4 lần (cách 30 giây) chỉ với lỗi tạm thời (timeout, 408/429/5xx) cho trường hợp Render đang khởi động.
 5. Chạy lại kiểm tra trùng lặp (T609, G5): `.github/workflows/similarity-recheck.yml` (phút 15 mỗi giờ + chạy tay), gọi `POST /api/cron/similarity-rechecks`, dùng **cùng hai secret** trên. Kết quả JSON `{ checked, updated, stillFailing }`; `stillFailing` > 0 nhiều giờ liền = FR06 vẫn lỗi, xem log Render. Limiter 10 lần/15 phút dùng chung với nhắc hạn.
 
 ## 5. Tách role chạy app khỏi role migrate (T703c, đề xuất – con người làm trên Supabase)
@@ -115,7 +115,7 @@ Migration sau tạo **bảng chỉ-thêm mới** phải tự thu quyền, viết
 
 ### 5.2 Đổi chuỗi kết nối
 - Render `DATABASE_URL`: `postgresql://nckh_app.<ref>:<mật khẩu>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1`.
-- `DIRECT_URL` (role `postgres`) chỉ dùng cho `prisma migrate deploy`. Nếu còn để trên Render (lệnh build chạy migrate) thì kẻ chiếm được tiến trình app vẫn đọc được nó; tách thật sự = chạy migrate ở nơi khác (job GitHub Actions chạy tay có secret riêng) và **xóa `DIRECT_URL` khỏi Render**. Việc này thuộc T706 (devops kiểm Prisma Client có cần biến `DIRECT_URL` lúc chạy không; nếu cần thì đặt bằng đúng chuỗi `nckh_app`).
+- `DIRECT_URL` (role `postgres`) chỉ dùng cho `prisma migrate deploy`. Nếu còn để trên Render (lệnh build chạy migrate) thì kẻ chiếm được tiến trình app vẫn đọc được nó; tách thật sự = chạy migrate ở nơi khác (job GitHub Actions chạy tay có secret riêng) và **xóa `DIRECT_URL` khỏi Render**. T706 đã kiểm: Prisma Client 5 **không** đọc `DIRECT_URL` lúc chạy (truy vấn chạy được khi biến vắng hẳn, rỗng hoặc sai; `prisma generate` cũng không cần) → không đặt `DIRECT_URL` trên Render; migrate chạy bằng workflow `migrate.yml` (§6.3).
 - Script `bootstrap` admin chạy bằng `DATABASE_URL` (`nckh_app`) được. Seed và job sao lưu giữ nguyên (`postgres` / `backup_ro`); `ALTER DEFAULT PRIVILEGES FOR ROLE postgres` ở mục 3.1 vẫn đúng vì migration vẫn chạy bằng `postgres`.
 
 ### 5.3 Xác nhận (kết nối bằng `nckh_app` qua psql/pooler cổng 5432, không phải SQL Editor)
@@ -133,3 +133,56 @@ Còn `SELECT count(*) FROM "User";` phải trả đúng số tài khoản (khác
 
 ### 5.4 Data API của Supabase (NFR03)
 Cách chắc nhất: Settings > API > tắt Data API (app không dùng). Nếu giữ: `curl "https://<ref>.supabase.co/rest/v1/User?select=id" -H "apikey: <anon key>"` phải trả `[]` hoặc lỗi; và nên chạy `REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM anon, authenticated;` (các hàm hiện có vô hại nhưng gọi được qua `/rest/v1/rpc/...`).
+
+## 6. Triển khai Vercel (web) + Render (API) (T706 – con người làm, agent không deploy)
+File: `apps/web/vercel.json`, `apps/web/middleware.js`, `render.yaml`, `.github/workflows/migrate.yml`, `.nvmrc`.
+
+Luồng: trình duyệt → `https://<app>.vercel.app` (trang tĩnh + `/api/*`) → middleware Vercel gắn header `x-nckh-origin: <ORIGIN_SECRET>` → `https://<api>.onrender.com/api/*`. Cookie refresh chỉ thấy domain Vercel (NFR01). Từ T706 bước B, API trả **404** cho request thiếu/sai header (trừ `GET /api/health` – health check của Render gọi thẳng), nên mọi client (kể cả cron GitHub Actions) phải đi qua domain Vercel.
+
+### 6.1 Biến môi trường
+Sinh chuỗi ngẫu nhiên: `openssl rand -base64 48`. Không dán giá trị thật vào repo, issue, log.
+
+| Biến | Đặt ở | Ví dụ (không bí mật) | Ghi chú |
+|---|---|---|---|
+| `NODE_VERSION` | Render (đã có trong `render.yaml`) | `24` | engines ≥ 22.22 |
+| `NODE_ENV` | Render (`render.yaml`) | `production` | tắt Swagger (NFR08) |
+| `DATABASE_URL` | Render | `postgresql://nckh_app.<ref>:<mk>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1` | Transaction pooler (NFR10), role `nckh_app` (§5). **Không** đặt `DIRECT_URL` trên Render |
+| `JWT_ACCESS_SECRET` | Render (`generateValue`) | – | Render tự sinh; đổi = mọi người đăng nhập lại |
+| `CORS_ORIGIN` | Render | `https://<app>.vercel.app` | đúng domain Vercel, nhiều domain cách nhau dấu phẩy, không khoảng trắng |
+| `CLOUDINARY_URL` | Render | `cloudinary://<key>:<secret>@<cloud>` | bắt buộc ở production |
+| `CLOUDINARY_FOLDER` | Render (`render.yaml`) + biến repo GitHub | `nckh/production` | hai nơi phải trùng (§3.4) |
+| `CRON_SECRET` | Render + GitHub secret | – | ≥ 32 ký tự, hai nơi trùng nhau (§4) |
+| `ORIGIN_SECRET` | Render + Vercel | – | ≥ 32 ký tự, hai nơi trùng nhau |
+| `API_ORIGIN` | Vercel | `https://<api>.onrender.com` | chỉ origin: `https`, không `/` cuối, không `/api` |
+| `API_BASE_URL` | GitHub secret | `https://<app>.vercel.app` | domain **Vercel**, không phải Render |
+| `MIGRATE_DATABASE_URL` | GitHub secret (environment `production`) | `postgresql://postgres.<ref>:<mk>@aws-0-<region>.pooler.supabase.com:5432/postgres` | Session pooler 5432, role `postgres`, chỉ workflow `migrate.yml` dùng |
+| `BACKUP_DATABASE_URL`, `BACKUP_PASSPHRASE`, `CLOUDINARY_URL` | GitHub secret | – | §3 |
+
+Biến Vercel đặt ở Settings > Environment Variables, môi trường Production (và Preview nếu dùng preview), **không** có tiền tố `VITE_` (tiền tố này đưa giá trị vào bundle công khai).
+
+### 6.2 Tạo dịch vụ (một lần)
+1. Supabase: tạo project (vùng Singapore nếu được), lấy chuỗi pooler. Bật extension `pg_trgm`, `unaccent` (Database > Extensions).
+2. GitHub: Settings > Environments > tạo environment `production`; đặt Deployment branches = chỉ nhánh chính (`main`) và bật Required reviewers. `MIGRATE_DATABASE_URL` là **environment secret** của environment `production` (không phải repository secret). Sau đó Actions > "Migrate" > Run workflow. Xanh: log `All migrations have been successfully applied` / `Database schema is up to date!`. Rồi làm §5.1 (role `nckh_app`) và §5.4 (tắt Data API).
+3. Render: New > Blueprint, chọn repo (đọc `render.yaml`). Nhập các biến `sync: false`. Deploy tay lần đầu. Xác nhận `https://<api>.onrender.com/api/health` trả `{"status":"ok","db":true}`. Tạo admin đầu tiên trên máy cá nhân theo README "Tạo quản trị viên đầu tiên" (`scripts/create-admin.js`) với `DATABASE_URL` của `nckh_app` (gói free của Render không có Shell).
+4. Vercel: New Project, chọn repo, **Root Directory = `apps/web`** (bật "Include files outside the root directory"), Framework Vite (lệnh build/install lấy từ `vercel.json`). Settings > General > Node.js Version = **24.x**. Đặt `API_ORIGIN`, `ORIGIN_SECRET`. Deploy.
+5. Render: đặt `CORS_ORIGIN` = domain Vercel thật, deploy lại. GitHub: đặt `API_BASE_URL` = domain Vercel (§4).
+
+### 6.3 Mỗi lần phát hành
+1. Có migration mới → chạy workflow "Migrate" **trước** (migration phải tương thích ngược với code cũ đang chạy).
+2. Render: Manual Deploy (`autoDeploy: false` trong `render.yaml`). Vercel tự deploy khi push nhánh chính.
+
+### 6.4 Checklist SAU KHI DEPLOY – bắt buộc trước khi dùng thật (MAJOR T703c mục 3)
+Ghi kết quả từng mục (ngày, người, số đo) vào `docs/agents/reports/T706a.md` mục "Kết quả đo thật" hoặc biên bản riêng.
+1. **Middleware Vercel hoạt động** (giao thức `x-middleware-*` chưa chạy thử được trên Vercel thật):
+   - `curl -i https://<app>.vercel.app/api/health` → 200 JSON của API (không phải HTML của SPA, không phải 503).
+   - `curl -sI https://<app>.vercel.app/api/health | grep -i '^x-middleware'` → kết quả phải **rỗng**. Nếu có header `x-middleware-*` (đặc biệt `x-middleware-request-x-nckh-origin`) nghĩa là secret bị lộ ra client: xoay `ORIGIN_SECRET` ngay: (1) sinh giá trị mới `openssl rand -base64 48`; (2) Render > Environment: cập nhật `ORIGIN_SECRET`, Save và deploy lại; (3) Vercel > Settings > Environment Variables: cập nhật cùng giá trị, Redeploy; (4) chạy lại lệnh curl, và báo devops để đổi cách gắn header.
+   - Đăng nhập trên web, F5 vẫn còn phiên (cookie refresh đi qua proxy), tải lên một tài liệu (gần 10 MB), tải xuống, xem trang thống kê.
+   - Nếu header không tới API (bước B trả 404 cho mọi request qua Vercel): báo devops; phương án dự phòng là thư viện `@vercel/functions` (`rewrite(url, { request: { headers } })`), cần `kien-truc-su` duyệt.
+2. **Chặn gọi thẳng Render** (sau khi bước B đã deploy và `ORIGIN_SECRET` đã đặt cả hai nơi): `curl -i https://<api>.onrender.com/api/auth/me` → **404**; `curl -i https://<api>.onrender.com/api/health` → 200; cùng request qua domain Vercel → 401 (chưa đăng nhập), không phải 404.
+3. **Đo số hop rồi mới đặt `trust proxy`** (chỉ sau mục 2): bật tạm log `req.ips` + `x-forwarded-for` thô cho một request qua Vercel (backend-dev thêm log tạm, gỡ sau khi đo). Đặt `trust proxy` = đúng số proxy đứng trước app sao cho `req.ip` = IP công cộng của máy bạn (so với https://ifconfig.me). Kiểm: hai máy khác IP (ví dụ wifi và 4G) cùng nhập sai mật khẩu, mỗi máy có `RateLimit-Remaining` riêng. Ghi số hop đo được.
+4. **Tắt Data API Supabase** (§5.4) hoặc gọi thử bằng anon key → `[]`/lỗi. Ghi kết quả.
+5. **Cron qua Vercel**: `API_BASE_URL` = domain Vercel; chạy tay "Reminders" và "Similarity recheck" → `HTTP 200`.
+6. **Nhập CSV 2.000 dòng trên Render thật**: Admin > Nhập tài khoản, file 2.000 dòng, đo thời gian bước xác nhận (DevTools > Network) qua domain Vercel. So với timeout proxy thật (rewrite ngoài của Vercel; nếu bị cắt sẽ nhận 504 dù API vẫn chạy). Nếu thời gian > ~70% timeout: báo backend-dev hạ `TEMP_PARAMS.memoryCost` về 1024 (`apps/api/src/lib/password.js`, bảo mật đã duyệt trước, BUG-013), đo lại.
+7. **Tách role** theo §5 (DATABASE_URL Render dùng `nckh_app`, không có `DIRECT_URL`), chạy kịch bản §5.3.
+8. **Header bảo mật trang tĩnh**: `curl -sI https://<app>.vercel.app/ | grep -i -E 'content-security|x-content-type|referrer|x-frame'` có đủ 4 dòng. Mở web, DevTools Console không có dòng "Refused to ... Content Security Policy" khi đi qua các màn chính (đăng nhập, đề tài, tài liệu, thống kê – biểu đồ Recharts). Có vi phạm → báo devops, không tự nới CSP.
+9. Swagger tắt: `https://<app>.vercel.app/api/docs` → 404.

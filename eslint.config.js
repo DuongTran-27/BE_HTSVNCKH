@@ -19,6 +19,7 @@ export default [
     plugins: { 'react-hooks': reactHooks },
     rules: { 'react-hooks/rules-of-hooks': 'error', 'react-hooks/exhaustive-deps': 'warn' },
   },
-  { files: ['apps/web/vite.config.js'], languageOptions: { globals: globals.node } },
+  // middleware.js chạy ở Vercel (process.env), không phải trình duyệt
+  { files: ['apps/web/vite.config.js', 'apps/web/middleware.js'], languageOptions: { globals: globals.node } },
   prettier, // tắt mọi luật định dạng trùng Prettier – đặt cuối
 ];
