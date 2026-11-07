@@ -146,7 +146,7 @@ export const createImportService = ({ repo, hasher, genPassword = generateTempPa
         // Băm TRƯỚC transaction, tối đa IMPORT_HASH_CONCURRENCY phép song song
         const hashed = await mapLimit(valid, IMPORT_HASH_CONCURRENCY, async (r) => {
           const temporaryPassword = genPassword();
-          return { r, temporaryPassword, passwordHash: await hasher.hash(temporaryPassword) };
+          return { r, temporaryPassword, passwordHash: await hasher.hash(temporaryPassword, { temporary: true }) };
         });
         await repo.importUsers(
           hashed.map(({ r, passwordHash }) => ({

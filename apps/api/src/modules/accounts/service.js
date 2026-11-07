@@ -89,7 +89,7 @@ export const createAccountService = ({ repo, hasher, genPassword = generateTempP
       const errors = await refErrors(body);
       if (Object.keys(errors).length) throw fail(errors);
       const temporaryPassword = genPassword();
-      const passwordHash = await hasher.hash(temporaryPassword); // băm TRƯỚC transaction
+      const passwordHash = await hasher.hash(temporaryPassword, { temporary: true }); // băm TRƯỚC transaction
       const { code, email, fullName, role, facultyId = null, classId = null, staffFacultyIds } = body;
       const row = await repo.create(
         { data: { code, email, fullName, role, facultyId, classId, passwordHash, mustChangePassword: true }, staffFacultyIds },
@@ -147,7 +147,7 @@ export const createAccountService = ({ repo, hasher, genPassword = generateTempP
       mustManage(actor, pre);
       notSelf(actor, pre);
       const temporaryPassword = genPassword();
-      const passwordHash = await hasher.hash(temporaryPassword);
+      const passwordHash = await hasher.hash(temporaryPassword, { temporary: true });
       await repo.updateLocked(id, (before) => {
         mustManage(actor, before);
         notSelf(actor, before);

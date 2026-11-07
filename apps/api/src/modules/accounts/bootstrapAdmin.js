@@ -11,7 +11,7 @@ export const createFirstAdmin = async (prisma, hasher, input, { force = false, g
   }
   const { code, email, fullName } = parsed.data;
   const temporaryPassword = genPassword();
-  const passwordHash = await hasher.hash(temporaryPassword);
+  const passwordHash = await hasher.hash(temporaryPassword, { temporary: true });
   const user = await prisma.$transaction(async (tx) => {
     // Khóa tư vấn: hai lệnh chạy đồng thời không cùng qua kiểm "chưa có quản trị viên"
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('create-first-admin'))`;
