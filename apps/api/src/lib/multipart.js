@@ -9,18 +9,20 @@ const SLACK = 8 * 1024; // phần đầu/biên của các part
 
 // BUG-008: trả lỗi sớm (403) khi client còn đang gửi thân lớn làm kết nối bị reset (ECONNRESET/EPIPE).
 // Bỏ dữ liệu ngay khi đến (không giữ vào RAM) tới khi hết thân, rồi mới trả lỗi. Chặn DoS: quá maxBytes hoặc quá timeoutMs thì trả lỗi luôn.
-export const drainThen = (req, next, err, { maxBytes = 32 * 1024 * 1024, timeoutMs = 10000 } = {}) => {
+const DRAIN_MAX_BYTES = 16 * 1024 * 1024; // > file hợp lệ lớn nhất (10 MB) để client không bị reset lại (BUG-008)
+export const drainThen = (req, next, err, { maxBytes = DRAIN_MAX_BYTES, timeoutMs = 10000 } = {}) => {
   let size = 0;
   let fired = false;
   const fire = () => {
     if (fired) return;
     fired = true;
     clearTimeout(timer);
-    req.removeAllListeners('data');
+    req.off('data', onData);
     next(err);
   };
   const timer = setTimeout(fire, timeoutMs);
-  req.on('data', (c) => { size += c.length; if (size > maxBytes) fire(); });
+  const onData = (c) => { size += c.length; if (size > maxBytes) fire(); };
+  req.on('data', onData);
   req.on('end', fire);
   req.on('error', fire);
   req.on('aborted', fire);

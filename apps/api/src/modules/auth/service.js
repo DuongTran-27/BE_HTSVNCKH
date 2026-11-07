@@ -20,12 +20,18 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
     return { accessToken, refreshToken, refreshRecord: record, user: publicUser(user) };
   };
 
+  // Hash giả cùng tham số Argon2id: tài khoản không tồn tại vẫn tốn một lần verify (chống dò tài khoản qua thời gian)
+  let dummyHash;
+
   return {
     async login({ identifier, password, userAgent }) {
       const user = await repo.findUserByIdentifier(identifier.trim().toLowerCase());
       // Thông báo chung, không tiết lộ tài khoản có tồn tại hay không
       const generic = unauthorized('Mã/email hoặc mật khẩu không đúng');
-      if (!user) throw generic;
+      if (!user) {
+        await hasher.verify(await (dummyHash ??= hasher.hash(newOpaqueToken())), password);
+        throw generic;
+      }
       if (user.isLocked) throw new AppError(403, 'ACCOUNT_LOCKED', 'Tài khoản đã bị khóa');
       if (user.lockedUntil && user.lockedUntil > now()) {
         throw new AppError(429, 'TEMP_LOCKED', 'Đăng nhập sai quá nhiều lần, vui lòng thử lại sau');

@@ -91,10 +91,10 @@ export const ROUTES = [
   ['POST', '/documents/:id/feedbacks', SLV, { body: S.documentFeedbackSchema }],
   ['PATCH', '/progress/:id', SLV, { body: S.progressUpdateSchema }],
   ['POST', '/progress/:id/feedbacks', SLV, { body: S.progressFeedbackSchema }],
-  ['GET', '/notifications', SLV, { query: S.notificationListQuerySchema }],
-  ['GET', '/notifications/unread-count', SLV],
-  ['POST', '/notifications/read-all', SLV, { body: S.emptyBodySchema }],
-  ['POST', '/notifications/:id/read', SLV, { body: S.emptyBodySchema }],
+  ['GET', '/notifications', 'U', { query: S.notificationListQuerySchema }],
+  ['GET', '/notifications/unread-count', 'U'],
+  ['POST', '/notifications/read-all', 'U', { body: S.emptyBodySchema }],
+  ['POST', '/notifications/:id/read', 'U', { body: S.emptyBodySchema }],
   ['GET', '/stats', 'SL', { query: S.statsQuerySchema }],
   ['GET', '/stats/export.csv', 'SL', { query: S.statsQuerySchema, note: 'Trả text/csv' }],
   ['POST', '/cron/reminders', 'C'],
@@ -155,7 +155,7 @@ export const buildOpenApi = () => {
 
 // Swagger UI tải từ CDN (không thêm phụ thuộc npm); chỉ phục vụ khi NODE_ENV khác production.
 export const swaggerHtml = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>API NCKH</title>
-<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"></head><body><div id="ui"></div>
-<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.34.1/swagger-ui.css" integrity="sha384-4c3vsE5f+trhFyHrFrLM1fFGUn531NIaC7dcqEWIJdoRQJ5CkJbSuSCwXLpaS1KF" crossorigin="anonymous"></head><body><div id="ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5.34.1/swagger-ui-bundle.js" integrity="sha384-XFYN47VzPiDY6qPtxYKg0nqUeW/upo20xf1j2SUE7gT/i35FJB4cuS/71Iegzk8Z" crossorigin="anonymous"></script>
 <script src="/api/docs/init.js"></script></body></html>`;
 export const swaggerInit = "SwaggerUIBundle({ url: '/api/openapi.json', dom_id: '#ui' });";

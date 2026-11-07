@@ -31,7 +31,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // sau proxy của Vercel/Render
-  app.use(pinoHttp({ logger, genReqId: (req) => req.get('x-request-id') ?? randomUUID(), autoLogging: env.NODE_ENV !== 'test' }));
+  app.use(pinoHttp({ logger, genReqId: (req) => { const id = req.get('x-request-id'); return id && /^[\w-]{1,64}$/.test(id) ? id : randomUUID(); }, autoLogging: env.NODE_ENV !== 'test' }));
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGIN.split(','), credentials: true }));
   app.use(express.json({ limit: '100kb' }));
@@ -44,8 +44,8 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     const db = await checkDb().catch(() => false);
     res.status(db ? 200 : 503).json({ status: db ? 'ok' : 'degraded', db });
   });
-  // NFR08: tài liệu API chỉ có ngoài production; production rơi xuống 404 chuẩn.
-  if (env.NODE_ENV !== 'production') {
+  // NFR08: tài liệu API chỉ có ngoài production và khi ENABLE_SWAGGER bật; production rơi xuống 404 chuẩn.
+  if (env.NODE_ENV !== 'production' && env.ENABLE_SWAGGER) {
     const doc = buildOpenApi();
     app.get('/api/openapi.json', (_req, res) => res.json(doc));
     app.get('/api/docs', (_req, res) => res.set('Content-Security-Policy', "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:; connect-src 'self'").type('html').send(swaggerHtml));

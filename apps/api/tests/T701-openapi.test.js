@@ -17,7 +17,7 @@ describe('T701 OpenAPI', () => {
   });
 
   it('test/dev: 200, JSON OpenAPI 3, Swagger UI có, không lộ secret', async () => {
-    const app = build(testEnv);
+    const app = build({ ...testEnv, ENABLE_SWAGGER: true });
     const res = await request(app).get('/api/openapi.json');
     expect(res.status).toBe(200);
     expect(res.body.openapi).toMatch(/^3\./);
@@ -41,7 +41,7 @@ describe('T701 OpenAPI', () => {
     };
     let doc;
     try {
-      const app = build(testEnv);
+      const app = build({ ...testEnv, ENABLE_SWAGGER: true });
       doc = (await request(app).get('/api/openapi.json')).body;
       const actual = new Set(['GET /api/health']); // route khai báo trực tiếp trên app
       for (const [prefix, router] of mounts) {
