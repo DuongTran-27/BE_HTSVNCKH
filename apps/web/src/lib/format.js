@@ -22,6 +22,9 @@ export const downloadCsv = (text, filename) => {
   URL.revokeObjectURL(url);
 };
 
+// API từ chối q < 2 ký tự (400): chỉ gửi khi đủ 2 ký tự sau trim
+export const searchTerm = (v) => (v && v.trim().length >= 2 ? v.trim() : undefined);
+
 export const qs = (params) => {
   const p = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => v !== undefined && v !== null && v !== '' && p.set(k, v));

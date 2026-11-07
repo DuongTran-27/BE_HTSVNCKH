@@ -1,7 +1,7 @@
 import { Link, useLocation, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api.js';
-import { fmtDateTime, qs } from '../../lib/format.js';
+import { fmtDateTime, qs, searchTerm } from '../../lib/format.js';
 import { useCatalog } from '../../lib/queries.js';
 import { inputClass } from '../../components/FormField.jsx';
 import { SimilarityLevelCell } from '../../components/SimilarityPanel.jsx';
@@ -25,7 +25,7 @@ export function ReviewQueuePage() {
   const fields = useCatalog('fields');
   const query = useQuery({
     queryKey: ['topics', 'review-queue', roundId, fieldId, q, page],
-    queryFn: () => api(`/topics${qs({ status: 'UNDER_REVIEW', sort: 'updatedAt_asc', roundId, fieldId, q, page, pageSize: 20 })}`),
+    queryFn: () => api(`/topics${qs({ status: 'UNDER_REVIEW', sort: 'updatedAt_asc', roundId, fieldId, q: searchTerm(q), page, pageSize: 20 })}`),
   });
   const now = Date.now();
   return (

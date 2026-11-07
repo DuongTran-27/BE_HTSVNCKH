@@ -25,7 +25,7 @@ beforeEach(() => {
   api.mockReset();
   api.mockImplementation(async (url) => {
     if (url.startsWith('/stats')) return { groupBy: 'status', total: 3, rows: [{ key: 'CLOSED', label: 'Đã đóng', count: 2 }, { key: 'REJECTED', label: 'Bị từ chối', count: 1 }] };
-    if (url.startsWith('/topics')) return url.includes('HAS_ADVISOR') ? { items: [] } : { items: [stuck(), stuck({ id: 't2', code: 'NCKH-2', round: { name: 'Đợt 2', registrationOpen: true } })], total: 2, page: 1, pageSize: 100 };
+    if (url.startsWith('/topics')) return { items: [stuck()], total: 12, page: 1, pageSize: 10 };
     if (url.startsWith('/notifications/unread-count')) return { count: 3 };
     if (url.startsWith('/notifications')) return { items: [{ id: 'n1', type: 'FEEDBACK_CREATED', title: 'GVHD đã nhận xét', link: '/de-tai/t1', readAt: null, createdAt: '2026-01-01T00:00:00Z' }], total: 1, page: 1, pageSize: 20, unreadCount: 1 };
     return { items: [], total: 0, page: 1, pageSize: 20 };
@@ -52,12 +52,14 @@ describe('Trang thông báo', () => {
 });
 
 describe('Trang thống kê', () => {
-  it('STAFF: bảng có caption, widget đề tài kẹt chỉ giữ đợt đã đóng đăng ký', async () => {
+  it('STAFF: bảng có caption, widget đề tài kẹt gọi stuck=true phân trang server, hiện total', async () => {
     auth.setSession({ accessToken: 'x', user: { id: 'u', role: 'STAFF' } });
     mount(<StatsPage />, '/thong-ke');
     expect(await screen.findByRole('table', { name: /Số đề tài theo trạng thái/ })).toBeTruthy();
     expect(await screen.findByText('NCKH-1 – Kẹt')).toBeTruthy();
-    expect(screen.queryByText(/NCKH-2/)).toBeNull();
+    expect(await screen.findByText('Tổng cộng 12 đề tài kẹt')).toBeTruthy();
+    expect(calls().some((c) => c.startsWith('/topics?stuck=true') && c.includes('pageSize=10'))).toBe(true);
+    expect(calls().some((c) => c.includes('status='))).toBe(false);
   });
 
   it('LECTURER: không có widget kẹt, không có bộ lọc GV; CSV dùng cùng query với bảng', async () => {

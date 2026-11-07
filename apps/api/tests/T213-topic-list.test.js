@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
+import { createListRepo } from '../src/modules/topics/listRepo.js';
 import { createApp } from '../src/app.js';
 import { createAuthRepo } from '../src/modules/auth/prismaRepo.js';
 import { createTopicRepo } from '../src/modules/topics/prismaRepo.js';
@@ -127,7 +128,7 @@ describe('tìm kiếm q', () => {
   it('% và _ được escape, không thành ký tự đại diện', async () => {
     expect(codes(await get('staff', `?q=${encodeURIComponent('100%')}`))).toEqual(['T213-reviewB']);
     expect(codes(await get('staff', `?q=${encodeURIComponent('phòng_họp')}`))).toEqual(['T213-reviewB']);
-    expect((await get('staff', `?q=${encodeURIComponent('%')}`)).body.total).toBe(1);
+    expect((await get('staff', `?q=${encodeURIComponent('%')}`)).status).toBe(400); // BUG-011: q 1 ký tự bị từ chối
     expect((await get('staff', `?q=${encodeURIComponent('đặt_phòng')}`)).body.total).toBe(0);
   });
   it('q vẫn bị giới hạn bởi phạm vi', async () => {
@@ -184,5 +185,43 @@ describe('MINOR T212b', () => {
     const r = await svc.act({ ...U.staff, staffFacultyIds: [F1.id] }, t.id, { action: 'APPROVE', version: t.version, submissionId: s.id }, '127.0.0.1');
     expect(r.topic.status).toBe('IN_PROGRESS');
     expect(logger.warn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('BUG-011 q tối thiểu 2 ký tự', () => {
+  it('q 1 ký tự (sau trim) -> 400 tiếng Việt; q 2 ký tự -> 200; repo không trả IN toàn bảng', async () => {
+    for (const q of ['a', '%20a%20']) {
+      const r = await get('staff', `?q=${q}`);
+      expect(r.status).toBe(400);
+      expect(JSON.stringify(r.body)).toContain('tối thiểu 2 ký tự');
+    }
+    expect((await get('staff', '?q=T213')).status).toBe(200);
+    expect(await createListRepo(prisma).searchIds('a')).toEqual([]);
+  });
+});
+
+describe('BUG-012 stuck=true (FR16.5)', () => {
+  let closed;
+  beforeAll(async () => {
+    closed = await prisma.round.create({ data: { facultyId: F1.id, name: 'Đợt đã đóng', academicYear: '2020-2021', regOpenAt: new Date(Date.now() - 20 * day), regCloseAt: new Date(Date.now() - day), reviewDeadline: new Date(Date.now() + 60 * day), endAt: new Date(Date.now() + 200 * day), config: {} } });
+    const mk = (i, status, roundId) => prisma.topic.create({ data: { title: `Kẹt ${i}`, summary: 'S', objectives: 'O', keywords: [], code: `T213-K${i}`, roundId, facultyId: F1.id, status } });
+    for (let i = 0; i < 3; i++) await mk(i, 'WAITING_ADVISOR', closed.id);
+    for (let i = 3; i < 6; i++) await mk(i, 'HAS_ADVISOR', closed.id);
+    await mk(6, 'UNDER_REVIEW', closed.id); // trạng thái khác: không kẹt
+  });
+  it('chỉ đề tài WAITING_ADVISOR/HAS_ADVISOR của đợt đã đóng; total và phân trang đúng', async () => {
+    const all = await get('staff', '?stuck=true&pageSize=4&page=2');
+    expect(all.status).toBe(200);
+    expect(all.body.total).toBe(6);
+    expect(all.body.items).toHaveLength(2);
+    const p1 = await get('staff', '?stuck=true&pageSize=4');
+    expect([...p1.body.items, ...all.body.items].every((t) => ['WAITING_ADVISOR', 'HAS_ADVISOR'].includes(t.status) && t.round.registrationOpen === false)).toBe(true);
+  });
+  it('stuck=false không lọc; kết hợp status; vẫn bị giới hạn bởi phạm vi; ADMIN 403; giá trị lạ 400', async () => {
+    expect((await get('staff', '?stuck=false&roundId=' + closed.id)).body.total).toBe(7);
+    expect((await get('staff', '?stuck=true&status=HAS_ADVISOR')).body.total).toBe(3);
+    expect((await get('staff2', '?stuck=true')).body.total).toBe(0);
+    expect((await get('admin', '?stuck=true')).status).toBe(403);
+    expect((await get('staff', '?stuck=yes')).status).toBe(400);
   });
 });

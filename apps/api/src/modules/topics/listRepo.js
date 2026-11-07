@@ -17,7 +17,9 @@ const esc = (s) => s.replace(/[\\%_]/g, '\\$&');
 
 export const createListRepo = (prisma) => ({
   // Dùng đúng biểu thức của index topic_title_trgm_idx; keywords không có index (quét, chấp nhận ở quy mô 2.000 đề tài)
+  // shortcut: IN(id…) giới hạn ~32.767 tham số bind (~36.000 đề tài với q 2 ký tự phổ biến), khi mở rộng nhiều khoa chuyển sang = ANY($1::text[]) hoặc EXISTS
   searchIds: async (q) => {
+    if (q.trim().length < 2) return []; // chặn IN gần toàn bảng; schema đã từ chối q < 2 ký tự (400), đây là lớp phòng thủ
     const like = `%${esc(q)}%`;
     const rows = await prisma.$queryRaw(Prisma.sql`
       SELECT id FROM "Topic"

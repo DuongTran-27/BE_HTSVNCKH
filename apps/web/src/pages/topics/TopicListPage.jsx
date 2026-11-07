@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { FINAL_RESULT_LABEL, TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { useAuth } from '../../lib/auth.js';
-import { fmtDateTime, qs } from '../../lib/format.js';
+import { fmtDateTime, qs, searchTerm } from '../../lib/format.js';
 import { useCatalog } from '../../lib/queries.js';
 import { pickEnum, pickPage, pickYear, useUrlParams } from '../../lib/urlParams.js';
 import { DebouncedInput, FilterSelect } from '../../components/ListFilters.jsx';
@@ -39,7 +39,7 @@ export function TopicListPage() {
   const invitations = useQuery({ queryKey: ['invitations', 'banner'], enabled: isStudent, queryFn: () => api('/invitations?status=PENDING&pageSize=1') });
   const query = useQuery({
     queryKey: ['topics', 'list', params],
-    queryFn: () => api(`/topics${qs({ ...params, pageSize: 20 })}`),
+    queryFn: () => api(`/topics${qs({ ...params, q: searchTerm(params.q), pageSize: 20 })}`),
     placeholderData: keepPreviousData,
   });
   const pending = invitations.data?.total ?? 0;

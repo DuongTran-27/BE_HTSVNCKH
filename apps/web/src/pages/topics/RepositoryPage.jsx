@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { FINAL_RESULT_LABEL, REPOSITORY_RESULTS } from '@nckh/shared';
 import { api } from '../../lib/api.js';
-import { qs } from '../../lib/format.js';
+import { qs, searchTerm } from '../../lib/format.js';
 import { useCatalog } from '../../lib/queries.js';
 import { pickEnum, pickPage, pickYear, useUrlParams } from '../../lib/urlParams.js';
 import { DebouncedInput, FilterSelect } from '../../components/ListFilters.jsx';
@@ -16,7 +16,7 @@ export function RepositoryPage() {
     academicYear: pickYear(u.get('academicYear')), fieldId: u.get('fieldId'),
     result: pickEnum(u.get('result'), REPOSITORY_RESULTS), q: u.get('q').slice(0, 200), page: pickPage(u.get('page')),
   };
-  const query = useQuery({ queryKey: ['repository', params], queryFn: () => api(`/repository${qs({ ...params, pageSize: 20 })}`), placeholderData: keepPreviousData });
+  const query = useQuery({ queryKey: ['repository', params], queryFn: () => api(`/repository${qs({ ...params, q: searchTerm(params.q), pageSize: 20 })}`), placeholderData: keepPreviousData });
   const yearBad = u.get('academicYear') && !params.academicYear;
   return (
     <section>

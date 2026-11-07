@@ -46,6 +46,7 @@ export const createListService = ({ repo, now = () => new Date() }) => {
       if (q.academicYear) and.push({ round: { academicYear: q.academicYear } });
       if (q.lecturerId) and.push({ advisings: { some: { lecturerId: q.lecturerId, endAt: null } } });
       if (q.result) and.push({ status: 'CLOSED', results: { some: { isCurrent: true, result: q.result } } }); // G27, cùng định nghĩa với thống kê
+      if (q.stuck === 'true') and.push({ status: { in: ['WAITING_ADVISOR', 'HAS_ADVISOR'] }, round: { regCloseAt: { lte: now() } } });
       if (q.q) and.push({ id: { in: await repo.searchIds(q.q) } });
       const { total, rows } = await repo.list({ where: { AND: and }, orderBy: SORTS[q.sort], skip: (q.page - 1) * q.pageSize, take: q.pageSize });
       return { items: rows.map(present), page: q.page, pageSize: q.pageSize, total };

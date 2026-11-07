@@ -100,7 +100,8 @@ export const topicListQuerySchema = z.object({
   lecturerId: opt(z.string().trim().max(64)),
   status: opt(z.enum(Object.values(TOPIC_STATUS))),
   result: opt(z.enum(Object.values(FINAL_RESULT))),
-  q: opt(z.string().trim().max(200)),
+  q: opt(z.string().trim().min(2, 'Từ khóa tìm kiếm tối thiểu 2 ký tự').max(200)),
+  stuck: opt(z.enum(['true', 'false'])), // FR16.5: đợt đã đóng đăng ký mà đề tài còn Chờ GVHD / Đã có GVHD
   sort: z.preprocess(emptyToUndef, z.enum(TOPIC_SORTS).default('updatedAt_desc')),
   ...pageQuery,
 });
