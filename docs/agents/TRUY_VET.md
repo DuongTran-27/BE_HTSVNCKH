@@ -1,0 +1,97 @@
+# Ma trận truy vết M1–M5, FR01–FR27, NFR01–NFR10 ↔ test (T707 bước A)
+
+Lập ngày 2026-11-08 bằng grep thật trên `apps/api/tests`, `apps/web/{e2e,tests,src}`, `packages/shared/src` (lệnh ở cuối file và ở `reports/T707a.md`). Quy ước:
+- Chỉ ghi ID `TC-xxx` khi grep thấy trong file; test không có ID ghi `file › tên khối describe`. Không bịa ID.
+- Loại: **U** unit · **I** integration (Supertest, DB thật) · **S** security · **E** E2E Playwright · **P** perf (`npm run perf`, không nằm trong `npm test`) · **V** eval (`npm run eval:fr06`) · **W** test component web (Vitest).
+- Báo cáo: `reports/Txxx.md`. Đường dẫn test API rút gọn `a/` = `apps/api/tests/`, web `w/` = `apps/web/tests/`, E2E `e/` = `apps/web/e2e/`, shared `s/` = `packages/shared/src/`.
+- Ô "KHÔNG CÓ" = grep không thấy test tự động. Ô "SAU DEPLOY" = chỉ kiểm được trên hạ tầng thật, không có test tự động.
+- Chưa chạy lại test ở T707a (chỉ tài liệu); kết quả chạy xem `reports/` và `reviews/` của từng task, tổng hợp lại ở T708.
+
+## 1. Mục tiêu M1–M5 (đặc tả mục 6)
+
+| Mục tiêu | FR | Unit | Integration | E2E | Báo cáo |
+|---|---|---|---|---|---|
+| M1 | FR03, FR05, FR07, FR08, FR16, FR18–FR21 | `s/topics.test.js`; `a/T208-groups.test.js` (giới hạn nhóm) | `a/T214-concurrency.test.js` TC-FR16-C5/C6 (hạn mức GV khi nhận đồng thời); `a/T213-topic-list.test.js` › "quyền và phạm vi (FR25)"; `a/T214-gd2-flow.test.js` TC-FR05-F1 | `e/m1.spec.js` TC-FR05-E01 → TC-FR16-E02 → TC-FR06-E03 → TC-FR07-E04 (tạo nhóm → mời GVHD → gửi → cán bộ duyệt) | T214, T309, T407, T702 |
+| M2 | FR09, FR10, FR12, FR13, FR22, FR23, FR27 | `a/T405-close.test.js` › "checkTransition – nhánh đóng đề tài (unit)" | `a/T505-notify-dedupe.test.js` TC-FR13-D01..D11; `a/T601-change-requests.test.js` › "FR19 – đồng thời với thao tác của GV cũ" (chỉ GVHD hiện hành) | `e/m4.spec.js` TC-FR11-E01 → TC-FR12-E03 → TC-FR12-E04 → TC-FR27-E05 | T405, T407, T505 |
+| M3 | FR11, FR17, FR24, FR26 | `a/T403-documents.test.js` › "thuần: upload.js, storage.js, env" | `a/T403-documents.test.js` (bản mới không ghi đè, `download-url`); `a/T212b-snapshots.test.js` › "quyền đọc (FR25)" | `e/m4.spec.js` TC-FR11-E01/E02/E08 (upload); **KHÔNG CÓ E2E "tải về" tài liệu** (đặc tả §6 ghi "xem lịch sử phiên bản, tải về"; `e/m5.spec.js` chỉ tải CSV). Xem lịch sử phiên bản/so sánh có ở `e/gd6.spec.js` TC-FR21-E01 | T403, T406, T608 |
+| M4 | FR14, FR23, FR27 | `a/csv.test.js` › "Xuất CSV (FR14)"; `a/T703b.test.js` 5a (escapeCell), 5b (MAX_ROWS) | `a/T505-stats-consistency.test.js` TC-FR14-P01..P03, E01, E02; `a/T503-stats.test.js` › "CSV (FR14: cùng số, BOM, chống injection)" | `e/m5.spec.js` TC-FR14-E01, TC-FR14-E02 | T503, T505, T504 |
+| M5 | FR05, FR06 | `a/similarity.test.js` (chuẩn hóa, tên, TF-IDF, dịch vụ) | `a/T211-similarity.test.js`; `a/T214-gd2-flow.test.js` TC-FR06-01..05 (kho so đúng trạng thái, hồ sơ chờ của nhóm khác bị ẩn, lỗi → "Chưa kiểm tra được") | `e/m1.spec.js` TC-FR06-E03 (HIGH → buộc giải trình → gửi) + TC-FR07-E04 (cán bộ thấy cảnh báo); `e/gd6.spec.js` TC-FR06-E09 (G5) | T211, T214, T609, T705 |
+| NT | FR01, FR02, FR04, FR15, FR25 | `s/catalog.test.js` › "schema đợt" (thứ tự mốc) | `a/T205-auth-db.test.js`; `a/T204-audit.test.js`; `a/T214-concurrency.test.js` TC-FR25-C8 | `e/` mọi spec đăng nhập qua `helpers.js`; **không có TC riêng cho refresh/logout theo vai trò** | T205, T204, T206 |
+
+Thực nghiệm M5 (đặc tả §3, bộ ≥ 100 cặp): `a/fr06-eval/` + `a/fr06-dataset.test.js` TC-FR06-90..93 (kiểm dữ liệu hợp lệ) + `npm run eval:fr06 -w @nckh/api` (V). Kết quả `reports/T705.md` (122 cặp). Xem mục 5 về hạn chế khi trích dẫn.
+
+## 2. Chức năng FR01–FR27
+
+| FR | Ưu tiên | Test tự động (loại · file · ID/khối) | Báo cáo | Ghi chú |
+|---|---|---|---|---|
+| FR01 | P1 | I · `a/auth.test.js` › "Đăng nhập và phiên (FR01)" (5 lần sai → khóa, refresh xoay vòng, đổi MK thu hồi phiên khác); I · `a/T205-auth-db.test.js` › "FR01 trên Postgres" (3 khối); S · `a/security/BUG-002.test.js`, `T207a-vong1.test.js`; W · `w/auth-pages.test.jsx`, `w/security/logout-race.test.js`, `logout-guest-refresh.test.js`, `src/lib/api.test.js`; E · gián tiếp qua `e/helpers.js` | T205, T302, BUG-002 | E2E không có TC riêng cho refresh/logout |
+| FR02 | P1 | I · `a/T207a-accounts.test.js` (tạo/khóa/reset/staff-scopes), `a/T207b-import.test.js` (preview/confirm), `a/T207a-temp-password.test.js`, `a/BUG-013-temp-hash.test.js`; S · `a/security/T207a-bao-mat.test.js`, `T207b-multipart.test.js`, `a/T214-import-flaky.test.js` TC-FR25-IMP-01/02; U · `s/csvImport.test.js`, `s/users.test.js`; W · `w/admin.test.jsx` (R18–R21); E · `e/roles.spec.js` TC-FR25-E04 | T207a, T207b, BUG-013 | "Không tự đăng ký": kiểm gián tiếp (không có route đăng ký), **KHÔNG CÓ** test khẳng định 404 route đăng ký |
+| FR03 | P1 | I · `a/T208-groups.test.js`; `a/T214-concurrency.test.js` TC-FR03-C1..C4; `a/T214-gd2-flow.test.js` TC-FR03-F3, F4, F9; `a/T203-qa-seed.test.js` TC-FR03-20; W · `w/student.test.jsx`; E · `e/m1.spec.js` TC-FR05-E01 (mời, chấp nhận) | T208, T214 | |
+| FR04 | P1 | I · `a/T206-catalog-rounds.test.js`; `a/T203-qa-seed.test.js` TC-FR04-20; U · `s/catalog.test.js`; W · `w/admin.test.jsx` (R22–R24) | T206, T304 | E2E: KHÔNG CÓ |
+| FR05 | P1 | I · `a/T209-topics.test.js`; `a/T214-gd2-flow.test.js` TC-FR05-F1; U · `s/topics.test.js`; W · `w/student.test.jsx`; E · `e/m1.spec.js` TC-FR05-E01, TC-FR05-E08 (360 px) | T209, T305 | |
+| FR06 | P1 | U · `a/similarity.test.js`; I · `a/T211-similarity.test.js`, `a/T214-gd2-flow.test.js` TC-FR06-01..05, `a/T609-similarity-bypass.test.js` (G5), `a/T605-topic-change.test.js` › "FR18 – FR06 khi đổi tên/tóm tắt"; V · `a/fr06-dataset.test.js` TC-FR06-90..93 + `npm run eval:fr06`; P · `a/perf/T704.perf.js` TC-NFR04-04; W · `src/lib/similarity.test.js`, `w/student.test.jsx`, `w/gd6-ui-b.test.jsx` › "G5 cờ chưa kiểm tra"; E · `e/m1.spec.js` TC-FR06-E03, `e/gd6.spec.js` TC-FR06-E09 | T211, T609, T705 | TC-FR06-93 chỉ kiểm điểm ∈ [0,1] và tất định, **không assert chất lượng** (recall) – MINOR T705 → bước B. **KHÔNG CÓ E2E** job `POST /api/cron/similarity-rechecks` và SV gửi hồ sơ mang cờ G5 (T702b MINOR 2). Điểm tên là mô phỏng JS, chưa đo bằng pg_trgm thật trong V |
+| FR07 | P1 | I · `a/T212a-review.test.js`; `a/T214-gd2-flow.test.js` TC-FR07-F2; `a/T214-concurrency.test.js` TC-FR07-C7; W · `w/review.test.jsx`; E · `e/m1.spec.js` TC-FR07-E04, `e/roles.spec.js` TC-FR07-E05, TC-FR07-E06 | T212a, T307 | |
+| FR08 | P1 | I · `a/T213-topic-list.test.js`, `a/T213b-repository.test.js`, `a/T503-stats.test.js` › "G27 cho GET /api/topics"; W · `src/pages/topics/TopicListPage.test.jsx`, `src/components/ListFilters.test.jsx`, `src/lib/searchTerm.test.js`; E · `e/m1.spec.js` TC-FR08-E05, E06, E07 | T213, T213b, T308 | |
+| FR09 | P1 | I · `a/T401-milestones.test.js` (tạo/sửa/due-changes); W · `w/execution.test.jsx` › "Tab Mốc – FR09" | T401, T406 | E2E: KHÔNG CÓ ca riêng tạo/sửa/đổi hạn mốc |
+| FR10 | P1 | I · `a/T402-progress.test.js`, `a/T404-feedback.test.js` › "khóa tiến độ FR10"; W · `w/execution.test.jsx` › "Tab Tiến độ – FR10" | T402, T406 | E2E: KHÔNG CÓ |
+| FR11 | P1 | I · `a/T403-documents.test.js` (upload, link, xác minh tồn tại); U · `a/T403-documents.test.js` › "thuần: upload.js…"; W · `w/execution.test.jsx`; E · `e/m4.spec.js` TC-FR11-E01, E02 (nộp muộn), E08 (360 px) | T403, T406, T407 | |
+| FR12 | P1 | I · `a/T404-feedback.test.js` (nhận xét, đánh giá mốc, kết quả cuối); W · `w/execution.test.jsx`; E · `e/m4.spec.js` TC-FR12-E03, TC-FR12-E04 | T404, T407 | |
+| FR13 | P1 | I · `a/T501-notifications.test.js`; `a/T505-notify-dedupe.test.js` TC-FR13-D01..D11; W · `src/pages/stats/T504.test.jsx` (chuông, trang thông báo); E · `e/m5.spec.js` TC-FR13-E04 | T501, T502, T505 | Lịch cron thật (`reminders.yml`): chỉ chạy được sau deploy (§6.4 mục 5), xem NFR10 |
+| FR14 | P1 | I · `a/T503-stats.test.js`; `a/T505-stats-consistency.test.js` TC-FR14-P01..P03, E01, E02; U · `a/csv.test.js`, `s/stats.test.js`; W · `src/pages/stats/T504.test.jsx`; E · `e/m5.spec.js` TC-FR14-E01, E02 | T503, T504, T505 | **ID trùng**: TC-FR14-E01/E02 dùng ở cả `a/T505-stats-consistency.test.js` (API) và `e/m5.spec.js` (E2E) – phân biệt bằng file; đổi tên ở bước B nếu cần |
+| FR15 | P1 | I · `a/T204-audit.test.js` (AuditLog, StatusHistory, "bảng chỉ-thêm ở mức DB"); `a/T203-schema.test.js` › "§11b – bất biến được DB giữ"; `a/T203-qa-seed.test.js` TC-FR15-20 | T204, T203 | UI xem AuditLog: xem T703 |
+| FR16 | P1 | I · `a/T210-advisor.test.js`; `a/T214-concurrency.test.js` TC-FR16-C5, C6; `a/T214-gd2-flow.test.js` TC-FR16-F7, F8; `a/T203-qa-seed.test.js` TC-FR16-20, 21; `a/T213-topic-list.test.js` › "BUG-012 stuck=true (FR16.5)"; W · `w/advising.test.jsx`; E · `e/m1.spec.js` TC-FR16-E02 | T210, T306, BUG-012 | |
+| FR17 | P1 | I · `a/T212b-snapshots.test.js`, `a/T212a-review.test.js`, `a/T403-documents.test.js` › "snapshot gắn tài liệu đề cương (FR17, §5.6)", `a/T203-qa-seed.test.js` TC-FR17-20; W · `w/review.test.jsx` › "Lịch sử, snapshot, so sánh (R11–R13)", `src/lib/diff.test.js`; E · `e/m1.spec.js` TC-FR07-E04, `e/gd6.spec.js` TC-FR21-E01 | T212b, T307 | |
+| FR18 | P3 | I · `a/T605-topic-change.test.js`; W · `w/change-requests.test.jsx` | T605, T607 | E2E: KHÔNG CÓ |
+| FR19 | P2 | I · `a/T601-change-requests.test.js`; W · `w/change-requests.test.jsx` | T601, T607 | E2E: KHÔNG CÓ |
+| FR20 | P2 | I · `a/T602-cancel.test.js`; W · `w/change-requests.test.jsx` | T602, T607 | E2E: KHÔNG CÓ |
+| FR21 | P2 | I · `a/T603-leave.test.js` (cửa sổ `[joinedAt, leftAt)`, trước/sau duyệt, quyền đọc); W · `w/change-requests.test.jsx` › "Rời nhóm (FR21)", "Lịch sử tham gia"; E · `e/gd6.spec.js` TC-FR21-E01 | T603, T607, T702 | |
+| FR22 | P3 | I · `a/T606-milestone-reopen.test.js`; W · `w/gd6-ui-b.test.jsx` › "FR22 mở lại mốc" | T606, T607 | E2E: KHÔNG CÓ |
+| FR23 | P2 | I · `a/T604-result-correction.test.js`; W · `w/gd6-ui-b.test.jsx` › "FR23 sửa kết quả" | T604, T607 | E2E: KHÔNG CÓ |
+| FR24 | P1 | I · `a/T403-documents.test.js` › "POST /api/documents/:id/download-url (FR24)" (chưa mở từng ca để xác minh "hết hạn 5 phút" và "ghi lịch sử lượt tải" – T708 kiểm); W · `w/execution.test.jsx` › "Tab Tài liệu – FR11, FR24, FR12" | T403, T406 | **E2E: KHÔNG CÓ ca tải tài liệu** (xem M3) |
+| FR25 | P1 | I · `a/T214-concurrency.test.js` TC-FR25-C8; `a/T214-gd2-flow.test.js` TC-FR25-F5, F6; `a/T214-import-flaky.test.js` TC-FR25-IMP-01/02; mọi file `T2xx/T4xx/T5xx/T6xx` có khối "quyền"; S · `a/security/T703c-bao-mat.test.js` › "T703c-1 IDOR / phạm vi quan hệ", `a/security/T703a-bao-mat.test.js` › "vai trò trong ROUTES khớp guard thật"; W · `w/guards.test.jsx`; E · `e/m5.spec.js` TC-FR25-E03, `e/roles.spec.js` TC-FR25-E04, TC-FR25-E05 | T214, T703 | |
+| FR26 | P2 | I · `a/T403-documents.test.js` › "cleanup-orphans (FR26, §5.7)"; `a/T608-devops-scripts.test.js` (giữ 7 bản, file mồ côi); S · `a/security/T403-cleanup-guard.test.js`; `a/T703b.test.js` mục 4 | T403, T608, T703 | **Workflow `backup.yml`/`cleanup-orphans.yml` chạy thật và biên bản diễn tập khôi phục: SAU DEPLOY / thủ công** (`reports/T608.md`: "chưa chạy thật (cần con người)"; `VAN_HANH.md` §3). Không có test tự động cho điều kiện "diễn tập thành công ít nhất một lần" |
+| FR27 | P1 | I · `a/T405-close.test.js` (unit điều kiện + REQUEST_CLOSE, RETURN, CONFIRM_CLOSE, CLOSE_EXPIRED), `a/T404-feedback.test.js` › "Kết quả cuối"; W · `w/execution.test.jsx` › "Kết quả cuối + đóng đề tài"; E · `e/m4.spec.js` TC-FR27-E05, E06, E07 | T405, T407 | |
+
+Kiểm tra đủ định nghĩa hoàn thành mục 4 `QUY_TRINH.md` ("mỗi FR P1/P2 có ≥ 1 test tự động"): theo bảng trên mọi FR P1/P2 có ít nhất một test tích hợp; FR18, FR22 (P3) cũng có. Việc xác nhận **đạt** (xanh) là của T708.
+
+## 3. Yêu cầu phi chức năng NFR01–NFR10
+
+| NFR | Test tự động | Chỉ kiểm được sau deploy / thủ công | Báo cáo |
+|---|---|---|---|
+| NFR01 Bảo mật phiên | `a/auth.test.js` › "Argon2id thật", "đăng nhập… cookie httpOnly path /api/auth"; `a/T205-auth-db.test.js`; S · `a/security/T703c-bao-mat.test.js` › "T703c-2 cookie refresh (NFR01)"; `a/security/T703a-bao-mat.test.js` › "T703a-2 login không lộ tài khoản qua thời gian phản hồi"; `a/T703b.test.js` mục 1; `a/security/T199-rate-limit.test.js`, `T215.test.js` › "rate limit dùng chung"; `a/BUG-013-temp-hash.test.js` | **SAU DEPLOY**: cookie `Secure`/`SameSite=Lax` trên **Chrome và Safari** thật qua rewrite Vercel (đặc tả ghi "kiểm tra cookie trên Chrome và Safari"; `VAN_HANH.md` §6.4 mục 1: F5 vẫn còn phiên). Không có test trình duyệt Safari. `w/tests/middleware.test.js` chỉ kiểm middleware ở mức đơn vị | T205, T215, **T703a, T703c** |
+| NFR02 Bảo mật truy cập | S · `a/security/T703c-bao-mat.test.js` › "T703c-1 IDOR", "T703c-3 CORS chỉ domain cấu hình (NFR02)"; `a/security/T215-bao-mat.test.js` › "không lộ chi tiết nội bộ"; `a/security/BUG-001.test.js`; `a/T206-errors.test.js`; `a/security/T199-input-size.test.js`; U · `s/schemas.test.js`; `a/T706b.test.js` (CORS trim, ORIGIN_SECRET); 403 theo vai trò: khối "quyền" ở từng file module + `T703a-bao-mat` "vai trò trong ROUTES khớp guard thật" | CORS trên domain Vercel thật, header bảo mật trang tĩnh (`VAN_HANH.md` §6.4 mục 8) | T215, **T703a, T703c**, T706b |
+| NFR03 Bảo vệ database | S · `a/security/T703c-bao-mat.test.js` › "T703c-4 RLS Supabase (NFR03)" (không policy cho public/anon/authenticated, không hàm SECURITY DEFINER); `a/T203-schema.test.js` (index, trigger; chưa xác minh trong grep rằng có assert RLS) | **SAU DEPLOY**: "gọi thử Data API bằng anon key phải bị từ chối" và tách role `nckh_app` (`VAN_HANH.md` §5, §6.4 mục 4, 7). Test chỉ kiểm trên Postgres test, không kiểm Supabase thật | **T703c**, T203 |
+| NFR04 Hiệu năng | P · `a/perf/T704.perf.js` TC-NFR04-01..02 (danh sách), 03 (thống kê), 04 (FR06), 05 (widget kẹt), 06 (nhập CSV Argon2id thật); `a/T503-stats.test.js` › "NFR04: ≤ 2 giây với 2.000 đề tài" | **SAU DEPLOY**: p95 "server đã khởi động" trên Render + Supabase thật. Số đo T704 là mức sàn trên máy dev, DB cùng máy (`reports/T704.md` "Cấu hình máy"); TC-NFR04-06 (nhập CSV 2.000 dòng) cần đo lại trên Render thật (`VAN_HANH.md` §6.4 mục 6). Bộ P không nằm trong `npm test` | T704, BUG-011, BUG-012 |
+| NFR05 Toàn vẹn dữ liệu | I · `a/T214-gd2-flow.test.js` TC-NFR05-01..06 (rollback giữa transaction, lỗi DB thật); `a/T203-schema.test.js` (trigger chỉ-thêm, bất biến do DB giữ); `a/T204-audit.test.js` › "bảng chỉ-thêm ở mức DB" | – | T214, T203 |
+| NFR06 Thời gian | I · `a/T214-gd2-flow.test.js` TC-NFR06-01..07 (hạn theo giờ server); `a/T201-db-test.test.js` › "pg_trgm, unaccent, timezone (K1–K7)" | Hiển thị `Asia/Ho_Chi_Minh` ở UI: không có test riêng ngoài `formatVnDate` (`s/stats.test.js`) | T214, T201 |
+| NFR07 Giao diện | E · `e/gd6.spec.js` TC-NFR07-E01 (/thong-ke, /thong-bao, /xet-duyet, /yeu-cau không tràn ngang 360 px); `e/m1.spec.js` TC-FR05-E08, `e/m4.spec.js` TC-FR11-E08 (360 px); `playwright.config.js` có hai project desktop + mobile 360 px; W · `src/lib/forms.test.js` (lỗi theo trường), `src/components/dialogs.test.jsx` | **KHÔNG CÓ** test tự động cho "toàn bộ tiếng Việt" (kiểm bằng review). Safari/iOS thật: không có | T702 |
+| NFR08 Vận hành | I · `a/T201-qa-isolation.test.js` TC-NFR08-01..02, `a/T201-qa-guard-bypass.test.js` TC-NFR08-03..06 (cô lập DB test khỏi dev); `a/T701-openapi.test.js`; S · `a/security/T703a-bao-mat.test.js` › "T703a-3 x-request-id", "T703a-5 Swagger UI"; `a/security/T215.test.js` › "loadEnv ENABLE_SWAGGER"; `a/auth.test.js` › "health trả ok" | "Rà cấu hình từng môi trường" (dev/test/prod tách DB) là thủ công; Swagger tắt ở production thật: `VAN_HANH.md` §6.4 mục 9 | T201, T701, T703a |
+| NFR09 Chất lượng mã | `.github/workflows/ci.yml` (lint + test + `npm run test:coverage`, Node 22.22 và 24); `vitest.config.js` coverage cho `apps/api/src/modules/**` + `packages/shared/src/**` | Ngưỡng ≥ 70% **chưa gắn `thresholds`**, chỉ báo (`reports/T202.md`: lines 88,84% khi đo T202); số đo mới và run CI trên GitHub thật: T708. Chưa có bằng chứng PR chạy CI trên GitHub trong repo | T202, T708 |
+| NFR10 Triển khai | `a/T706b.test.js` (ORIGIN_SECRET, CORS_ORIGIN, LOG_PROXY_HOPS), `w/tests/middleware.test.js` (middleware `/api`) – chỉ kiểm cấu hình ở mức đơn vị | **TOÀN BỘ SAU DEPLOY, KHÔNG CÓ test tự động**: rewrite SPA về `index.html`, pooler Supabase, làm nóng Render trước demo, header bí mật Vercel → Render, số hop `trust proxy`. Checklist `VAN_HANH.md` §6.4 (9 mục) – **chưa có số đo thật**; mục "Kết quả đo thật" của `reports/T706a.md` còn trống | T706a, T706b |
+
+### 3.1 Các số đo/kiểm chỉ làm được sau deploy (tổng hợp)
+`VAN_HANH.md` §6.4 mục 1–9 (header `x-middleware-*` rỗng, chặn gọi thẳng Render, **số hop → `trust proxy`**, tắt Data API, cron qua Vercel, **nhập CSV 2.000 dòng vs timeout proxy**, tách role, header bảo mật, Swagger tắt); p95 NFR04 trên hạ tầng thật; cookie Chrome/Safari (NFR01); sao lưu hằng ngày + biên bản diễn tập khôi phục (FR26); chạy thật `reminders.yml`/`similarity-recheck.yml` (FR13, G5). **MAJOR T703c mục 3 chỉ đóng khi §6.4 có số đo thật**; mã `LOG_PROXY_HOPS` gỡ sau khi đo.
+
+## 4. Mục chưa có test tự động (tóm tắt cho T708)
+1. E2E: FR09, FR10, FR18, FR19, FR20, FR22, FR23, FR24 (tải tài liệu), FR04; job similarity-recheck; hồ sơ mang cờ G5 ở `SubmitPage`. Các FR này vẫn có integration + test component (bảng trên).
+2. FR26 (chạy workflow thật, diễn tập khôi phục), NFR10, "tiếng Việt toàn bộ" (NFR07), Safari (NFR01), Data API anon key (NFR03): sau deploy/thủ công.
+3. TC-FR06-93 chưa assert recall; điểm tên trong V là mô phỏng JS.
+4. ID `TC-FR14-E01/E02` trùng giữa API và E2E.
+
+## 5. Ghi chú cho báo cáo khoa học (M5 / FR06)
+Khi trích số liệu `reports/T705.md` (122 cặp; ngưỡng hiện tại Cần xem xét: P 92,9% R 92,9%; Nghi trùng cao: P 100% R 92,9%) phải nêu các hạn chế:
+1. **Điểm tên là trigram cài bằng JS**, mô phỏng `pg_trgm` có bỏ dấu của engine, **không phải `similarity()` thật của PostgreSQL**; chênh lệch nhỏ có thể có. Phép đo không dùng DB. Chưa đo lại trên pg_trgm thật. (MINOR 3 `reviews/T705-reviewer-v1.md`)
+2. **Bộ dữ liệu do một người soạn và gán nhãn**, chưa có người thứ hai chéo kiểm (không tính được độ đồng thuận như Cohen's kappa). Nhãn 1 là "theo cấu tạo" (cặp được tạo chủ đích là biến thể của cùng đề tài), 30 đề tài gốc tự soạn, nên recall **lạc quan** hơn đề tài sinh viên thực tế (thường chỉ trùng ý). Khuyến nghị: bổ sung cặp thật từ kho NCKH cũ của khoa, ≥ 2 cán bộ gán nhãn.
+3. **Kết luận "giữ nguyên ngưỡng" là sơ bộ**: dựa trên bộ nhỏ, một người gán nhãn, điểm tên mô phỏng. Không dùng làm khẳng định ngưỡng tối ưu; ngưỡng nằm trong cấu hình đợt (FR04) nên khoa chỉnh được.
+4. Giới hạn đã biết của TF-IDF: 4 FN (P053–P056, nhóm "khác từ ngữ hoàn toàn") không bắt được; hướng phát triển là embedding (đặc tả mục 3).
+5. Recall ≥ 80% hiện chỉ được in khi chạy tay `npm run eval:fr06`, chưa là assert tự động (xem bước B).
+
+## Lệnh grep đã dùng (bằng chứng)
+```
+Glob  **/*.{test,spec}.{js,jsx}  (bỏ node_modules)          -> danh sách file test
+Grep  TC-[A-Z0-9]+-[0-9A-Za-z-]+  apps/**/*.{js,jsx} (-o)    -> mọi ID TC- (109 lần ở 15 file)
+Grep  ^\s*describe(\.\w+)?\(  apps/api/tests, packages/shared/src, apps/web/src
+Grep  ^\s*(describe|test)(\.\w+)?\(  apps/web/tests, apps/web/e2e
+Grep  ^\s*it\(  apps/api/tests/auth.test.js, T205-auth-db.test.js
+Glob  apps/api/prisma/migrations/**, apps/api/prisma/sql/*, .github/workflows/*
+```

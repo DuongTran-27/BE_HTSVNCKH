@@ -38,6 +38,7 @@ Mọi quy ước của `API_GD2.md` §1 (đường dẫn, middleware, định d�
 | `formerMemberWindows` | Danh sách `[joinedAt, leftAt)` của các dòng `TopicMember` của me có `leftAt IS NOT NULL` | Chỉ các phiên bản trong khoảng (§5.4) |
 
 - `canView` (= quyền `GET /api/topics/:id`) thêm `isFormerAdvisorReader || isChangeTarget`.
+- **Chấp nhận (m1 `reviews/T601-bao-mat-v1.md`)**: vì `similarityService` dùng `canView`, GV đích (`isChangeTarget`, stage TARGET) đọc được cả `GET /api/topics/:id/similarity-checks/latest`, không chỉ `GET /api/topics/:id` như bảng trên. Giống tiền lệ `isRequestedLecturer` (GV được đề nghị hướng dẫn cũng xem được kết quả tương tự để quyết định nhận). Không lộ ngoài phạm vi: vai trò LECTURER không bị FR08 che, kết quả FR06 trả theo quy tắc theo vai trò của API_GD2 §14 (test `T214-gd2-flow.test.js` "FR06 đọc kết quả tương tự theo vai trò"). `isChangeTarget` vẫn **không** đọc được snapshot, tiến độ, nhận xét, tài liệu (đã có kiểm 403). Không tách `canView` cho similarity.
 - `canReadExecution` (API_GD45 §1.1) và quyền đọc snapshot (API_GD2 §8.4) thêm `isFormerAdvisorReader`. **Không** thêm `isChangeTarget`.
 - GV cũ **không** được cấp quyền: không có quan hệ nào → 403 ở mọi endpoint (FR19.4 "mất mọi quyền, kể cả quyền đọc"). Người đã rời nhóm: 403 ở mọi endpoint trừ §5.4.
 - Gom 5 bản sao biểu thức `rel.isMember || rel.isCurrentAdvisor || (rel.inStaffScope && status ≠ DRAFT)` (`feedbackService.js:26`, `progressService.js:21`, `execution/service.js:30`, `snapshotService.js:24`, `service.js:105`) về **một** hàm `canReadExecution(t, rel)` export từ `topics/service.js`, rồi thêm `isFormerAdvisorReader` một lần (T601). Không sửa từng nơi.
@@ -169,7 +170,8 @@ Hàng chờ cán bộ = `?status=PENDING&stage=STAFF`.
 | `Advising` | + `readOnlyGranted Boolean @default(false)` (FR19.4) |
 | `User`, `SimilarityCheck` | quan hệ ngược tương ứng |
 
-**SQL thô** (cuối `migration.sql` **và** `after_init.sql`):
+**SQL thô** (chỉ ở cuối `migration.sql` của migration `gd6_change_requests`; **không** ghi vào `prisma/sql/after_init.sql`):
+> Hiện trạng (T707 kiểm `apps/api/prisma/`): `sql/after_init.sql` là bản gốc đóng băng của migration `20261101000100_search_and_security`, test `T203-schema.test.js` chỉ so khớp hai file đó. Từ T203 (README "Index/trigger SQL thô mới") mọi SQL thô mới chỉ nằm trong `migration.sql` mới; `after_init.sql` không được cập nhật và không còn là nguồn của migration nào sau đó (đã xác nhận: `change_request_*`, `submission_guard`, `SimilarityBypass` chỉ có trong `migrations/2026110[68]*`).
 ```sql
 -- Một yêu cầu đang chờ mỗi loại mỗi đề tài; LEAVE_GROUP: mỗi người rời
 CREATE UNIQUE INDEX change_request_one_pending ON "ChangeRequest"
@@ -525,7 +527,8 @@ Lịch: `.github/workflows/similarity-recheck.yml`, `schedule: '15 * * * *'` (m�
 Hiển thị:
 - `SimilarityCheckView` thêm `justificationMissing: boolean` = `status = OK && level = HIGH && countWords(justification) < minJustificationWords` (ca chạy lại ra HIGH khi SV chưa giải trình; cán bộ thấy cảnh báo đỏ kèm nhãn "Chưa có giải trình").
 - `GET /api/topics/:id/submissions` item thêm `similarityStatus: 'OK' | 'ERROR' | null`, `unchecked: boolean`; `similarityLevel` = `null` khi `unchecked`.
-- `GET /api/topics/:id/submissions/:seq` thêm `submission.unchecked`, `submission.similarityBypass: { reason, grantedBy: { fullName }, createdAt } | null` (từ `payload.similarityBypassId`; chỉ STAFF và thành viên thấy `reason`, GV thấy `null` cho `reason`).
+- `GET /api/topics/:id/submissions/:seq` thêm `submission.unchecked`, `submission.similarityBypass: { reason, grantedBy: { fullName }, createdAt } | null` (từ `payload.similarityBypassId`). **`reason` (quyết định G46, T707, thay quy tắc cũ "GV thấy `null`")**: trả `reason` khi người xem có **quan hệ hiện hành** với đề tài: `isMember || isCurrentAdvisor || inStaffScope` (đúng điều kiện của `TopicDetail.similarityBypass`, §9.3); người chỉ có quyền đọc lịch sử (`isFormerAdvisorReader`, người đã rời nhóm đọc theo khoảng §5.4) nhận `reason: null`, vẫn thấy `grantedBy.fullName` và `createdAt`.
+- **Người đã rời nhóm (FR21) và G5 (quyết định G47, T707, đóng câu hỏi §9.5 của `reviews/T607b-reviewer-v1.md`)**: `GET /api/me/past-topics` (danh sách `/lich-su-tham-gia`) **không** thêm cờ G5, không đổi hợp đồng (item chỉ là mục lục: `topicId, code, title, windows, submissionCount, documentCount`). Cờ nằm ở từng lần gửi: `GET /api/topics/:id/submissions` (đã lọc theo khoảng thời gian) trả sẵn `unchecked`, `similarityStatus` cho người đã rời, nên `PastTopicDetailPage` phải hiển thị cờ bằng đúng quy tắc của `SubmissionHistoryPage` (`SimilarityLevelCell`: ERROR/`unchecked` → "Chưa kiểm tra được" + cờ "Gửi khi chưa kiểm tra"; không bao giờ "Không trùng"). Màn `SubmissionPage` đã hiển thị cờ và người cho phép.
 - `TopicDetail.latestSubmission.unchecked: boolean`.
 
 ### 9.6 `latestSimilarityStatus` trong item danh sách (`GET /api/topics`)
@@ -552,7 +555,7 @@ END $$;
 CREATE OR REPLACE TRIGGER submission_immutable BEFORE UPDATE OR DELETE ON "Submission"
   FOR EACH ROW EXECUTE FUNCTION submission_guard();
 ```
-(PostgreSQL ≥ 14 có `CREATE OR REPLACE TRIGGER`; test và Supabase đều 16.) Ghi vào cả `migration.sql` và `after_init.sql`.
+(PostgreSQL ≥ 14 có `CREATE OR REPLACE TRIGGER`; test và Supabase đều 16.) Chỉ ghi vào `migration.sql` của migration `g5_similarity_bypass` (`20261108000000_g5_similarity_bypass`); **không** ghi `after_init.sql` (xem ghi chú ở §2.6). Hàm `submission_guard` được `20261108000100_t703b_submission_guard_hash` thay bằng bản so thêm `contentHash` của payload (m1 `reviews/T609-bao-mat-v1.md`); bản trong khối trên là bản gốc T609.
 
 ### 9.8 Test bắt buộc (T609)
 | # | Ca | Kỳ vọng |
@@ -574,7 +577,9 @@ CREATE OR REPLACE TRIGGER submission_immutable BEFORE UPDATE OR DELETE ON "Submi
 Vấn đề: đề tài ở HAS_ADVISOR không sửa được hồ sơ (FR05, G1) và `SUBMIT_FOR_REVIEW` kiểm `topicSubmitSchema(cfg hiện tại)`. Nếu cán bộ tăng `minSummaryWords`/`minKeywords` hoặc giảm `maxKeywords`, đề tài đó **kẹt vĩnh viễn** (không sửa, không gửi, không có đường về Nháp).
 
 Quyết định (G45): **chặn ở `PATCH /api/rounds/:id`** (API_GD2 §4.3).
-- Khi `config` gửi lên làm đổi `minSummaryWords`, `minKeywords` hoặc `maxKeywords` của cấu hình hiệu lực: tìm các đề tài của đợt ở `WAITING_ADVISOR` hoặc `HAS_ADVISOR` (WAITING_ADVISOR gồm vì GV có thể nhận ngay sau đó) **không đạt** `topicSubmitSchema(cấu hình mới)`.
+- Khi `config` gửi lên làm đổi `minSummaryWords`, `minKeywords` hoặc `maxKeywords` của cấu hình hiệu lực: tìm các đề tài của đợt ở `WAITING_ADVISOR` hoặc `HAS_ADVISOR` (WAITING_ADVISOR gồm vì GV có thể nhận ngay sau đó) mà **đạt `topicSubmitSchema(cấu hình cũ)` nhưng không đạt `topicSubmitSchema(cấu hình mới)`** – tức chỉ đề tài *trở nên* không đạt vì chính thay đổi này (làm rõ T707 theo `reports/T605.md` và `reviews/T605-reviewer-v1.md`; hiện thực `rounds/service.js` `assertNoStuckTopics`: `passes(oldCfg, t) && !passes(newCfg, t)`).
+  - Đề tài **đã không đạt từ trước** (chỉ có thể do seed/sửa DB trực tiếp: trên luồng thật mọi đề tài vào hai trạng thái này đã qua `assertTopicComplete` ở `REQUEST_ADVISOR`) **không** được tính vào `details.codes`/`total` và **không** chặn. Lý do: nếu tính, một đề tài kẹt sẵn sẽ chặn luôn cả việc cán bộ *nới* tham số để gỡ kẹt cho nó. Hệ quả chấp nhận: đề tài kẹt sẵn không được cảnh báo ở lần PATCH này (nó hiện ở widget "đề tài kẹt", BUG-012).
+  - Nới tham số (cấu hình mới dễ hơn cũ) không bao giờ làm đề tài nào "trở nên không đạt" nên luôn qua.
 - Có ít nhất một → 409 `ROUND_CONFIG_BLOCKS_TOPICS` "Thay đổi này làm N đề tài đang chờ/đã có GVHD không còn đủ điều kiện gửi xét duyệt mà nhóm không sửa được hồ sơ", `details: { codes: [mã đề tài, tối đa 50], total: N }`. Không ghi gì.
 - Các trạng thái khác không bị chặn: DRAFT, NEEDS_REVISION sửa được; UNDER_REVIEW được cán bộ yêu cầu chỉnh sửa hoặc duyệt; IN_PROGRESS dùng FR18 (đã kiểm theo cấu hình hiện tại, §6.2).
 - Không có cờ "bỏ qua": muốn tăng tham số thì cán bộ chờ các đề tài đó gửi xong, hoặc chỉ áp cho đợt sau. Đúng nguyên tắc "không hồi tố" của API_GD2 §4.3.
@@ -668,7 +673,9 @@ Kèm các MINOR FE đã gom vào T607 trên bảng việc (không thuộc hợp 
 | G42 | Mở lại mốc chỉ ở IN_PROGRESS, không tự đổi hạn; GV gia hạn riêng | FR22 chỉ đòi lý do + về Cần bổ sung; đổi hạn đã có lịch sử riêng (FR09) |
 | G43 | FR23 chỉ khi CLOSED; nhận xét tổng kết giữ nguyên nếu không gửi; kết quả mới phải khác | FR27.4 "sau khi đóng, kết quả chỉ sửa qua FR23"; trước đó GV nhập lại phiên bản mới (API_GD45 §6.4) |
 | G44 | Quyền "gửi khi chưa kiểm tra" do cán bộ cấp áp cho **đúng một** lần gửi kế tiếp; chỉ cấp khi lần kiểm gần nhất lỗi; tự chạy lại mỗi giờ; kết quả chạy lại HIGH mà chưa có giải trình chỉ hiện cảnh báo cho cán bộ (không chặn vì đã gửi). **Câu hỏi `CAU_HOI.md` #12** | Mục 3 "nếu lỗi kéo dài, cán bộ có thể cho phép"; một lần dùng giới hạn rủi ro bỏ qua FR06 |
-| G45 | Chặn `PATCH` đợt khi đổi tham số hồ sơ làm đề tài WAITING_ADVISOR/HAS_ADVISOR không còn đạt; không có cờ bỏ qua | INFO 12; giữ "không hồi tố" (API_GD2 §4.3) mà không mở đường sửa hồ sơ ở HAS_ADVISOR (G1) |
+| G45 | Chặn `PATCH` đợt khi đổi tham số hồ sơ làm đề tài WAITING_ADVISOR/HAS_ADVISOR **trở nên** không đạt (đạt cấu hình cũ, không đạt cấu hình mới); đề tài đã không đạt từ trước không bị tính; không có cờ bỏ qua | INFO 12; giữ "không hồi tố" (API_GD2 §4.3) mà không mở đường sửa hồ sơ ở HAS_ADVISOR (G1). Làm rõ T707: đọc nghĩa đen "không đạt cấu hình mới" sẽ để đề tài kẹt sẵn chặn việc nới tham số |
+| G46 | `reason` của quyền cho phép G5 (`SimilarityBypass.reason`) hiện cho người có quan hệ hiện hành (`isMember`, `isCurrentAdvisor`, `inStaffScope`) ở **cả** `TopicDetail` và snapshot; người chỉ đọc lịch sử (GV cũ được cấp quyền đọc, SV đã rời) nhận `null` ở snapshot | Đặc tả không quy định. Lý do là ghi chú vận hành của cán bộ (sự cố FR06), không phải dữ liệu cá nhân hay của đề tài khác (không thuộc FR08/FR06 che). GVHD hiện hành đã thấy ở TopicDetail nên ẩn ở snapshot chỉ gây không nhất quán, không tăng bảo mật. Quyền tối thiểu cho người chỉ đọc lịch sử. Phương án khác: ẩn với mọi GV ở cả hai chỗ (chặt hơn nhưng GVHD không biết vì sao hồ sơ mang cờ). m2 `reviews/T609-bao-mat-v1.md` |
+| G47 | Cờ G5 cho người đã rời nhóm chỉ ở mức từng lần gửi (danh sách submissions/snapshot), không ở danh sách `/lich-su-tham-gia` | §9.5 không yêu cầu; danh sách past-topics là mục lục, thêm cờ cần đổi hợp đồng + truy vấn mà không có giá trị nghiệp vụ; nơi cờ có nghĩa là từng snapshot đã hiển thị |
 
 ## 14. Ngoài phạm vi GĐ6
 Hủy ở trạng thái khác IN_PROGRESS (cần dòng `TRANSITIONS` mới – không làm), cán bộ chủ động chạy lại FR06 cho một snapshot (dùng `workflow_dispatch` của §9.5), thông báo email, Swagger (T701 sinh từ schema §2.7).
