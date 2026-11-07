@@ -60,11 +60,11 @@ export const createTopicRepo = (prisma) => ({
   },
 
   // Tạo nháp + trưởng nhóm + AuditLog trong một transaction; mã lấy từ sequence (FR05)
-  create: ({ round, userId, data }, buildAudit) =>
+  create: ({ round, userId, data, joinedAt }, buildAudit) =>
     prisma.$transaction(async (tx) => {
       const code = await nextTopicCode(tx, round.academicYear);
       const topic = await tx.topic.create({
-        data: { ...data, code, roundId: round.id, facultyId: round.facultyId, status: 'DRAFT', members: { create: { userId, role: 'LEADER' } } },
+        data: { ...data, code, roundId: round.id, facultyId: round.facultyId, status: 'DRAFT', members: { create: { userId, role: 'LEADER', joinedAt } } },
       });
       await recordAudit(tx, buildAudit(topic));
       return topic.id;

@@ -51,6 +51,8 @@ export async function runCleanup({ prisma, storage, folder, storageFiles, apply 
     const n = r.storageOrphans.length;
     const overDefault = n > MAX_AUTO_DELETE || n > files.length * MAX_AUTO_RATIO;
     if (maxDelete == null ? overDefault : n > maxDelete) {
+      // In danh sách để người vận hành đọc trước khi chép --max-delete (MINOR 2 reviews/T403-bao-mat-v2.md)
+      r.storageOrphans.forEach((f) => log(`  mồ côi (chưa xóa): ${f.publicId}`));
       throw new Error(`TỪ CHỐI xóa ${n}/${files.length} file mồ côi (vượt ngưỡng an toàn). Kiểm tra DB và CLOUDINARY_FOLDER có khớp nhau; nếu đúng, chạy lại với --max-delete=${n}. Không xóa gì.`);
     }
     for (const f of r.storageOrphans) {

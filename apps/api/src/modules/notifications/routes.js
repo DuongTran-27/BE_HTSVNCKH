@@ -44,7 +44,11 @@ export const requireCronSecret = (secret) => (req, _res, next) => {
 export const cronRouter = ({ repo, env, now, logger }) => {
   const reminders = createReminderService({ repo, now, logger });
   const rechecks = createSimilarityRecheckService({ repo, now, logger });
-  const r = businessRouter([createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'ip' }), requireCronSecret(env.CRON_SECRET)]);
+  // Hạn mức riêng mỗi tác vụ (m4 reviews/T609-bao-mat-v1.md): curl --retry của tác vụ này không đốt hạn mức tác vụ kia
+  const mkLimiter = () => createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'ip' });
+  const limiters = { '/similarity-rechecks': mkLimiter() };
+  const fallback = mkLimiter(); // /reminders và đường dẫn lạ
+  const r = businessRouter([(req, res, next) => (limiters[req.path] ?? fallback)(req, res, next), requireCronSecret(env.CRON_SECRET)]);
   r.post('/reminders', async (_req, res) => {
     const out = await reminders.run();
     res.set('Cache-Control', 'no-store').json(out);

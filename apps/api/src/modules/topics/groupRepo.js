@@ -25,7 +25,7 @@ export const groupOps = (db) => ({
   // Cập nhật có điều kiện PENDING (§5.3): count 1 = bên này thắng
   closeInvitation: async (id, status, respondedAt) =>
     (await db.invitation.updateMany({ where: { id, status: 'PENDING' }, data: { status, respondedAt } })).count === 1,
-  addMember: (topicId, userId) => db.topicMember.create({ data: { topicId, userId, role: 'MEMBER' } }),
+  addMember: (topicId, userId, joinedAt) => db.topicMember.create({ data: { topicId, userId, role: 'MEMBER', joinedAt } }),
   // Đổi LEADER cũ -> MEMBER TRƯỚC, đích -> LEADER SAU (partial unique index không deferrable)
   setLeader: async (topicId, oldId, newId) => {
     await db.topicMember.updateMany({ where: { topicId, userId: oldId, ...LIVE }, data: { role: 'MEMBER' } });

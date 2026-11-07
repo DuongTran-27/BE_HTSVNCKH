@@ -28,9 +28,9 @@ export const createStatsService = ({ repo }) => {
   const computeStats = async (user, q) => {
     const raw = await repo.groupTopics(q.groupBy, scopeOf(user, q), q);
     const rows = raw.map((r) => ({ key: r.key ?? null, label: labelOf(q.groupBy, r.key ?? null, r.name), count: r.count }))
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'vi'))
-      .slice(0, MAX_ROWS);
-    return { groupBy: q.groupBy, total: rows.reduce((s, r) => s + r.count, 0), rows };
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'vi'));
+    // §9: total = số đề tài khớp bộ lọc, nên tính trước khi cắt MAX_ROWS
+    return { groupBy: q.groupBy, total: rows.reduce((s, r) => s + r.count, 0), rows: rows.slice(0, MAX_ROWS) };
   };
 
   return {

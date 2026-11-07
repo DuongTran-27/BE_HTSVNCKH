@@ -10,6 +10,7 @@ import { signAccessToken } from '../src/lib/tokens.js';
 import { fakeHasher, testEnv } from './helpers.js';
 import { checkTransition } from '../src/modules/topics/stateMachine.js';
 import { activeBypassOf, justificationMissing } from '../src/modules/similarity/service.js';
+import { contentHash } from '../src/modules/similarity/engine.js';
 
 const SECRET = 'cron-secret-t609-0123456789abcdef';
 const mkApp = (repo = {}, env = {}) => createApp({ env: { ...testEnv, CRON_SECRET: SECRET, ...env }, logger: undefined, authRepo: createAuthRepo(prisma), hasher: fakeHasher, topicRepo: { ...createTopicRepo(prisma), ...repo } });
@@ -304,11 +305,13 @@ describe('§9.7 – trigger submission_immutable chỉ nới similarityCheckId (
 
   it('các cột khác, DELETE, ERROR → ERROR, ERROR → NULL, OK đề tài khác, OK cũ hơn, OK của ChangeRequest: DB từ chối; dữ liệu không đổi', async () => {
     const { t, s, leader } = await mkSub('ERROR');
-    const okOther = await mkCheck((await mkReady()).t.id);
-    const okNew = await mkCheck(t.id);
+    // contentHash khớp payload của s: mỗi ca chỉ còn đỏ vì đúng điều kiện cần kiểm (topicId / createdAt / ChangeRequest)
+    const h = contentHash({ title: t.title, keywords: [] });
+    const okOther = await mkCheck((await mkReady()).t.id, 'OK', { contentHash: h });
+    const okNew = await mkCheck(t.id, 'OK', { contentHash: h });
     const errNew = await mkCheck(t.id, 'ERROR');
-    const okOld = await mkCheck(t.id, 'OK', { createdAt: new Date(s.createdAt.getTime() - 1000) });
-    const crCheck = await mkCheck(t.id);
+    const okOld = await mkCheck(t.id, 'OK', { createdAt: new Date(s.createdAt.getTime() - 1000), contentHash: h });
+    const crCheck = await mkCheck(t.id, 'OK', { contentHash: h });
     await prisma.changeRequest.create({ data: { topicId: t.id, type: 'TOPIC_CHANGE', payload: {}, reason: 'Đổi tên đề tài', createdById: U[leader].id, similarityCheckId: crCheck.id } });
     const tries = [
       () => prisma.$executeRaw`UPDATE "Submission" SET seq = 9 WHERE id = ${s.id}`,
@@ -329,15 +332,17 @@ describe('§9.7 – trigger submission_immutable chỉ nới similarityCheckId (
 
   it('ERROR → OK mới cùng đề tài: được, đúng một lần (OK → OK khác bị từ chối); NULL → OK: được', async () => {
     const { t, s } = await mkSub('ERROR');
-    const ok1 = await mkCheck(t.id);
+    // T703b: dòng OK phải kiểm đúng nội dung đã gửi (submission_guard so contentHash với payload)
+    const hashOf = (x) => contentHash({ title: x.title, keywords: [] });
+    const ok1 = await mkCheck(t.id, 'OK', { contentHash: hashOf(t) });
     expect(await setCheck(s.id, ok1.id)).toBe(1);
     const after = await prisma.submission.findUnique({ where: { id: s.id } });
     expect(after).toEqual({ ...s, similarityCheckId: ok1.id });
-    await expect(setCheck(s.id, (await mkCheck(t.id)).id)).rejects.toThrow(/Chỉ được thay kết quả FR06 lỗi/);
+    await expect(setCheck(s.id, (await mkCheck(t.id, 'OK', { contentHash: hashOf(t) })).id)).rejects.toThrow(/Chỉ được thay kết quả FR06 lỗi/);
     await expect(prisma.$executeRaw`DELETE FROM "Submission" WHERE id = ${s.id}`).rejects.toThrow(/chỉ cho phép thêm mới/);
 
     const n0 = await mkSub(null);
-    expect(await setCheck(n0.s.id, (await mkCheck(n0.t.id)).id)).toBe(1);
+    expect(await setCheck(n0.s.id, (await mkCheck(n0.t.id, 'OK', { contentHash: hashOf(n0.t) })).id)).toBe(1);
   });
 
   it('SimilarityBypass chỉ thêm: UPDATE, DELETE bị từ chối', async () => {

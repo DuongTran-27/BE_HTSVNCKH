@@ -184,7 +184,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
       if (round.facultyId !== user.facultyId) throw forbidden();
       if (now() >= round.regCloseAt) throw conflict('REGISTRATION_CLOSED', 'Ngoài thời gian đăng ký của đợt');
       const fieldId = await checkContent(body, effectiveRoundConfig(round.config));
-      const id = await repo.create({ round, userId: user.id, data: content(body, fieldId) }, (t) => ({
+      const id = await repo.create({ round, userId: user.id, data: content(body, fieldId), joinedAt: now() }, (t) => ({
         actorId: user.id, action: 'TOPIC_CREATE', entityType: 'Topic', entityId: t.id,
         before: null, after: { code: t.code, roundId: round.id, ...topicSnapshot(t) }, ip,
       }));

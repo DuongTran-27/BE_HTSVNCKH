@@ -29,7 +29,9 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
       // Thông báo chung, không tiết lộ tài khoản có tồn tại hay không
       const generic = unauthorized('Mã/email hoặc mật khẩu không đúng');
       if (!user) {
-        await hasher.verify(await (dummyHash ??= hasher.hash(newOpaqueToken())), password);
+        // Băm lỗi thì bỏ cache để lần sau thử lại, không 500 vĩnh viễn
+        dummyHash ??= hasher.hash(newOpaqueToken()).catch((e) => { dummyHash = undefined; throw e; });
+        await hasher.verify(await dummyHash, password);
         throw generic;
       }
       if (user.isLocked) throw new AppError(403, 'ACCOUNT_LOCKED', 'Tài khoản đã bị khóa');

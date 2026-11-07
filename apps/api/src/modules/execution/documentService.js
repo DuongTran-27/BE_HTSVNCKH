@@ -124,11 +124,12 @@ export const createDocumentService = ({ repo, storage, folder, now = () => new D
       if (!can) throw forbidden();
       const rel = relations(t, user);
       const full = canReadExecution(t, rel) || (rel.isRequestedLecturer && q.stage === 'PROPOSAL');
-      const rows = await repo.listDocuments(topicId, q);
+      // Lọc khoảng trước khi tính isLatest: người đã rời không biết có bản mới hơn (m2 reviews/T603-bao-mat-v1.md)
+      const rows = (await repo.listDocuments(topicId, q)).filter((d) => full || can(d.uploadedAt));
       const key = (d) => `${d.milestoneId ?? ''}|${d.milestoneId ? '' : d.stage}`;
       const max = new Map();
       for (const d of rows) max.set(key(d), Math.max(max.get(key(d)) ?? 0, d.version));
-      const items = rows.filter((d) => full || can(d.uploadedAt))
+      const items = rows
         .map((d) => ({ ...presentDocument(d, d.version === max.get(key(d))), ...(!full && { feedbackCount: null }) })) // người đã rời: không lộ nhận xét
         .filter((d) => (!q.stage || d.stage === q.stage) && (q.latestOnly !== 'true' || d.isLatest)); // isLatest tính trên cả chuỗi trước khi lọc stage
       return { items };

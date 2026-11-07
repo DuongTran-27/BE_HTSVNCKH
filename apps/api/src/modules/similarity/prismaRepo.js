@@ -52,7 +52,9 @@ export const createSimilarityRepo = (prisma) => ({
   findUncheckedSubmissions: async (limit) => {
     const ids = await prisma.$queryRaw`
       SELECT s.id FROM "Submission" s LEFT JOIN "SimilarityCheck" c ON c.id = s."similarityCheckId"
-      WHERE c.id IS NULL OR c.status <> 'OK' ORDER BY random() LIMIT ${limit}`;
+      JOIN "Topic" t ON t.id = s."topicId"
+      WHERE (c.id IS NULL OR c.status <> 'OK') AND t.status NOT IN ('CLOSED', 'CANCELLED', 'REJECTED') -- m3: đề tài đã kết thúc, chạy lại vô ích
+      ORDER BY random() LIMIT ${limit}`;
     return prisma.submission.findMany({
       where: { id: { in: ids.map((r) => r.id) } },
       include: { similarityCheck: { select: { justification: true } }, topic: { select: { roundId: true, round: { select: { config: true } } } } },

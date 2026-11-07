@@ -92,7 +92,7 @@ export const createGroupService = ({ repo, getTopic, now = () => new Date() }) =
         if ((await o.countActiveTopics(user.id, g.round.id, pre.topicId)) >= cfg.maxActiveTopicsPerStudent) {
           throw conflict('STUDENT_TOPIC_LIMIT', 'Sinh viên đã đạt số đề tài hoạt động tối đa trong đợt', { codes: [user.code] });
         }
-        await o.addMember(pre.topicId, user.id);
+        await o.addMember(pre.topicId, user.id, now()); // cùng nguồn giờ với leftAt (m3 reviews/T603-bao-mat-v1.md)
         await o.audit({ actorId: user.id, action: 'INVITATION_ACCEPT', entityType: 'Invitation', entityId: id, before: { status: 'PENDING' }, after: { status: 'ACCEPTED', topicId: pre.topicId }, ip });
         await o.notify({ topicId: pre.topicId, to: ['leader'], actorId: user.id, type: 'INVITATION_ACCEPTED', key: `INVITATION_ACCEPTED:${id}`, link: `/de-tai/${pre.topicId}/nhom`, title: (x) => `${user.fullName} đã nhận lời mời tham gia đề tài ${topicName(x)}` });
       });

@@ -1,6 +1,7 @@
 // Xuất CSV cho Excel: UTF-8 có BOM + chống CSV injection (FR14).
 const BOM = '\uFEFF';
-const DANGEROUS = /^[=+\-@\t\r]/;
+// Kể cả khoảng trắng đầu ô và dạng toàn chiều rộng (＝＋－＠) mà Excel/LibreOffice có thể chuẩn hóa thành công thức
+const DANGEROUS = /^(?:[\t\r]|\s*[=+\-@＝＋－＠])/;
 
 export const escapeCell = (value) => {
   if (value === null || value === undefined) return '';
