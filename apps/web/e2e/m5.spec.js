@@ -1,17 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { STATE_FILE } from './env.js';
+import { data, login } from './helpers.js';
 
 // E2E GĐ5 (T505, FR13, FR14): dashboard lọc -> bảng -> CSV khớp bảng; chuông chưa đọc -> đánh dấu đã đọc.
-const S = JSON.parse(readFileSync(STATE_FILE, 'utf8'));
-
-async function login(page, code) {
-  await page.goto('/dang-nhap');
-  await page.getByLabel('Mã hoặc email').fill(code);
-  await page.getByLabel('Mật khẩu').fill(S.password);
-  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-  await expect(page).not.toHaveURL(/dang-nhap/);
-}
 
 // parse CSV tối giản (bỏ BOM, ô có thể đặt trong "...")
 const parse = (text) => text.replace(new RegExp('^\uFEFF'), '').trim().split(/\r?\n/).map((l) => [...l.matchAll(/"((?:[^"]|"")*)"|([^,]+)/g)].map((m) => (m[1] ?? m[2]).replaceAll('""', '"')));
@@ -22,6 +13,7 @@ async function tableRows(page) {
 
 test.describe('M4 dashboard và CSV', () => {
   test('TC-FR14-E01 STAFF lọc dashboard, bảng có số, CSV tải về có BOM và khớp từng dòng + tổng', async ({ page }) => {
+    const S = data();
     await login(page, S.users.cb.code);
     await page.goto('/thong-ke');
     await expect(page.getByRole('heading', { name: 'Thống kê' })).toBeVisible();
@@ -42,6 +34,7 @@ test.describe('M4 dashboard và CSV', () => {
   });
 
   test('TC-FR14-E02 lọc theo trạng thái Đã đóng: bảng chỉ còn một nhóm, tổng đổi và CSV vẫn khớp', async ({ page }) => {
+    const S = data();
     await login(page, S.users.cb.code);
     await page.goto('/thong-ke?groupBy=status');
     const all = Number((await page.locator('table tfoot td').textContent()).trim());
@@ -58,6 +51,7 @@ test.describe('M4 dashboard và CSV', () => {
   });
 
   test('TC-FR25-E03 SV không có menu Thống kê và vào /thong-ke không thấy dữ liệu', async ({ page }) => {
+    const S = data();
     await login(page, S.bell.sv.code);
     await expect(page.getByRole('link', { name: 'Thống kê' })).toHaveCount(0);
     await page.goto('/thong-ke');
@@ -67,6 +61,7 @@ test.describe('M4 dashboard và CSV', () => {
 
 test.describe('M2 chuông thông báo', () => {
   test('TC-FR13-E04 chuông hiện số chưa đọc; đánh dấu một thông báo giảm số; đánh dấu tất cả về 0', async ({ page }) => {
+    const S = data();
     await login(page, S.bell.sv.code);
     const bell = (n) => page.getByRole('link', { name: n ? `Thông báo, ${n} chưa đọc` : 'Thông báo', exact: true });
     await expect(bell(S.bell.unread)).toBeVisible();

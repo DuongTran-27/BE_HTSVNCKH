@@ -1,25 +1,16 @@
 import { Buffer } from 'node:buffer';
-import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { STATE_FILE } from './env.js';
+import { data, login } from './helpers.js';
 
 // E2E GĐ4 (M2, M3): nộp mốc -> nộp muộn -> nhận xét + đánh giá -> kết quả cuối -> đề nghị đóng -> xác nhận đóng.
 // Kho file là bản giả trong bộ nhớ của API (server.js khi không có CLOUDINARY_URL), không gọi Cloudinary thật.
-const S = JSON.parse(readFileSync(STATE_FILE, 'utf8'));
-const { flow, neg } = S.exec;
+// Dùng chung tài khoản gv, cb với m1.spec.js (cùng bộ dữ liệu của project); không spec nào đổi mật khẩu/khóa hai tài khoản này
+// (MINOR 1 reviews/T407-reviewer-v1.md). Đề tài flow/neg và SV4/SV5 chỉ spec này dùng.
 const M_ONTIME = 'Báo cáo giữa kỳ E2E';
 const M_LATE = 'Báo cáo cuối kỳ E2E';
 const FILE_ONTIME = 'báo-cáo-giữa-kỳ.pdf';
 const FILE_LATE = 'báo-cáo-cuối-kỳ.pdf';
 const pdf = (name) => ({ name, mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n') });
-
-async function login(page, code) {
-  await page.goto('/dang-nhap');
-  await page.getByLabel('Mã hoặc email').fill(code);
-  await page.getByLabel('Mật khẩu').fill(S.password);
-  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-  await expect(page).not.toHaveURL(/dang-nhap/);
-}
 
 // selectOption chỉ nhận nhãn chuỗi đầy đủ; nhãn mốc có thêm "– hạn …" nên tìm theo tên
 const pickMilestone = async (form, name) => {
@@ -53,6 +44,8 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
   };
 
   test('TC-FR11-E01 SV nộp file cho mốc bắt buộc, đúng hạn không có nhãn nộp muộn', async ({ browser }) => {
+    const S = data();
+    const { flow } = S.exec;
     const page = await pageFor(browser, 'sv', flow.sv.code);
     await submitFile(page, flow.id, M_ONTIME, FILE_ONTIME);
     const g = group(page, M_ONTIME);
@@ -63,6 +56,8 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
   });
 
   test('TC-FR11-E02 nộp sau hạn mốc: bản có nhãn "Nộp muộn"', async ({ browser }) => {
+    const S = data();
+    const { flow } = S.exec;
     const page = await pageFor(browser, 'sv', flow.sv.code);
     await submitFile(page, flow.id, M_LATE, FILE_LATE);
     const g = group(page, M_LATE);
@@ -71,6 +66,8 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
   });
 
   test('TC-FR12-E03 GVHD nhận xét và đánh giá Đạt cho cả hai mốc; SV thấy nhận xét', async ({ browser }) => {
+    const S = data();
+    const { flow } = S.exec;
     const gv = await pageFor(browser, 'gv', S.users.gv.code);
     await gv.goto(`/de-tai/${flow.id}/tai-lieu`);
     for (const [name, text] of [[M_ONTIME, 'Bài làm đạt yêu cầu giữa kỳ.'], [M_LATE, 'Nộp muộn nhưng nội dung đầy đủ.']]) {
@@ -87,6 +84,8 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
   });
 
   test('TC-FR12-E04 GVHD nhập kết quả cuối; điều kiện đóng đủ; SV thấy kết quả ngay nhưng không có nút đóng', async ({ browser }) => {
+    const S = data();
+    const { flow } = S.exec;
     const gv = await pageFor(browser, 'gv', S.users.gv.code);
     await gv.goto(`/de-tai/${flow.id}`);
     await expect(gv.getByText('Mốc bắt buộc: 2/2 Đạt – Đạt')).toBeVisible();
@@ -105,6 +104,8 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
   });
 
   test('TC-FR27-E05 GVHD đề nghị đóng -> Chờ đóng; GV hết quyền ghi; cán bộ xác nhận đóng -> Đã đóng', async ({ browser }) => {
+    const S = data();
+    const { flow } = S.exec;
     const gv = await pageFor(browser, 'gv', S.users.gv.code);
     await gv.goto(`/de-tai/${flow.id}`);
     await gv.getByRole('button', { name: 'Đề nghị đóng đề tài' }).click();
@@ -132,6 +133,8 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
 
 test.describe('M2/M3 ca âm: chưa đủ điều kiện', () => {
   test('TC-FR27-E06 chưa có mốc Đạt và kết quả cuối: đề nghị đóng bị từ chối, đề tài vẫn Đang thực hiện', async ({ browser }) => {
+    const S = data();
+    const { neg } = S.exec;
     const ctx = await browser.newContext();
     try {
       const gv = await ctx.newPage();
@@ -140,7 +143,12 @@ test.describe('M2/M3 ca âm: chưa đủ điều kiện', () => {
       await expect(gv.getByText('Mốc bắt buộc: 0/1 Đạt – Chưa đạt')).toBeVisible();
       await gv.getByRole('button', { name: 'Đề nghị đóng đề tài' }).click();
       const dlg = gv.getByRole('dialog');
-      await dlg.getByRole('button', { name: 'Đề nghị đóng đề tài' }).click();
+      const [res] = await Promise.all([
+        gv.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes(`/api/topics/${neg.id}/`)),
+        dlg.getByRole('button', { name: 'Đề nghị đóng đề tài' }).click(),
+      ]);
+      expect(res.status()).toBe(409); // mã lỗi, không chỉ thông điệp (MINOR 3 reviews/T407-reviewer-v1.md)
+      expect((await res.json()).error.code).toBe('MILESTONES_NOT_PASSED');
       await expect(dlg).toBeVisible(); // hộp không đóng
       await expect(dlg.getByText(/Mốc chưa đạt E2E/)).toBeVisible(); // lỗi MILESTONES_NOT_PASSED kèm tên mốc
       await gv.reload();
@@ -152,6 +160,8 @@ test.describe('M2/M3 ca âm: chưa đủ điều kiện', () => {
   });
 
   test('TC-FR27-E07 cán bộ khoa không có nút xác nhận đóng khi đề tài chưa ở Chờ đóng', async ({ browser }) => {
+    const S = data();
+    const { neg } = S.exec;
     const ctx = await browser.newContext();
     try {
       const cb = await ctx.newPage();
@@ -168,6 +178,8 @@ test.describe('M2/M3 ca âm: chưa đủ điều kiện', () => {
 test.describe('M2 viewport 360 px', () => {
   test.use({ viewport: { width: 360, height: 740 } });
   test('TC-FR11-E08 SV nộp file ở 360 px: không tràn ngang, nút Nộp cao >= 44 px, nộp được', async ({ page }) => {
+    const S = data();
+    const { neg } = S.exec;
     await login(page, neg.sv.code);
     await page.goto(`/de-tai/${neg.id}/tai-lieu`);
     const form = page.getByRole('form', { name: 'Nộp tài liệu' });

@@ -1,17 +1,8 @@
-import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { STATE_FILE } from './env.js';
+import { JUSTIFICATION, data, db, login } from './helpers.js';
 
-const S = JSON.parse(readFileSync(STATE_FILE, 'utf8'));
-const JUSTIFICATION = Array.from({ length: 60 }, (_, i) => `từ${i + 1}`).join(' ') + ' nhóm giải trình khác biệt về đối tượng và dữ liệu';
-
-async function login(page, code) {
-  await page.goto('/dang-nhap');
-  await page.getByLabel('Mã hoặc email').fill(code);
-  await page.getByLabel('Mật khẩu').fill(S.password);
-  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-  await expect(page).not.toHaveURL(/dang-nhap/);
-}
+// Mỗi project (desktop/mobile) dùng bộ dữ liệu riêng (helpers.data()). Tài khoản gv, cb dùng chung với m4.spec.js:
+// không spec nào đổi mật khẩu/khóa hai tài khoản này (MINOR 1 reviews/T407-reviewer-v1.md).
 
 test.describe('M1/M5 luồng đầy đủ', () => {
   test.describe.configure({ mode: 'serial' });
@@ -25,10 +16,11 @@ test.describe('M1/M5 luồng đầy đủ', () => {
   };
 
   test('TC-FR05-E01 SV tạo đề tài, soạn hồ sơ, mời thành viên; thành viên chấp nhận (FR03)', async ({ browser }) => {
+    const S = data();
     const page = await pageFor(browser, 'sv1');
     await login(page, S.users.sv1.code);
     await page.getByRole('link', { name: 'Tạo đề tài' }).first().click();
-    await page.getByLabel('Đợt đăng ký').selectOption({ index: 1 });
+    await page.getByLabel('Đợt đăng ký').selectOption({ label: S.roundLabel }); // theo nhãn, không theo thứ tự đợt
     await page.getByLabel(/Tên đề tài/).fill(S.main.title);
     await page.getByRole('button', { name: 'Tạo nháp' }).click();
     await expect(page.getByRole('heading', { name: 'Soạn hồ sơ' })).toBeVisible();
@@ -60,6 +52,7 @@ test.describe('M1/M5 luồng đầy đủ', () => {
   });
 
   test('TC-FR16-E02 SV mời GVHD, GV đăng nhập và nhận', async ({ browser }) => {
+    const S = data();
     const page = await pageFor(browser, 'sv1');
     await page.goto(`/de-tai/${topicId}/moi-gvhd`);
     await page.getByLabel('Tìm giảng viên').fill(S.users.gv.code);
@@ -93,6 +86,7 @@ test.describe('M1/M5 luồng đầy đủ', () => {
   });
 
   test('TC-FR07-E04 Cán bộ mở hàng chờ, xem snapshot + cảnh báo + giải trình, duyệt', async ({ browser }) => {
+    const S = data();
     const page = await pageFor(browser, 'cb');
     await login(page, S.users.cb.code);
     await expect(page).toHaveURL(/xet-duyet/);
@@ -112,16 +106,21 @@ test.describe('M1/M5 luồng đầy đủ', () => {
 
 test.describe('FR08 kho đề tài (API thật)', () => {
   test('TC-FR08-E05 /kho chỉ hiện đề tài đóng đạt, không có FAIL, không lộ thành viên', async ({ page }) => {
+    const S = data();
     await login(page, S.users.sv2.code);
+    // oracle theo đặc tả FR08 (CLOSED + kết quả hiện hành đạt), đọc lúc chạy: spec khác/project khác có thể đóng thêm đề tài
+    const closedOk = await db().topic.findMany({ where: { status: 'CLOSED', results: { some: { isCurrent: true, result: { in: ['EXCELLENT', 'GOOD', 'PASS'] } } } }, select: { code: true, title: true } });
+    expect(closedOk.length).toBeLessThanOrEqual(20); // vừa một trang
     await page.goto('/kho');
-    for (const t of S.closedOk) await expect(page.getByRole('link', { name: `${t.code} – ${t.title}` })).toBeVisible();
-    await expect(page.getByRole('listitem').filter({ hasText: 'NCKH-' })).toHaveCount(S.closedOk.length);
+    for (const t of closedOk) await expect(page.getByRole('link', { name: `${t.code} – ${t.title}` })).toBeVisible();
+    await expect(page.getByRole('listitem').filter({ hasText: 'NCKH-' })).toHaveCount(closedOk.length);
     await expect(page.getByText(S.fail.code)).toHaveCount(0);
     await expect(page.getByText(S.fail.title)).toHaveCount(0);
     for (const n of S.leaderNames) await expect(page.getByText(n)).toHaveCount(0);
   });
 
   test('TC-FR08-E06 /kho/:code đề tài FAIL không có trong kho; đề tài đạt xem được tóm tắt', async ({ page }) => {
+    const S = data();
     await login(page, S.users.gv.code);
     await page.goto(`/kho/${S.fail.code}`);
     await expect(page.getByText('Đề tài không có trong kho')).toBeVisible();
@@ -132,6 +131,7 @@ test.describe('FR08 kho đề tài (API thật)', () => {
   });
 
   test('TC-FR08-E07 ?result=FAIL không đưa đề tài FAIL vào kho; ADMIN xem được; tìm không dấu', async ({ page }) => {
+    const S = data();
     await login(page, S.users.admin.code);
     await page.goto('/kho?result=FAIL');
     await expect(page.getByText(S.fail.title)).toHaveCount(0);
@@ -145,10 +145,11 @@ test.describe('FR08 kho đề tài (API thật)', () => {
 test.describe('R10 trên 360 px', () => {
   test.use({ viewport: { width: 360, height: 740 } });
   test('TC-FR05-E08 màn Gửi xét duyệt không tràn ngang, nút đủ lớn, gửi được', async ({ page }) => {
-    await login(page, 'SVE2E3');
+    const S = data();
+    await login(page, S.users.sv3.code);
     await page.goto(`/de-tai/${S.mobile.id}/gui`);
     await expect(page.getByTestId('similarity-panel')).toHaveAttribute('data-level', 'HIGH');
-    const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(await overflow()).toBeLessThanOrEqual(0);
     await page.getByLabel(/Giải trình/).fill(JUSTIFICATION);
     const send = page.getByRole('button', { name: 'Gửi xét duyệt', exact: true });

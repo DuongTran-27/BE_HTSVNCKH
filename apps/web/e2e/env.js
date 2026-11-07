@@ -9,6 +9,10 @@ export const DB_URL = `postgresql://postgres:postgres@localhost:54329/${DB_NAME}
 export const TEMPLATE_URL = 'postgresql://postgres:postgres@localhost:54329/template1';
 export const OUT_DIR = fileURLToPath(new URL('./.out/', import.meta.url));
 export const STATE_FILE = `${OUT_DIR}state.json`;
+// project Playwright -> tiền tố mã tài khoản của bộ dữ liệu riêng (prepare.js)
+export const DATASETS = { desktop: 'E2E', mobile: 'M36' };
+// chỉ dùng cho E2E gọi /api/cron/similarity-rechecks (G5), không phải bí mật thật
+export const CRON_SECRET = 'e2e-t702-cron-khong-dung-that-0123456789';
 
 export const API_ENV = {
   NODE_ENV: 'development',
@@ -17,4 +21,5 @@ export const API_ENV = {
   DIRECT_URL: DB_URL,
   JWT_ACCESS_SECRET: 'e2e-t309-secret-khong-dung-that-0123456789',
   CORS_ORIGIN: `http://localhost:${WEB_PORT}`,
+  CRON_SECRET,
 };

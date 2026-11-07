@@ -13,7 +13,11 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
   use: { baseURL: `http://localhost:${WEB_PORT}`, locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh', trace: 'retain-on-failure' },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // T702 (NFR07): mọi spec chạy ở cả hai project; mỗi project dùng bộ dữ liệu riêng (DATASETS trong e2e/env.js)
+  projects: [
+    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile', use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true } },
+  ],
   webServer: [
     {
       command: 'node ../api/src/server.js',
