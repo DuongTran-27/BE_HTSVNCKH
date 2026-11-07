@@ -88,3 +88,48 @@ File: `.github/workflows/reminders.yml` (08:00 giờ VN hằng ngày + chạy ta
 3. Tab Actions > "Reminders" > Run workflow. Xanh: log in `HTTP 200` và JSON số thông báo đã tạo. Chạy lần hai: số mới ~0 (chống trùng).
 4. Lỗi: 404 = chưa đặt `CRON_SECRET` trên Render; 401 = hai giá trị lệch nhau; 429 = gọi quá 10 lần/15 phút. Workflow tự thử lại 4 lần (cách 30 giây) cho trường hợp Render đang khởi động.
 5. Chạy lại kiểm tra trùng lặp (T609, G5): `.github/workflows/similarity-recheck.yml` (phút 15 mỗi giờ + chạy tay), gọi `POST /api/cron/similarity-rechecks`, dùng **cùng hai secret** trên. Kết quả JSON `{ checked, updated, stillFailing }`; `stillFailing` > 0 nhiều giờ liền = FR06 vẫn lỗi, xem log Render. Limiter 10 lần/15 phút dùng chung với nhắc hạn.
+
+## 5. Tách role chạy app khỏi role migrate (T703c, đề xuất – con người làm trên Supabase)
+Mục đích: trigger chỉ-thêm (AuditLog, StatusHistory, Document, Feedback, …) chỉ chặn được nếu role của app **không sở hữu bảng**. Role sở hữu (`postgres`) luôn `DROP TRIGGER` / `ALTER TABLE … DISABLE TRIGGER` được (MINOR 3 `reviews/T204-bao-mat-v1.md`). Migration vẫn chạy bằng `postgres`, app chạy bằng role mới `nckh_app`. Không đổi code; chỉ đổi chuỗi kết nối.
+
+### 5.1 Tạo role (Supabase > SQL Editor, chạy bằng `postgres`, sau khi `prisma migrate deploy` đã chạy)
+```sql
+-- BYPASSRLS bắt buộc: mọi bảng public bật RLS không policy (NFR03); thiếu cờ này app thấy 0 dòng mà không báo lỗi.
+CREATE ROLE nckh_app LOGIN NOINHERIT NOCREATEDB NOCREATEROLE BYPASSRLS PASSWORD '<mật khẩu mạnh, khác postgres>';
+GRANT CONNECT ON DATABASE postgres TO nckh_app;
+GRANT USAGE ON SCHEMA public TO nckh_app;
+GRANT USAGE ON SCHEMA extensions TO nckh_app;   -- pg_trgm/unaccent của Supabase nằm ở schema extensions
+-- Chỉ DML; không TRUNCATE, REFERENCES, TRIGGER
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO nckh_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO nckh_app;   -- topic_code_seq, id AuditLog
+-- Bảng chỉ-thêm tuyệt đối (trigger forbid_mutation không có ngoại lệ): bỏ luôn quyền sửa/xóa – lớp thứ hai ngoài trigger.
+-- KHÔNG đưa vào đây Submission, ResultVersion, ChangeRequest: trigger của chúng cho phép một số UPDATE hợp lệ.
+REVOKE UPDATE, DELETE ON "AuditLog", "StatusHistory", "ReviewDecision", "SimilarityCheck", "Document",
+  "MilestoneDueChange", "Feedback", "MilestoneReopen", "SimilarityBypass" FROM nckh_app;
+-- Bảng/sequence do migration sau tạo (chạy bằng postgres) tự có quyền DML
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO nckh_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO nckh_app;
+```
+Migration sau tạo **bảng chỉ-thêm mới** phải tự thu quyền, viết sao cho chạy được cả trên DB test (không có role này):
+`DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'nckh_app') THEN REVOKE UPDATE, DELETE ON "<Bảng>" FROM nckh_app; END IF; END $$;`
+
+### 5.2 Đổi chuỗi kết nối
+- Render `DATABASE_URL`: `postgresql://nckh_app.<ref>:<mật khẩu>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1`.
+- `DIRECT_URL` (role `postgres`) chỉ dùng cho `prisma migrate deploy`. Nếu còn để trên Render (lệnh build chạy migrate) thì kẻ chiếm được tiến trình app vẫn đọc được nó; tách thật sự = chạy migrate ở nơi khác (job GitHub Actions chạy tay có secret riêng) và **xóa `DIRECT_URL` khỏi Render**. Việc này thuộc T706 (devops kiểm Prisma Client có cần biến `DIRECT_URL` lúc chạy không; nếu cần thì đặt bằng đúng chuỗi `nckh_app`).
+- Script `bootstrap` admin chạy bằng `DATABASE_URL` (`nckh_app`) được. Seed và job sao lưu giữ nguyên (`postgres` / `backup_ro`); `ALTER DEFAULT PRIVILEGES FOR ROLE postgres` ở mục 3.1 vẫn đúng vì migration vẫn chạy bằng `postgres`.
+
+### 5.3 Xác nhận (kết nối bằng `nckh_app` qua psql/pooler cổng 5432, không phải SQL Editor)
+Mỗi câu sau phải **lỗi** (permission denied / must be owner):
+```sql
+DROP TRIGGER audit_log_append_only ON "AuditLog";
+ALTER TABLE "AuditLog" DISABLE TRIGGER ALL;
+SET session_replication_role = replica;
+UPDATE "AuditLog" SET action = action WHERE false;
+TRUNCATE "Notification";
+CREATE TABLE zz (x int);
+```
+Nếu riêng `CREATE TABLE` chạy được: `REVOKE CREATE ON SCHEMA public FROM PUBLIC;` (chạy bằng postgres). Đã thử kịch bản 5.1 + các câu trên trên Postgres 16 của DB test bằng `SET ROLE nckh_app` (T703c): 6 câu bị từ chối; SELECT, nextval, INSERT AuditLog, UPDATE Topic chạy được.
+Còn `SELECT count(*) FROM "User";` phải trả đúng số tài khoản (khác 0 – nếu 0 là thiếu `BYPASSRLS`). Sau đó đăng nhập web, tạo/sửa một đề tài, tải một tài liệu, xem thống kê để chắc app đủ quyền.
+
+### 5.4 Data API của Supabase (NFR03)
+Cách chắc nhất: Settings > API > tắt Data API (app không dùng). Nếu giữ: `curl "https://<ref>.supabase.co/rest/v1/User?select=id" -H "apikey: <anon key>"` phải trả `[]` hoặc lỗi; và nên chạy `REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM anon, authenticated;` (các hàm hiện có vô hại nhưng gọi được qua `/rest/v1/rpc/...`).
