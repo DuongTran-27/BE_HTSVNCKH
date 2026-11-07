@@ -12,7 +12,10 @@ const schema = z.object({
   CLOUDINARY_URL: z.string().optional(),
   CLOUDINARY_FOLDER: z.string().trim().min(1).max(100).optional(), // mặc định nckh/<NODE_ENV> (storage.js)
   CRON_SECRET: z.string().min(32, 'CRON_SECRET tối thiểu 32 ký tự').optional(), // thiếu thì /api/cron trả 404
-}).refine((e) => e.NODE_ENV !== 'production' || !!e.CLOUDINARY_URL, { message: 'Production cần CLOUDINARY_URL', path: ['CLOUDINARY_URL'] });
+  ORIGIN_SECRET: z.string().min(32, 'ORIGIN_SECRET tối thiểu 32 ký tự').optional(), // header x-nckh-origin do proxy Vercel gắn (T706)
+  LOG_PROXY_HOPS: z.stringbool().default(false), // tạm: log req.ips/x-forwarded-for ở /api/health để đo số hop
+}).refine((e) => e.NODE_ENV !== 'production' || !!e.CLOUDINARY_URL, { message: 'Production cần CLOUDINARY_URL', path: ['CLOUDINARY_URL'] })
+  .refine((e) => e.NODE_ENV !== 'production' || !!e.ORIGIN_SECRET, { message: 'Production cần ORIGIN_SECRET', path: ['ORIGIN_SECRET'] });
 
 export const loadEnv = (source = process.env) => {
   const parsed = schema.safeParse(source);

@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { createRequireAuth, requirePasswordChanged } from './middlewares/auth.js';
 import { createAuthService } from './modules/auth/service.js';
@@ -32,15 +32,26 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // sau proxy của Vercel/Render
   app.use(pinoHttp({ logger, genReqId: (req) => { const id = req.get('x-request-id'); return id && /^[\w-]{1,64}$/.test(id) ? id : randomUUID(); }, autoLogging: env.NODE_ENV !== 'test' }));
+  if (env.ORIGIN_SECRET) {
+    // Chỉ nhận request qua proxy Vercel (gắn header bí mật); gọi thẳng Render -> 404 chuẩn. Chỉ miễn đúng GET /api/health.
+    const secret = Buffer.from(env.ORIGIN_SECRET);
+    app.use((req, _res, next) => {
+      if (req.method === 'GET' && req.path === '/api/health') return next();
+      const got = Buffer.from(String(req.get('x-nckh-origin') ?? ''));
+      if (got.length !== secret.length || !timingSafeEqual(got, secret)) throw notFound('Không tìm thấy đường dẫn');
+      next();
+    });
+  }
   app.use(helmet());
-  app.use(cors({ origin: env.CORS_ORIGIN.split(','), credentials: true }));
+  app.use(cors({ origin: env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean), credentials: true }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
 
   const authService = createAuthService({ repo: authRepo, hasher, env });
   const requireAuth = createRequireAuth({ env, loadUser: authRepo.findUserById });
 
-  app.get('/api/health', async (_req, res) => {
+  app.get('/api/health', async (req, res) => {
+    if (env.LOG_PROXY_HOPS) req.log.info({ ips: req.ips, xff: req.get('x-forwarded-for') }, 'proxy hops'); // tạm, gỡ sau khi đo (VAN_HANH §6.4 mục 3)
     const db = await checkDb().catch(() => false);
     res.status(db ? 200 : 503).json({ status: db ? 'ok' : 'degraded', db });
   });

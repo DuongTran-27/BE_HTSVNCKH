@@ -311,7 +311,7 @@ describe('thuần: upload.js, storage.js, env', () => {
   it('env: production thiếu CLOUDINARY_URL thì báo lỗi; thư mục mặc định nckh/<NODE_ENV>', () => {
     const base = { DATABASE_URL: 'postgresql://x/y', JWT_ACCESS_SECRET: 'x'.repeat(40) };
     expect(() => loadEnv({ ...base, NODE_ENV: 'production' })).toThrow(/CLOUDINARY_URL/);
-    expect(loadEnv({ ...base, NODE_ENV: 'production', CLOUDINARY_URL: 'cloudinary://a:b@c' }).NODE_ENV).toBe('production');
+    expect(loadEnv({ ...base, NODE_ENV: 'production', CLOUDINARY_URL: 'cloudinary://a:b@c', ORIGIN_SECRET: 'o'.repeat(32) }).NODE_ENV).toBe('production');
     expect(defaultStorageFolder({ NODE_ENV: 'production' })).toBe('nckh/production');
     expect(defaultStorageFolder({ NODE_ENV: 'test', CLOUDINARY_FOLDER: 'khac' })).toBe('khac');
   });

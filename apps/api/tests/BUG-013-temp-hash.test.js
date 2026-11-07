@@ -28,7 +28,7 @@ describe('passwordHasher', () => {
     expect(await passwordHasher.verify('khong-phai-hash', 'x')).toBe(false);
   });
 
-  it('verify hash nhẹ không nhanh hơn hash đầy đủ (không lộ tài khoản còn mật khẩu tạm qua thời gian)', async () => {
+  it('thời gian verify hash nhẹ ≈ hash đầy đủ (tỉ lệ 0,8–1,2, không lộ tài khoản còn mật khẩu tạm)', async () => {
     const light = await passwordHasher.hash('Tam12345abcdXY', { temporary: true });
     const full = await passwordHasher.hash('Tam12345abcdXY');
     await passwordHasher.verify(light, 'sai'); // làm nóng hash bù
@@ -37,7 +37,9 @@ describe('passwordHasher', () => {
       for (let i = 0; i < 10; i++) await passwordHasher.verify(h, 'sai');
       return performance.now() - t;
     };
-    expect(await time(light)).toBeGreaterThanOrEqual((await time(full)) * 0.8);
+    const ratio = (await time(light)) / (await time(full));
+    expect(ratio).toBeGreaterThanOrEqual(0.8);
+    expect(ratio).toBeLessThanOrEqual(1.2);
   });
 });
 
