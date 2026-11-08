@@ -17,7 +17,7 @@ beforeAll(() => seedBase({ students: 40 }), 60000);
 afterAll(() => prisma.$disconnect());
 
 describe('POST /api/topics/:id/progress', () => {
-  it('thành viên SV tạo được: tác giả, selfReported, issues mặc định rỗng, AuditLog', async () => {
+  it('TC-FR10-01 thành viên SV tạo được: tác giả, selfReported, issues mặc định rỗng, AuditLog', async () => {
     const { t, leader } = await mkRunning();
     await addMember(t, 's40');
     const r = await mk('s40', t);
@@ -42,7 +42,7 @@ describe('POST /api/topics/:id/progress', () => {
     }
   });
 
-  it('400: percent ngoài 0–100 hoặc không nguyên, thiếu done/nextPlan; 404 đề tài không có', async () => {
+  it('TC-FR10-02 400: percent ngoài 0–100 hoặc không nguyên, thiếu done/nextPlan; 404 đề tài không có', async () => {
     const { t, leader } = await mkRunning();
     for (const o of [{ percent: 101 }, { percent: -1 }, { percent: 10.5 }, { percent: '50' }, { done: ' ' }, { nextPlan: '' }]) expect((await mk(leader, t, o)).status, JSON.stringify(o)).toBe(400);
     expect((await post(leader, '/api/topics/khongco123/progress', body())).status).toBe(404);
@@ -88,7 +88,7 @@ describe('PATCH /api/progress/:id', () => {
     for (const who of [leader, 'lecA', 'staff1', 's39', 'admin']) expect((await patch(who, `/api/progress/${p.id}`, { percent: 1 })).status, who).toBe(403);
   });
 
-  it('409 PROGRESS_LOCKED sau khi bị khóa; 409 sai trạng thái; 400 body rỗng/trường lạ; 404', async () => {
+  it('TC-FR10-03 409 PROGRESS_LOCKED sau khi bị khóa; 409 sai trạng thái; 400 body rỗng/trường lạ; 404', async () => {
     const { t, leader } = await mkRunning();
     const p = (await mk(leader, t)).body.progress;
     expect((await patch(leader, `/api/progress/${p.id}`, {})).status).toBe(400);

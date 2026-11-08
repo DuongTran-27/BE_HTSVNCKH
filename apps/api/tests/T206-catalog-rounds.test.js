@@ -112,7 +112,7 @@ describe('danh mục – quyền (FR25) và CRUD (FR04)', () => {
     expect(dup.body.error).toMatchObject({ code: 'DUPLICATE', details: { code: 'Đã tồn tại' } });
   });
 
-  it('sửa tên + ngừng dùng thay vì xóa; không đổi được code; không có DELETE; audit before/after', async () => {
+  it('TC-FR04-01 sửa tên + ngừng dùng thay vì xóa; không đổi được code; không có DELETE; audit before/after', async () => {
     const f = await prisma.faculty.create({ data: { code: 'TMP', name: 'Cũ' } });
     const r = await patch('admin', `/api/faculties/${f.id}`, { name: 'Mới', isActive: false, code: 'DOI' });
     expect(r.status).toBe(200);
@@ -245,7 +245,7 @@ describe('đợt (FR04, FR25)', () => {
     expect(a.after).toMatchObject({ regOpenAt: '2026-10-31T17:00:00.000Z', config: { maxTopicsPerLecturer: 6 } });
   });
 
-  it('mốc sai thứ tự -> 400 tại trường sai đầu tiên, không ghi gì', async () => {
+  it('TC-FR04-02 mốc sai thứ tự -> 400 tại trường sai đầu tiên, không ghi gì', async () => {
     const n = await prisma.round.count();
     const r = await post('staff1', '/api/rounds', roundBody({ regCloseAt: dates.regOpenAt }));
     expect(r.status).toBe(400);
@@ -255,7 +255,7 @@ describe('đợt (FR04, FR25)', () => {
     expect(await prisma.round.count()).toBe(n);
   });
 
-  it('cấu hình hiệu lực sai (min > max, khóa lạ, vượt trần) -> 400 tại config.*', async () => {
+  it('TC-FR04-03 cấu hình hiệu lực sai (min > max, khóa lạ, vượt trần) -> 400 tại config.*', async () => {
     const a = await post('staff1', '/api/rounds', roundBody({ config: { minMembers: 4, maxMembers: 2 } }));
     expect(a.status).toBe(400);
     expect(a.body.error.details['config.minMembers']).toBeTruthy();

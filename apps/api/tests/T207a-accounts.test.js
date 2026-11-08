@@ -109,7 +109,7 @@ describe('quyền (FR25, FR02)', () => {
 });
 
 describe('tạo tài khoản (FR02)', () => {
-  it('ADMIN tạo SV: 201, mật khẩu tạm chỉ trả một lần + no-store, chỉ lưu hash, mustChangePassword, AuditLog không có mật khẩu', async () => {
+  it('TC-FR02-01 ADMIN tạo SV: 201, mật khẩu tạm chỉ trả một lần + no-store, chỉ lưu hash, mustChangePassword, AuditLog không có mật khẩu', async () => {
     const r = await post('admin', '/api/users', studentBody({ code: 'SV100', email: 'SV100@St.edu.vn' }));
     expect(r.status).toBe(201);
     expect(r.headers['cache-control']).toBe('no-store');
@@ -130,7 +130,7 @@ describe('tạo tài khoản (FR02)', () => {
     expect(JSON.stringify((await get('admin', `/api/users/${r.body.user.id}`)).body)).not.toContain(pw);
   });
 
-  it('mật khẩu tạm đăng nhập được, nhưng bị buộc đổi mật khẩu trước khi dùng API nghiệp vụ', async () => {
+  it('TC-FR02-02 mật khẩu tạm đăng nhập được, nhưng bị buộc đổi mật khẩu trước khi dùng API nghiệp vụ', async () => {
     const c = await post('admin', '/api/users', studentBody({ code: 'SV101', email: 'sv101@st.edu.vn' }));
     const login = await request(app).post('/api/auth/login').send({ identifier: 'SV101', password: c.body.temporaryPassword });
     expect(login.status).toBe(200);
@@ -189,7 +189,7 @@ describe('tạo tài khoản (FR02)', () => {
     expect(badScope.body.error.details.staffFacultyIds).toBeTruthy();
   });
 
-  it('trùng mã / email (kể cả khác hoa thường) → 409 DUPLICATE, details đúng trường, không tạo dòng nào', async () => {
+  it('TC-FR02-03 trùng mã / email (kể cả khác hoa thường) → 409 DUPLICATE, details đúng trường, không tạo dòng nào', async () => {
     const before = await prisma.user.count();
     const dupCode = await post('admin', '/api/users', studentBody({ code: 'sv100' }));
     expect(dupCode.status).toBe(409);
@@ -200,7 +200,7 @@ describe('tạo tài khoản (FR02)', () => {
     expect(await prisma.user.count()).toBe(before);
   });
 
-  it('không có tự nâng quyền: role lạ 400; body có passwordHash/mustChangePassword bị bỏ qua', async () => {
+  it('TC-FR02-04 không có tự nâng quyền: role lạ 400; body có passwordHash/mustChangePassword bị bỏ qua', async () => {
     expect((await post('admin', '/api/users', studentBody({ role: 'SUPERUSER' }))).status).toBe(400);
     const r = await post('admin', '/api/users', studentBody({ passwordHash: 'h:mine', mustChangePassword: false }));
     expect(r.status).toBe(201);

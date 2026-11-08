@@ -94,7 +94,7 @@ beforeEach(() => {
 });
 
 describe('preview', () => {
-  it('trả validCount/errorCount/errors/preview, dòng tính cả tiêu đề, không ghi DB', async () => {
+  it('TC-FR02-05 trả validCount/errorCount/errors/preview, dòng tính cả tiêu đề, không ghi DB', async () => {
     const before = await countUsers();
     const csv = users(
       'SV001,sv001@st.vn,Trần B,STUDENT,K20A', // 2 ok
@@ -254,7 +254,7 @@ describe('quyền (FR25) – kiểm trước khi đọc file', () => {
 });
 
 describe('confirm', () => {
-  it('ghi tất cả user + AuditLog, mật khẩu tạm dùng được và chỉ trả một lần, no-store', async () => {
+  it('TC-FR02-06 ghi tất cả user + AuditLog, mật khẩu tạm dùng được và chỉ trả một lần, no-store', async () => {
     const before = await countUsers();
     const res = await send('staff1', 'confirm', users('SV100,sv100@st.vn,Trần B,STUDENT,K20A', 'GV100,gv100@st.vn,Cô C,LECTURER,'));
     expect(res.status).toBe(200);

@@ -53,7 +53,7 @@ describe('redact', () => {
 });
 
 describe('AuditLog (FR15)', () => {
-  it('ghi người, thời điểm, thao tác, đối tượng, trước/sau; không lưu trường bí mật', async () => {
+  it('TC-FR15-01 ghi người, thời điểm, thao tác, đối tượng, trước/sau; không lưu trường bí mật', async () => {
     await recordAudit(prisma, {
       actorId: staff.id,
       action: 'USER_UPDATE',
@@ -104,7 +104,7 @@ describe('AuditLog (FR15)', () => {
 });
 
 describe('StatusHistory qua applyTransition', () => {
-  it('ghi một dòng StatusHistory (from/to/action/actor/reason) và tăng version', async () => {
+  it('TC-FR15-02 ghi một dòng StatusHistory (from/to/action/actor/reason) và tăng version', async () => {
     const t = findTransition('REQUEST_ADVISOR');
     const ctx = { isLeader: true };
     checkTransition({ topic: draft, action: t.action, actor: { id: leader.id, role: 'STUDENT' }, ctx });
@@ -172,7 +172,7 @@ describe('StatusHistory qua applyTransition', () => {
 describe('bảng chỉ-thêm ở mức DB (FR15)', () => {
   const TABLES = ['AuditLog', 'StatusHistory', 'Submission', 'ReviewDecision', 'SimilarityCheck'];
 
-  it('UPDATE và DELETE AuditLog/StatusHistory bị chặn', async () => {
+  it('TC-FR15-03 UPDATE và DELETE AuditLog/StatusHistory bị chặn', async () => {
     await expect(prisma.$executeRaw`UPDATE "AuditLog" SET action = 'x'`).rejects.toThrow(/chỉ cho phép thêm mới/);
     await expect(prisma.$executeRaw`DELETE FROM "AuditLog"`).rejects.toThrow(/chỉ cho phép thêm mới/);
     await expect(prisma.$executeRaw`UPDATE "StatusHistory" SET reason = 'x'`).rejects.toThrow(/chỉ cho phép thêm mới/);

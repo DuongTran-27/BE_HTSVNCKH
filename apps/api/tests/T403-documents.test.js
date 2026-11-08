@@ -251,7 +251,7 @@ describe('POST /api/documents/:id/download-url (FR24)', () => {
 });
 
 describe('snapshot gắn tài liệu đề cương (FR17, §5.6)', () => {
-  it('SUBMIT_FOR_REVIEW lưu documentIds = bản đề cương mới nhất; GET submission trả documents', async () => {
+  it('TC-FR17-03 SUBMIT_FOR_REVIEW lưu documentIds = bản đề cương mới nhất; GET submission trả documents', async () => {
     const { t, leader } = await mk('HAS_ADVISOR');
     await mkDoc(t, { version: 1, uploadedById: U[leader].id });
     const v2 = await mkDoc(t, { version: 2, fileName: 'Đề cương v2', uploadedById: U[leader].id });
@@ -341,7 +341,7 @@ describe('cleanup-orphans (FR26, §5.7)', () => {
     expect([r.deleted, s.files.size, db.audits.length]).toEqual([[], 4, 0]);
   });
 
-  it('--apply: xóa mồ côi, ghi AuditLog từng file; không đụng file có Document; lỗi một file vẫn chạy tiếp', async () => {
+  it('TC-FR26-01 --apply: xóa mồ côi, ghi AuditLog từng file; không đụng file có Document; lỗi một file vẫn chạy tiếp', async () => {
     const s = mkStore();
     s.files.set('f/moi', { bytes: 1, created_at: new Date().toISOString() }); // < 24h: giữ
     const db = fakeDb([{ id: 'd1', publicId: 'f/a', status: 'READY', uploadedAt: new Date() }]);
@@ -368,7 +368,7 @@ describe('cleanup-orphans (FR26, §5.7)', () => {
     expect([r.deleted.length, r.failed.length, s2.files.size]).toEqual([0, 3, 4]);
   });
 
-  it('--apply kiểm lại ngay trước khi xóa: file vừa có Document tham chiếu thì giữ', async () => {
+  it('TC-FR26-02 --apply kiểm lại ngay trước khi xóa: file vừa có Document tham chiếu thì giữ', async () => {
     const s = mkStore();
     const docs = [];
     const db = fakeDb(docs);

@@ -50,7 +50,7 @@ beforeAll(() => seedBase({ students: 80 }), 60000);
 afterAll(() => prisma.$disconnect());
 
 describe('FR19 – luồng đủ (API_GD6 §3.7 ca 1, 2, 6, 11)', () => {
-  it('SV tạo → GV mới đồng ý → cán bộ duyệt: Advising chuyển, GV cũ mất quyền, bàn giao bản nộp chờ, giữ tên nhận xét cũ', async () => {
+  it('TC-FR19-01 SV tạo → GV mới đồng ý → cán bộ duyệt: Advising chuyển, GV cũ mất quyền, bàn giao bản nộp chờ, giữ tên nhận xét cũ', async () => {
     const { t, leader } = await mkRunning();
     const lecNew = await mkUser('LECTURER');
     const staff = await mkUser('STAFF');
@@ -196,7 +196,7 @@ describe('FR19 – hạn mức GV mới (FR16, §3.3–3.4)', () => {
 });
 
 describe('FR19 – đồng thời với thao tác của GV cũ (§1.2, ca 3)', () => {
-  it('duyệt ‖ GV cũ nhận xét / nhập kết quả / REQUEST_CLOSE: không có bản ghi của GV cũ sau thời điểm duyệt, không 500', async () => {
+  it('TC-FR19-02 duyệt ‖ GV cũ nhận xét / nhập kết quả / REQUEST_CLOSE: không có bản ghi của GV cũ sau thời điểm duyệt, không 500', async () => {
     const staff = await mkUser('STAFF');
     for (let i = 0; i < 4; i++) {
       const { t, leader } = await mkRunning();
@@ -303,7 +303,7 @@ describe('khung ChangeRequest – vòng đời, đua, trùng (§2, ca 5, 7, 10)'
 });
 
 describe('quyền (FR25, ca 8)', () => {
-  it('tạo: thành viên thường, GV hiện hành, GV khác, SV ngoài, cán bộ khoa khác, ADMIN → 403; GV mới sai → 400', async () => {
+  it('TC-FR19-03 tạo: thành viên thường, GV hiện hành, GV khác, SV ngoài, cán bộ khoa khác, ADMIN → 403; GV mới sai → 400', async () => {
     const { t, leader } = await mkRunning();
     await addMember(t, 's70');
     const lecNew = await mkUser('LECTURER');

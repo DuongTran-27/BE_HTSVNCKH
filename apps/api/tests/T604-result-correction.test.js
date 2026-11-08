@@ -25,7 +25,7 @@ beforeAll(async () => { await seedBase({ students: 30 }); }, 60000);
 afterAll(() => prisma.$disconnect());
 
 describe('POST /api/topics/:id/result-corrections', () => {
-  it('GOOD -> PASS: hai phiên bản, đúng một isCurrent, giữ nhận xét, AuditLog; thống kê đổi theo', async () => {
+  it('TC-FR23-01 GOOD -> PASS: hai phiên bản, đúng một isCurrent, giữ nhận xét, AuditLog; thống kê đổi theo', async () => {
     const { t } = await mkClosed();
     const before = await resultRows();
     const r = await fix('staff1', t, {});
@@ -50,7 +50,7 @@ describe('POST /api/topics/:id/result-corrections', () => {
     expect(r.body.result.summary).toBe('Nhận xét tổng kết đã được chỉnh lại.');
   });
 
-  it('kho: GOOD -> FAIL rời kho (list, chi tiết 404, q không rò); FAIL -> PASS vào kho', async () => {
+  it('TC-FR23-02 kho: GOOD -> FAIL rời kho (list, chi tiết 404, q không rò); FAIL -> PASS vào kho', async () => {
     const { t } = await mkClosed({ title: 'Hệ thống nhận dạng xyzzyquux' });
     expect(await repoCodes('&q=xyzzyquux')).toEqual([t.code]);
     expect((await get('s1', `/api/repository/${t.code}`)).status).toBe(200);
@@ -82,7 +82,7 @@ describe('POST /api/topics/:id/result-corrections', () => {
     }
   });
 
-  it('GVHD, sinh viên, cán bộ khoa khác, ADMIN: 403; chưa đăng nhập 401', async () => {
+  it('TC-FR23-03 GVHD, sinh viên, cán bộ khoa khác, ADMIN: 403; chưa đăng nhập 401', async () => {
     const { t, leader } = await mkClosed();
     for (const who of ['lecA', leader, 'staff2', 'admin']) expect((await fix(who, t, {})).status, who).toBe(403);
     expect((await post('nobody', `/api/topics/${t.id}/result-corrections`, {})).status).toBe(401);

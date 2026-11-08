@@ -10,7 +10,7 @@ const art = (id, day, name = 'nckh-backup-x', extra = {}) => ({
 });
 
 describe('T608 giữ 7 bản sao lưu', () => {
-  it('xóa các bản cũ nhất, giữ 7 mới nhất, bất kể thứ tự đầu vào', () => {
+  it('TC-FR26-03 xóa các bản cũ nhất, giữ 7 mới nhất, bất kể thứ tự đầu vào', () => {
     const list = Array.from({ length: 10 }, (_, i) => art(i + 1, i + 1)).reverse();
     expect(selectBackupsToDelete(list).sort((a, b) => a - b)).toEqual([1, 2, 3]);
   });
@@ -43,7 +43,7 @@ describe('T608 file mồ côi', () => {
   const now = new Date('2026-11-03T12:00:00Z');
   const old = '2026-11-02T00:00:00Z';
   const fresh = '2026-11-03T06:00:00Z';
-  it('chỉ chọn file kho không được tham chiếu và cũ hơn 24h', () => {
+  it('TC-FR26-04 chỉ chọn file kho không được tham chiếu và cũ hơn 24h', () => {
     const documents = [{ id: 'd1', publicId: 'a', status: 'READY', uploadedAt: old }];
     const storageFiles = [
       { publicId: 'a', createdAt: old }, // có tham chiếu

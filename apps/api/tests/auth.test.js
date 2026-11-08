@@ -30,7 +30,7 @@ describe('Đăng nhập và phiên (FR01)', () => {
     expect(raw).toMatch(/Path=\/api\/auth/);
     expect((await login('Matkhau123', 'sv001@st.edu.vn')).status).toBe(200);
   });
-  it('sai mật khẩu: thông báo chung; 5 lần sai → tạm khóa', async () => {
+  it('TC-FR01-01 sai mật khẩu: thông báo chung; 5 lần sai → tạm khóa', async () => {
     for (let i = 0; i < 5; i += 1) expect((await login('sai')).status).toBe(401);
     const r = await login();
     expect(r.status).toBe(429);
@@ -41,7 +41,7 @@ describe('Đăng nhập và phiên (FR01)', () => {
     expect(r.status).toBe(400);
     expect(r.body.error.details).toHaveProperty('identifier');
   });
-  it('refresh xoay vòng token; dùng lại token cũ → thu hồi cả họ phiên', async () => {
+  it('TC-FR01-02 refresh xoay vòng token; dùng lại token cũ → thu hồi cả họ phiên', async () => {
     const c1 = cookieOf(await login());
     const r2 = await request(app).post('/api/auth/refresh').set('Cookie', c1);
     expect(r2.status).toBe(200);
@@ -55,13 +55,13 @@ describe('Đăng nhập và phiên (FR01)', () => {
     expect((await request(app).post('/api/auth/logout').set('Cookie', c)).status).toBe(204);
     expect((await request(app).post('/api/auth/refresh').set('Cookie', c)).status).toBe(401);
   });
-  it('tài khoản bị khóa: access token cũ bị từ chối ở lần gọi kế tiếp', async () => {
+  it('TC-FR01-03 tài khoản bị khóa: access token cũ bị từ chối ở lần gọi kế tiếp', async () => {
     const { accessToken } = (await login()).body;
     expect((await request(app).get('/api/auth/me').set('Authorization', `Bearer ${accessToken}`)).status).toBe(200);
     await repo.updateUser('u1', { isLocked: true });
     expect((await request(app).get('/api/auth/me').set('Authorization', `Bearer ${accessToken}`)).status).toBe(401);
   });
-  it('đổi mật khẩu thu hồi các phiên khác, giữ phiên hiện tại', async () => {
+  it('TC-FR01-04 đổi mật khẩu thu hồi các phiên khác, giữ phiên hiện tại', async () => {
     const other = cookieOf(await login());
     const cur = await login();
     const r = await request(app).post('/api/auth/change-password')

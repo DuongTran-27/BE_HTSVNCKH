@@ -51,7 +51,7 @@ beforeAll(() => seedBase({ students: 60 }), 60000);
 afterAll(() => prisma.$disconnect());
 
 describe('FR20 – tạo đề nghị hủy (§4.1, ca 1)', () => {
-  it('trưởng nhóm tạo 201, GVHD tạo 201 (sau khi đề nghị trước kết thúc); payload theo §2.1; thông báo + AuditLog', async () => {
+  it('TC-FR20-01 trưởng nhóm tạo 201, GVHD tạo 201 (sau khi đề nghị trước kết thúc); payload theo §2.1; thông báo + AuditLog', async () => {
     const { t, leader, lec } = await mkRunning();
     const staff = await mkUser('STAFF');
     const a = await create(leader, t);
@@ -99,7 +99,7 @@ describe('FR20 – tạo đề nghị hủy (§4.1, ca 1)', () => {
 });
 
 describe('FR20 – cán bộ quyết định (§4.2, ca 2, 5)', () => {
-  it('duyệt có lý do: CANCELLED, StatusHistory có lý do, ACCEPTED, AuditLog, thông báo "đã bị hủy"; dữ liệu không bị xóa', async () => {
+  it('TC-FR20-02 duyệt có lý do: CANCELLED, StatusHistory có lý do, ACCEPTED, AuditLog, thông báo "đã bị hủy"; dữ liệu không bị xóa', async () => {
     const { t, leader, lec } = await mkRunning();
     await addMember(t, 's57');
     const staff = await mkUser('STAFF');
@@ -156,7 +156,7 @@ describe('FR20 – cán bộ quyết định (§4.2, ca 2, 5)', () => {
 });
 
 describe('FR20 – đề nghị không tự đóng, đồng thời (ca 3, 4)', () => {
-  it('ca 3: đề tài sang WAITING_CLOSE khi đề nghị đang chờ → vẫn PENDING; duyệt 409 INVALID_TRANSITION; cán bộ từ chối được', async () => {
+  it('TC-FR20-03 ca 3: đề tài sang WAITING_CLOSE khi đề nghị đang chờ → vẫn PENDING; duyệt 409 INVALID_TRANSITION; cán bộ từ chối được', async () => {
     const { t, leader, lec } = await mkRunning({ closable: true });
     const staff = await mkUser('STAFF');
     const id = (await create(leader, t)).body.changeRequest.id;
@@ -187,7 +187,7 @@ describe('FR20 – đề nghị không tự đóng, đồng thời (ca 3, 4)', (
 });
 
 describe('FR20 – ảnh hưởng thống kê và kho FR06 (ca 7)', () => {
-  it('đề tài hủy vẫn có trong /api/stats chiều status; rời kho so FR06', async () => {
+  it('TC-FR20-04 đề tài hủy vẫn có trong /api/stats chiều status; rời kho so FR06', async () => {
     const { t, leader } = await mkRunning();
     const staff = await mkUser('STAFF');
     const sim = createSimilarityRepo(prisma);

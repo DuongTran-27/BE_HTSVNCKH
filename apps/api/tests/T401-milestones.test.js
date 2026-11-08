@@ -20,7 +20,7 @@ beforeAll(() => seedBase({ students: 60 }), 60000);
 afterAll(() => prisma.$disconnect());
 
 describe('POST /api/topics/:id/milestones', () => {
-  it('GVHD hiện hành và cán bộ trong phạm vi tạo được; order tăng, mặc định bắt buộc, version 0', async () => {
+  it('TC-FR09-01 GVHD hiện hành và cán bộ trong phạm vi tạo được; order tăng, mặc định bắt buộc, version 0', async () => {
     const t = await mkRunning();
     const a = await mk('lecA', t);
     expect(a.status, JSON.stringify(a.body)).toBe(201);
@@ -31,7 +31,7 @@ describe('POST /api/topics/:id/milestones', () => {
     expect(await prisma.auditLog.count({ where: { action: 'MILESTONE_CREATE', entityId: a.body.milestone.id } })).toBe(1);
   });
 
-  it('403: thành viên SV, GV không phải GVHD, cán bộ khoa khác, ADMIN; người ngoài không biết trạng thái', async () => {
+  it('TC-FR09-02 403: thành viên SV, GV không phải GVHD, cán bộ khoa khác, ADMIN; người ngoài không biết trạng thái', async () => {
     const t = await mkRunning();
     for (const who of [`s${seq}`, 'lecB', 'staff2', 'admin', 's60']) {
       const r = await mk(who, t);
@@ -143,7 +143,7 @@ describe('PATCH /api/milestones/:id', () => {
 });
 
 describe('due-changes (đổi hạn có lịch sử)', () => {
-  it('đổi hạn: ghi oldDueAt từ DB, lý do, người đổi; GET trả mới nhất trước; bất biến ở DB', async () => {
+  it('TC-FR09-03 đổi hạn: ghi oldDueAt từ DB, lý do, người đổi; GET trả mới nhất trước; bất biến ở DB', async () => {
     const t = await mkRunning();
     const m = (await mk('lecA', t)).body.milestone;
     const url = `/api/milestones/${m.id}/due-changes`;
@@ -161,7 +161,7 @@ describe('due-changes (đổi hạn có lịch sử)', () => {
     expect(await prisma.auditLog.count({ where: { action: 'MILESTONE_DUE_CHANGE', entityId: m.id } })).toBe(2);
   });
 
-  it('400 hạn trùng/quá khứ/lý do ngắn; 409 version lệch; 409 sai trạng thái; 403 vai trò sai; không ghi gì khi lỗi', async () => {
+  it('TC-FR09-04 400 hạn trùng/quá khứ/lý do ngắn; 409 version lệch; 409 sai trạng thái; 403 vai trò sai; không ghi gì khi lỗi', async () => {
     const t = await mkRunning();
     const m = (await mk('lecA', t)).body.milestone;
     const url = `/api/milestones/${m.id}/due-changes`;

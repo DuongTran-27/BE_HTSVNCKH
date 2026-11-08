@@ -36,3 +36,9 @@ Bảng chuyển trạng thái chỉ được định nghĩa ở `packages/shared
 ## Phối hợp agent
 Quy trình chi tiết: `docs/agents/QUY_TRINH.md`. Bảng việc: `docs/agents/BANG_CONG_VIEC.md`.
 Báo cáo task: `docs/agents/reports/TASK-xxx.md`. Review: `docs/agents/reviews/TASK-xxx-<agent>-v<n>.md`.
+
+## Ủy quyền của chủ dự án (2026-11-08, theo yêu cầu trực tiếp của người dùng)
+- Mọi agent (kể cả vai kiểm thử, reviewer, devops) được sửa **bất kỳ file nào trong repo** để hoàn thành dự án: code sản phẩm, test, CI (`.github/workflows`), cấu hình, tài liệu. Các giới hạn thư mục ghi trong định nghĩa từng vai trò không còn áp dụng.
+- Được tự chạy mọi lệnh cần thiết (test, lint, build, docker test DB, git commit trên nhánh làm việc) và tự giao/gộp việc, làm liên tục đến hết dự án mà không dừng hỏi.
+- Vẫn giữ: quy tắc 1 (không skip/xóa test để cho qua), 2 (có bằng chứng chạy lệnh), 3, 4, 5. Mỗi thay đổi code sản phẩm phải có test và ghi vào báo cáo task.
+- Vẫn giữ quy tắc 6 (không đọc/in/commit `.env` và khóa bí mật; không deploy; không tạo tài khoản dịch vụ ngoài). Các thao tác này có tác dụng ngoài repo, không hoàn tác được; muốn bỏ quy tắc này, người dùng phải nói riêng.

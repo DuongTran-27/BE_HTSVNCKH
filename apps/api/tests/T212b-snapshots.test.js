@@ -97,14 +97,14 @@ describe('submissions', () => {
   it('seq không tồn tại hoặc sai định dạng: 404', async () => {
     for (const s of ['3', '0', 'abc', '1.5']) expect((await get('svA', `${base()}/submissions/${s}`)).status).toBe(404);
   });
-  it('snapshot bất biến: payload cũ không đổi khi hồ sơ gốc đổi', async () => {
+  it('TC-FR17-01 snapshot bất biến: payload cũ không đổi khi hồ sơ gốc đổi', async () => {
     await prisma.topic.update({ where: { id: topic.id }, data: { title: 'Đổi sau' } });
     expect((await get('svA', `${base()}/submissions/1`)).body.submission.payload.title).toBe('Tên 1');
   });
 });
 
 describe('submission-diff', () => {
-  it('so sánh hai snapshot', async () => {
+  it('TC-FR17-02 so sánh hai snapshot', async () => {
     const r = await get('lect', `${base()}/submission-diff?from=1&to=2`);
     expect(r.status).toBe(200);
     expect(r.body.from.seq).toBe(1);

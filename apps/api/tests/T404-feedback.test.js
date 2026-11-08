@@ -91,7 +91,7 @@ describe('POST /api/documents/:id/feedbacks', () => {
 });
 
 describe('POST /api/progress/:id/feedbacks (khóa tiến độ FR10)', () => {
-  it('nhận xét khóa bản tiến độ; nhận xét lần hai giữ lockedAt; SV sửa sau đó 409 PROGRESS_LOCKED', async () => {
+  it('TC-FR10-04 nhận xét khóa bản tiến độ; nhận xét lần hai giữ lockedAt; SV sửa sau đó 409 PROGRESS_LOCKED', async () => {
     const { t, leader } = await mkRunning();
     const p = await mkProgress(t, leader);
     const r = await fbProg('lecA', p.id);
