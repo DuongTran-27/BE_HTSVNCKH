@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api.js';
 import { fmtDateTime } from '../../lib/format.js';
 import { toast } from '../../lib/toast.js';
-import { SimilarityBadge } from '../../components/SimilarityPanel.jsx';
+import { SimilarityLevelCell } from '../../components/SimilarityPanel.jsx';
 import { Pager, QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
 
 const Windows = ({ windows }) => windows.map((w) => `${fmtDateTime(w.joinedAt)} – ${fmtDateTime(w.leftAt)}`).join('; ');
@@ -84,7 +84,7 @@ export function PastTopicDetailPage() {
                       <input type="checkbox" className="size-5" checked={picked.includes(s.seq)} onChange={() => toggle(s.seq)} aria-label={`Chọn lần gửi ${s.seq} để so sánh`} />
                       <Link to={`/de-tai/${topicId}/lan-gui/${s.seq}`} className="font-medium text-blue-800 underline">Lần gửi {s.seq}</Link>
                     </label>
-                    <p className="flex flex-wrap items-center gap-x-3 text-sm">{fmtDateTime(s.createdAt)} <SimilarityBadge similarity={{ level: s.similarityLevel }} /></p>
+                    <p className="flex flex-wrap items-center gap-x-3 text-sm">{fmtDateTime(s.createdAt)} <SimilarityLevelCell level={s.similarityLevel} status={s.similarityStatus} unchecked={s.unchecked} /></p>
                   </li>
                 ))}
               </ul>

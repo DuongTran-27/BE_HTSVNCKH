@@ -1,7 +1,7 @@
 // Đọc snapshot hồ sơ và lịch sử trạng thái (FR17, API_GD2 §8.4). Chỉ đọc.
 import { forbidden, notFound } from '../../lib/errors.js';
 import { presentMatches, isUnchecked, justificationMissing } from '../similarity/service.js';
-import { relations, canReadExecution, versionReader } from './service.js';
+import { relations, canReadExecution, versionReader, canSeeBypassReason } from './service.js';
 
 const iso = (d) => d.toISOString();
 const sameSet = (a, b) => ({ added: b.filter((k) => !a.includes(k)), removed: a.filter((k) => !b.includes(k)) });
@@ -28,9 +28,10 @@ export const createSnapshotService = ({ repo }) => {
   const reader = async (user, id) => {
     const t = await repo.findDetail(id);
     if (!t) throw notFound();
-    const can = versionReader(t, relations(t, user));
+    const rel = relations(t, user);
+    const can = versionReader(t, rel);
     if (!can) throw forbidden();
-    return can;
+    return Object.assign(can, { rel });
   };
   const brief = (s) => ({ seq: s.seq, createdAt: iso(s.createdAt), payload: s.payload });
 
@@ -63,7 +64,7 @@ export const createSnapshotService = ({ repo }) => {
           payload: { ...s.payload, documents: docs.map((d) => ({ id: d.id, fileName: d.fileName, kind: d.kind, version: d.version, uploadedAt: iso(d.uploadedAt) })) },
           similarityCheck: s.similarityCheck ? checkView(s.similarityCheck, user.role) : null,
           unchecked: isUnchecked(s),
-          similarityBypass: b ? { reason: user.role === 'LECTURER' ? null : b.reason, grantedBy: { fullName: b.grantedBy.fullName }, createdAt: iso(b.createdAt) } : null,
+          similarityBypass: b ? { reason: canSeeBypassReason(can.rel) ? b.reason : null, grantedBy: { fullName: b.grantedBy.fullName }, createdAt: iso(b.createdAt) } : null,
           decision: s.decision
             ? { action: s.decision.action, reason: s.decision.reason, decidedBy: { fullName: s.decision.decidedBy.fullName }, decidedAt: iso(s.decision.decidedAt) }
             : null,

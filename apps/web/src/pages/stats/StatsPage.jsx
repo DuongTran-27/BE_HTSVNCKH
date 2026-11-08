@@ -99,7 +99,7 @@ export function StatsPage() {
           )}
         </QueryBox>
       </div>
-      {isStaff && <StuckTopics roundId={params.roundId} />}
+      {isStaff && <StuckTopics key={params.roundId} roundId={params.roundId} />}
     </section>
   );
 }

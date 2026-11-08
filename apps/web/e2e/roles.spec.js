@@ -89,8 +89,12 @@ test.describe('FR07 quyết định xét duyệt qua UI', () => {
     await expect(sv.getByRole('heading', { name: 'Gửi lại sau chỉnh sửa' })).toBeVisible();
     await expect(sv.getByTestId('similarity-panel')).toBeVisible();
     const just = sv.getByLabel(/Giải trình/);
+    const resend = sv.getByRole('button', { name: 'Gửi lại sau chỉnh sửa' });
+    await settled(sv);
+    // chờ kiểm tra tự chạy xong: hoặc nút gửi mở (NONE/ERROR) hoặc ô giải trình xuất hiện (REVIEW/HIGH) – không đếm khi chưa có kết quả
+    await expect.poll(async () => (await resend.isEnabled()) || (await just.count()) > 0).toBe(true);
     if (await just.count()) await just.fill(JUSTIFICATION); // dữ liệu hai project giống nhau có thể ra REVIEW/HIGH
-    await sv.getByRole('button', { name: 'Gửi lại sau chỉnh sửa' }).click();
+    await resend.click();
     await expect(sv.getByText(/Đã gửi hồ sơ lần 2/)).toBeVisible();
     await expect(sv.getByText('Chờ xét duyệt').first()).toBeVisible();
 

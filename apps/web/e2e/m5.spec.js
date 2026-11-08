@@ -12,7 +12,7 @@ async function tableRows(page) {
 }
 
 test.describe('M4 dashboard và CSV', () => {
-  test('TC-FR14-E01 STAFF lọc dashboard, bảng có số, CSV tải về có BOM và khớp từng dòng + tổng', async ({ page }) => {
+  test('TC-FR14-E03 STAFF lọc dashboard, bảng có số, CSV tải về có BOM và khớp từng dòng + tổng', async ({ page }) => {
     const S = data();
     await login(page, S.users.cb.code);
     await page.goto('/thong-ke');
@@ -33,7 +33,7 @@ test.describe('M4 dashboard và CSV', () => {
     }
   });
 
-  test('TC-FR14-E02 lọc theo trạng thái Đã đóng: bảng chỉ còn một nhóm, tổng đổi và CSV vẫn khớp', async ({ page }) => {
+  test('TC-FR14-E04 lọc theo trạng thái Đã đóng: bảng chỉ còn một nhóm, tổng đổi và CSV vẫn khớp', async ({ page }) => {
     const S = data();
     await login(page, S.users.cb.code);
     await page.goto('/thong-ke?groupBy=status');

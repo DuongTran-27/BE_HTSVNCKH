@@ -224,4 +224,23 @@ describe('BUG-012 stuck=true (FR16.5)', () => {
     expect((await get('admin', '?stuck=true')).status).toBe(403);
     expect((await get('staff', '?stuck=yes')).status).toBe(400);
   });
+  it('TC-FR16-B7 LECTURER/STUDENT với stuck=true: 200, chỉ đề tài kẹt trong phạm vi của mình, không lộ của người khác', async () => {
+    const mk = (key, status, leader) => prisma.topic.create({ data: { title: `Kẹt ${key}`, summary: 'S', objectives: 'O', keywords: [], code: `T213-B7${key}`, roundId: closed.id, facultyId: F1.id, status, members: { create: [{ userId: U[leader].id, role: 'LEADER' }] } } });
+    const made = [await mk('1', 'HAS_ADVISOR', 'svA'), await mk('2', 'WAITING_ADVISOR', 'svB'), await mk('3', 'UNDER_REVIEW', 'svA')];
+    try {
+      await prisma.advising.create({ data: { topicId: made[0].id, lecturerId: U.lect.id } });
+      await prisma.advising.create({ data: { topicId: made[2].id, lecturerId: U.lect.id } });
+      for (const [who, want] of [['svA', ['T213-B71']], ['svB', ['T213-B72']], ['lect', ['T213-B71']], ['lect2', []]]) {
+        const r = await get(who, '?stuck=true');
+        expect(r.status, who).toBe(200);
+        expect(codes(r), who).toEqual(want);
+        expect(r.body.total, who).toBe(want.length);
+      }
+    } finally {
+      const ids = made.map((t) => t.id);
+      await prisma.advising.deleteMany({ where: { topicId: { in: ids } } });
+      await prisma.topicMember.deleteMany({ where: { topicId: { in: ids } } });
+      await prisma.topic.deleteMany({ where: { id: { in: ids } } });
+    }
+  });
 });

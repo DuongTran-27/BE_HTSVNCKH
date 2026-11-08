@@ -163,7 +163,19 @@ describe('§9.4 – gửi khi FR06 lỗi (ca 1, 2, 3, 8)', () => {
     for (const who of [staff, leader, member]) {
       expect(await snap(who)).toMatchObject({ unchecked: true, similarityCheck: { status: 'ERROR' }, similarityBypass: { reason: REASON, grantedBy: { fullName: U[staff].fullName }, createdAt: b.createdAt } });
     }
-    expect((await snap(lec)).similarityBypass).toEqual({ reason: null, grantedBy: { fullName: U[staff].fullName }, createdAt: b.createdAt });
+    // G46 (đổi từ T609 cũ): GVHD hiện hành là quan hệ hiện hành nên thấy lý do
+    expect((await snap(lec)).similarityBypass).toEqual({ reason: REASON, grantedBy: { fullName: U[staff].fullName }, createdAt: b.createdAt });
+
+    // G46: GV cũ được cấp quyền đọc và SV đã rời chỉ thấy reason null, vẫn thấy grantedBy/createdAt
+    const old = await mkUser('LECTURER');
+    await prisma.advising.create({ data: { topicId: t.id, lecturerId: U[old].id, endAt: new Date(Date.now() - 1000), readOnlyGranted: true } });
+    const gone = await mkUser('STUDENT');
+    await prisma.topicMember.create({ data: { topicId: t.id, userId: U[gone].id, role: 'MEMBER', joinedAt: new Date(Date.now() - 3600000), leftAt: new Date(Date.now() + 3600000) } });
+    for (const who of [old, gone]) {
+      const x = await get(who, `/api/topics/${t.id}/submissions/1`);
+      expect([who, x.status]).toEqual([who, 200]);
+      expect(x.body.submission.similarityBypass).toEqual({ reason: null, grantedBy: { fullName: U[staff].fullName }, createdAt: b.createdAt });
+    }
 
     const d = await detail(staff, t);
     expect(d.latestSubmission.unchecked).toBe(true);

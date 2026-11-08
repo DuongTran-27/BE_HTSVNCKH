@@ -32,6 +32,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // sau proxy của Vercel/Render
   app.use(pinoHttp({ logger, genReqId: (req) => { const id = req.get('x-request-id'); return id && /^[\w-]{1,64}$/.test(id) ? id : randomUUID(); }, autoLogging: env.NODE_ENV !== 'test' }));
+  app.use(helmet()); // trước chốt ORIGIN_SECRET để 404 của chốt có cùng header bảo mật
   if (env.ORIGIN_SECRET) {
     // Chỉ nhận request qua proxy Vercel (gắn header bí mật); gọi thẳng Render -> 404 chuẩn. Chỉ miễn đúng GET /api/health.
     const secret = Buffer.from(env.ORIGIN_SECRET);
@@ -42,7 +43,6 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
       next();
     });
   }
-  app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean), credentials: true }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());

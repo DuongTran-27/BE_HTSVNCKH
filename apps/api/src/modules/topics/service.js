@@ -53,6 +53,8 @@ export const canView = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.i
 export const canReadExecution = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || (rel.inStaffScope && t.status !== 'DRAFT');
 // Quyền đọc "phiên bản" (snapshot hồ sơ, phiên bản tài liệu – G41): null = không được; còn lại là hàm at → được đọc bản tạo lúc at.
 // Người đã rời nhóm chỉ đọc bản trong khoảng còn là thành viên (FR21, API_GD6 §5.4)
+// G46: lý do cho phép gửi khi chưa kiểm tra chỉ hiện theo quan hệ hiện hành (không cho GV cũ/SV đã rời)
+export const canSeeBypassReason = (rel) => rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope;
 export const versionReader = (t, rel) => {
   if (canReadExecution(t, rel)) return () => true;
   const w = rel.formerMemberWindows;
@@ -109,7 +111,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         ? { id: sim.id, status: sim.status, level: sim.level, createdAt: iso(sim.createdAt), isStale: sim.contentHash !== contentHash(t) }
         : null,
       // G5 (API_GD6 §9.3): thành viên, GVHD hiện hành, cán bộ trong phạm vi
-      similarityBypass: bypass && (rel.isMember || rel.isCurrentAdvisor || rel.inStaffScope) ? presentBypass(bypass) : null,
+      similarityBypass: bypass && canSeeBypassReason(rel) ? presentBypass(bypass) : null,
       availableActions: actions,
       currentResult: res ? { version: res.version, result: res.result, createdAt: iso(res.createdAt) } : null,
       closeReadiness: CLOSING.includes(t.status) && (rel.isCurrentAdvisor || rel.inStaffScope)

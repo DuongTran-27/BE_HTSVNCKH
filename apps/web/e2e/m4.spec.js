@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { expect, test } from '@playwright/test';
-import { data, login } from './helpers.js';
+import { API_PORT } from './env.js';
+import { data, db, login } from './helpers.js';
 
 // E2E GĐ4 (M2, M3): nộp mốc -> nộp muộn -> nhận xét + đánh giá -> kết quả cuối -> đề nghị đóng -> xác nhận đóng.
 // Kho file là bản giả trong bộ nhớ của API (server.js khi không có CLOUDINARY_URL), không gọi Cloudinary thật.
@@ -63,6 +64,34 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
     const g = group(page, M_LATE);
     await expect(g.getByText(FILE_LATE)).toBeVisible();
     await expect(g.getByText('Nộp muộn')).toBeVisible();
+  });
+
+  // Kho file giả trong bộ nhớ API: URL ký giả (api.cloudinary.test) nên chặn điều hướng, kiểm URL và lịch sử, không tải thật
+  test('TC-FR24-E01 SV trong nhóm bấm Tải về: URL ký attachment hết hạn ~5 phút, ghi lịch sử; người ngoài nhóm nhận 403 và không ghi lịch sử', async ({ browser, request }) => {
+    const S = data();
+    const { flow, neg } = S.exec;
+    const page = await pageFor(browser, 'sv', flow.sv.code);
+    await page.route('https://api.cloudinary.test/**', (route) => route.fulfill({ status: 200, body: 'ok' }));
+    await page.goto(`/de-tai/${flow.id}/tai-lieu`);
+    const row = group(page, M_ONTIME).getByRole('listitem').first();
+    const doc = await db().document.findFirstOrThrow({ where: { topicId: flow.id, fileName: { startsWith: FILE_ONTIME.replace('.pdf', '') } } });
+    const before = await db().auditLog.count({ where: { action: 'DOCUMENT_DOWNLOAD', entityId: doc.id } });
+    const reqP = page.waitForRequest((r) => r.url().startsWith('https://api.cloudinary.test/'));
+    await row.getByRole('button', { name: 'Tải về' }).click();
+    const url = new URL((await reqP).url());
+    expect(url.searchParams.get('attachment')).toBe('true');
+    const ttl = Number(url.searchParams.get('expires_at')) - Date.now() / 1000;
+    expect(ttl).toBeGreaterThan(280);
+    expect(ttl).toBeLessThanOrEqual(300);
+    await expect.poll(() => db().auditLog.count({ where: { action: 'DOCUMENT_DOWNLOAD', entityId: doc.id } })).toBe(before + 1);
+
+    const api = `http://localhost:${API_PORT}/api`;
+    const lg = await request.post(`${api}/auth/login`, { data: { identifier: neg.sv.code, password: S.password } });
+    expect(lg.status()).toBe(200);
+    const { accessToken } = await lg.json();
+    const denied = await request.post(`${api}/documents/${doc.id}/download-url`, { headers: { Authorization: `Bearer ${accessToken}` }, data: {} });
+    expect(denied.status()).toBe(403);
+    expect(await db().auditLog.count({ where: { action: 'DOCUMENT_DOWNLOAD', entityId: doc.id } })).toBe(before + 1);
   });
 
   test('TC-FR12-E03 GVHD nhận xét và đánh giá Đạt cho cả hai mốc; SV thấy nhận xét', async ({ browser }) => {

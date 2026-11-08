@@ -351,6 +351,14 @@ describe('Lịch sử tham gia (SV đã rời)', () => {
     expect(await screen.findByText('Không có tài liệu nào trong thời gian bạn tham gia.')).toBeTruthy();
   });
 
+  it('lần gửi unchecked hiện "Gửi khi chưa kiểm tra", không bao giờ "Không trùng" (G47)', async () => {
+    map['GET /topics/t1/submissions'] = { items: [{ id: 's1', seq: 1, createdAt: '2026-10-05T00:00:00Z', similarityLevel: null, similarityStatus: 'ERROR', unchecked: true }] };
+    map['GET /topics/t1/documents'] = { items: [] };
+    open('/lich-su-tham-gia/t1', U('STUDENT'));
+    expect(await screen.findByText('Gửi khi chưa kiểm tra')).toBeTruthy();
+    expect(screen.queryByText('Không trùng')).toBeNull();
+  });
+
   it('GV không vào được route của SV', async () => {
     open('/lich-su-tham-gia', U('LECTURER'));
     await waitFor(() => expect(screen.getAllByText(/không có quyền/i).length).toBeGreaterThan(0));

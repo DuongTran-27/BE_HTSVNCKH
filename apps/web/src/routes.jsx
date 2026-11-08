@@ -170,10 +170,12 @@ function HomeRedirect() {
 }
 
 // Data router bắt buộc (useBlocker ở R7, R21 – UI §1.1)
+const hydrateFallbackElement = <p role="status" className="p-4">Đang tải…</p>;
 export const routes = [
-  { path: '/dang-nhap', loader: guestLoader, element: <LoginPage /> },
+  { path: '/dang-nhap', loader: guestLoader, hydrateFallbackElement, element: <LoginPage /> },
   {
     loader: authLoader,
+    hydrateFallbackElement,
     element: <Layout />,
     children: [
       { path: '/', element: <HomeRedirect /> },

@@ -287,7 +287,7 @@ describe('G5 cờ chưa kiểm tra', () => {
     expect(screen.queryByRole('button', { name: 'Cho phép gửi khi chưa kiểm tra' })).toBeNull();
   });
 
-  it('snapshot: cờ unchecked và người cho phép; GV không thấy lý do (null)', async () => {
+  it('snapshot: cờ unchecked và người cho phép; người chỉ đọc lịch sử (GV cũ, SV đã rời) không thấy lý do (null)', async () => {
     map['GET /topics/t1/submissions/1'] = { submission: {
       id: 's1', seq: 1, createdAt: '2027-01-01T00:00:00Z', createdBy: { fullName: 'An' }, payload: { title: 'T', keywords: [] }, similarityCheck: { status: 'ERROR', level: null },
       decision: null, unchecked: true, similarityBypass: { reason: null, grantedBy: { fullName: 'Cán bộ B' }, createdAt: '2027-01-02T01:00:00.000Z' },

@@ -34,6 +34,16 @@ describe('ORIGIN_SECRET', () => {
     expect((await request(secured).post('/api/cron/reminders')).status).toBe(404);
   });
 
+  it('B11: 404 của chốt có cùng tập header bảo mật (CSP, HSTS...) như 404 thường', async () => {
+    const gate = await request(secured).get('/api/auth/me');
+    const plain = await request(secured).get('/api/khong-co').set('x-nckh-origin', SECRET);
+    expect([gate.status, plain.status]).toEqual([404, 404]);
+    for (const h of ['content-security-policy', 'strict-transport-security', 'x-content-type-options']) expect(gate.headers[h], h).toBeDefined();
+    // cors không bắt buộc trước chốt: bỏ qua header CORS
+    const names = (r) => Object.keys(r.headers).filter((k) => !['date', 'etag', 'content-length', 'x-request-id', 'vary'].includes(k) && !k.startsWith('access-control-')).sort();
+    expect(names(gate)).toEqual(names(plain));
+  });
+
   it('không đặt biến -> như cũ', async () => {
     expect((await request(build()).get('/api/auth/me')).status).toBe(401);
   });
