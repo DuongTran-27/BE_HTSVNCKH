@@ -5,8 +5,8 @@ const schema = z.object({
   PORT: z.coerce.number().default(4000),
   DATABASE_URL: z.string().optional(),
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET tối thiểu 32 ký tự'),
-  ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().default(900),      // 15 phút (FR01)
-  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().default(7),
+  ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().max(900).default(900), // ≤ 15 phút (FR01)
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().max(30).default(7), // đặc tả không nêu; trần 30 ngày để phiên bị đánh cắp không sống vô hạn
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   ENABLE_SWAGGER: z.stringbool().default(false), // coerce.boolean biến "false" thành true
   CLOUDINARY_URL: z.string().optional(),

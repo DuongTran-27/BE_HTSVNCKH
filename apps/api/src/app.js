@@ -8,6 +8,7 @@ import { errorHandler } from './middlewares/errorHandler.js';
 import { createRequireAuth, requirePasswordChanged } from './middlewares/auth.js';
 import { createAuthService } from './modules/auth/service.js';
 import { authRouter } from './modules/auth/routes.js';
+import { LOG_REDACT } from './lib/logger.js';
 import { notFound } from './lib/errors.js';
 import { catalogRouters } from './modules/catalog/routes.js';
 import { roundsRouter } from './modules/rounds/routes.js';
@@ -31,7 +32,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // sau proxy của Vercel/Render
-  app.use(pinoHttp({ logger, genReqId: (req) => { const id = req.get('x-request-id'); return id && /^[\w-]{1,64}$/.test(id) ? id : randomUUID(); }, autoLogging: env.NODE_ENV !== 'test' }));
+  app.use(pinoHttp({ ...(logger ? { logger } : { level: 'silent', redact: LOG_REDACT }), genReqId: (req) => { const id = req.get('x-request-id'); return id && /^[\w-]{1,64}$/.test(id) ? id : randomUUID(); }, autoLogging: env.NODE_ENV !== 'test' }));
   app.use(helmet()); // trước chốt ORIGIN_SECRET để 404 của chốt có cùng header bảo mật
   if (env.ORIGIN_SECRET) {
     // Chỉ nhận request qua proxy Vercel (gắn header bí mật); gọi thẳng Render -> 404 chuẩn. Chỉ miễn đúng GET /api/health.

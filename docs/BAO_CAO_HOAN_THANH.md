@@ -48,5 +48,5 @@ Agent không deploy, không tạo tài khoản dịch vụ, không đọc `.env`
 ## 6. Hạn chế đã biết
 - Job E2E trong CI chưa chạy thật trên GitHub (chỉ chạy cục bộ).
 - Số đo NFR01–NFR04, NFR10 trên hạ tầng thật chỉ có sau deploy (§6.4).
-- MINOR bảo mật không chặn (`FINAL-bao-mat.md`): cận trên TTL token, cookie test in ra log CI, `persist-credentials: false` trong `ci.yml`, limiter cho `/api/auth/refresh` và `/logout`.
+- 4 MINOR bảo mật của `FINAL-bao-mat.md` đã sửa ở BUG-016. Lưu ý: limiter `/api/auth/refresh` 300 lần/15 phút/IP – nếu cả trường đi chung một IP NAT (> ~250 phiên đồng thời) thì nâng mức này sau khi đo thật. API không khởi động nếu `ACCESS_TOKEN_TTL_SECONDS` > 900 hoặc `REFRESH_TOKEN_TTL_DAYS` > 30.
 - Hoãn: phân trang nhận xét (B5).

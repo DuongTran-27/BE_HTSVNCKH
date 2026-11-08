@@ -19,6 +19,11 @@ export const authRouter = ({ authService, requireAuth, env }) => {
   const loginLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 20, keyBy: 'ip', skipSuccessfulRequests: true });
   const changePasswordLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 5, keyBy: 'user' });
 
+  // Rộng rãi: nhiều tab/SPA cùng NAT làm mới phiên thường xuyên; chỉ chặn lạm dụng
+  const sessionLimiter = () => createLimiter({ windowMs: 15 * 60e3, limit: 300, keyBy: 'ip' });
+  const refreshLimiter = sessionLimiter();
+  const logoutLimiter = sessionLimiter();
+
   const send = (res, issued) => {
     res.cookie(REFRESH_COOKIE, issued.refreshToken, cookieOpts);
     res.json({ accessToken: issued.accessToken, user: issued.user });
@@ -28,7 +33,7 @@ export const authRouter = ({ authService, requireAuth, env }) => {
     send(res, await authService.login({ ...req.body, userAgent: req.get('user-agent') }));
   });
 
-  r.post('/refresh', async (req, res) => {
+  r.post('/refresh', refreshLimiter, async (req, res) => {
     try {
       send(res, await authService.refresh({ refreshToken: req.cookies?.[REFRESH_COOKIE], userAgent: req.get('user-agent') }));
     } catch (e) {
@@ -38,7 +43,7 @@ export const authRouter = ({ authService, requireAuth, env }) => {
     }
   });
 
-  r.post('/logout', async (req, res) => {
+  r.post('/logout', logoutLimiter, async (req, res) => {
     await authService.logout({ refreshToken: req.cookies?.[REFRESH_COOKIE] });
     res.clearCookie(REFRESH_COOKIE, { path: cookieOpts.path });
     res.status(204).end();
