@@ -30,3 +30,15 @@ Yêu cầu trực tiếp của chủ dự án: dùng skill/thư viện giao di�
 - `ExecTabs`, `TopicActionBar`, `StuckTopics`: kiểu mới.
 - Bằng chứng: `npm run lint` sạch; `npm test -w @nckh/web` 28 file, 230/230 đạt; build xong; ảnh chụp với API giả lập (1366px, 360px) cho thống kê (cột/tròn) và chi tiết đề tài.
 - Vẫn chưa chạy E2E (Docker Desktop tắt).
+
+## Đợt 3 – Quản trị, xét duyệt và các trang còn lại (2026-11-09)
+- `ui.jsx`: thêm `PageHeader` (tiêu đề + mô tả + nút chính), hằng `card`, `tableFrame`.
+- Bảng (tài khoản, đợt, nhập CSV): khung thẻ, bỏ `border-b` không màu (TW4 dùng currentColor → viền đen), ô rộng hơn; mã tài khoản dạng mono.
+- `UsersPage`, `RoundsPage`: PageHeader có mô tả, nút có icon, bộ lọc trong thẻ.
+- `UserDetailPage`: thẻ hồ sơ (chữ tắt, tên, email, dl) + nút Khóa/Mở khóa/Đặt lại mật khẩu có icon; form trong thẻ.
+- `UserCreatePage`, `UserImportPage`, `RoundFormPage`, `CatalogPage`: form/fieldset thành thẻ, ô chọn file kiểu mới, số hợp lệ/lỗi dạng chip, tab danh mục kiểu mới.
+- `ReviewQueuePage`: hồ sơ quá hạn có viền trái đỏ + nhãn "Quá hạn", icon giờ gửi/hạn.
+- `ReviewPage`: thẻ đầu trang, hồ sơ trong thẻ, cột trùng lặp + quyết định dính khi cuộn (desktop); `Snapshot`, `ReviewActions`, `SimilarityPanel` kiểu mới.
+- `ErrorPages` (icon + gợi ý), `ChangePasswordPage` (thẻ giữa trang), `NotificationsPage` (chấm chưa đọc), form `TopicCreate`/`TopicEdit`/`GroupPage` trong thẻ.
+- Bằng chứng: `npm run lint` sạch; `npm test -w @nckh/web` 28 file, 230/230 đạt; build xong; ảnh chụp API giả lập: tài khoản (1366/360), chi tiết tài khoản, đợt, sửa đợt, danh mục, nhập CSV, hàng chờ, xét duyệt (1366/360), thông báo, đổi mật khẩu, 404.
+- Vẫn chưa chạy E2E (Docker Desktop tắt).

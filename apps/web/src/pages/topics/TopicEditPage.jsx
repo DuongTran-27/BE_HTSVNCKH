@@ -144,7 +144,7 @@ function EditForm({ topic }) {
     <section>
       <p data-testid="topic-code" className="text-sm text-slate-700">{topic.code}</p>
       <h1 className="text-2xl font-semibold">Soạn hồ sơ</h1>
-      <form noValidate onSubmit={onSave} className="mt-3 max-w-2xl space-y-4">
+      <form noValidate onSubmit={onSave} className="mt-4 max-w-2xl space-y-4 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5">
         <FormField label="Tên đề tài" error={errors.title?.message}><input type="text" {...register('title')} /></FormField>
         <FormField label="Tóm tắt" error={errors.summary?.message} hint={`${words}/${cfg.minSummaryWords} từ`}><textarea rows={6} {...register('summary')} /></FormField>
         <FormField label="Mục tiêu" error={errors.objectives?.message}><textarea rows={4} {...register('objectives')} /></FormField>

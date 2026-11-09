@@ -55,7 +55,7 @@ export function RoundFormPage({ create }) {
   if (create) return <RoundForm />;
   return (
     <section>
-      <h1 className="mb-3 text-2xl font-semibold">Chi tiết đợt</h1>
+      <h1 className="mb-4 text-2xl font-semibold">Chi tiết đợt</h1>
       <QueryBox query={query}>{(d) => <RoundForm key={JSON.stringify(d.round)} round={d.round} />}</QueryBox>
     </section>
   );
@@ -101,6 +101,7 @@ function RoundForm({ round }) {
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="max-w-3xl space-y-4" aria-label={round ? 'Sửa đợt' : 'Tạo đợt'}>
       {!round && <h1 className="text-2xl font-semibold">Tạo đợt</h1>}
       {round && <p className="text-sm text-slate-700">Thay đổi áp dụng từ lần kiểm tra kế tiếp, không áp dụng lại cho dữ liệu cũ.</p>}
+      <div className="space-y-4 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5">
       {!round && (
         <FormField label="Khoa" error={err('facultyId')}>
           <select {...register('facultyId')}><Options placeholder="Chọn khoa" options={opt(faculties.data ?? [])} /></select>
@@ -108,14 +109,15 @@ function RoundForm({ round }) {
       )}
       <FormField label="Tên đợt" error={err('name')}><input {...register('name')} /></FormField>
       <FormField label="Năm học" hint="Dạng 2026-2027" error={err('academicYear')}><input {...register('academicYear')} /></FormField>
-      <fieldset className="grid gap-3 sm:grid-cols-2">
-        <legend className="mb-1 font-bold">Mốc thời gian (giờ Việt Nam)</legend>
+      </div>
+      <fieldset className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5 grid gap-3 sm:grid-cols-2">
+        <legend className="float-left mb-1 w-full font-semibold sm:col-span-2">Mốc thời gian (giờ Việt Nam)</legend>
         {MILESTONES.map(([k, label]) => (
           <FormField key={k} label={label} error={err(k)}><input type="datetime-local" {...register(k)} /></FormField>
         ))}
       </fieldset>
-      <fieldset className="grid gap-3 sm:grid-cols-2">
-        <legend className="mb-1 font-bold">Cấu hình tham số</legend>
+      <fieldset className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5 grid gap-3 sm:grid-cols-2">
+        <legend className="float-left mb-1 w-full font-semibold sm:col-span-2">Cấu hình tham số</legend>
         {CONFIG_FIELDS.map(([k, label]) => {
           const isDefault = sameAsDefault(k, getPath(config, k));
           const step = k.startsWith('similarity.') && !k.endsWith('Words') ? '0.01' : '1';

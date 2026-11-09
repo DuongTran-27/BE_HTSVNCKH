@@ -11,7 +11,8 @@ import { applyServerErrors } from '../../lib/forms.js';
 import { useCatalog, useScopedFaculties } from '../../lib/queries.js';
 import { toast } from '../../lib/toast.js';
 import { FormField } from '../../components/FormField.jsx';
-import { Badge, CheckGroup, ConfirmDialog, Options, QueryBox, TempPasswordBox, btnGhost, btnPrimary, opt } from '../../components/ui.jsx';
+import { KeyRound, Lock, LockOpen } from 'lucide-react';
+import { Badge, CheckGroup, ConfirmDialog, Options, PageHeader, QueryBox, TempPasswordBox, btnGhost, btnPrimary, card, opt } from '../../components/ui.jsx';
 
 const FIELDS = ['email', 'fullName', 'classId', 'facultyId'];
 
@@ -36,8 +37,8 @@ export function UserDetailPage() {
   const query = useQuery({ queryKey: ['users', 'detail', id], queryFn: () => api(`/users/${id}`) });
   return (
     <section>
-      <h1 className="text-2xl font-semibold">Chi tiết tài khoản</h1>
-      <div className="mt-3">
+      <PageHeader title="Chi tiết tài khoản" />
+      <div>
         {/* key theo dữ liệu: form điền lại sau khi lưu/khóa */}
         <QueryBox query={query}>{(d) => <UserDetail key={JSON.stringify(d.user)} user={d.user} />}</QueryBox>
       </div>
@@ -102,31 +103,41 @@ function UserDetail({ user: target }) {
 
   return (
     <div className="space-y-4">
-      <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-[10rem_1fr]">
-        <dt className="font-medium">Mã</dt><dd>{target.code}</dd>
-        <dt className="font-medium">Vai trò</dt><dd>{ROLE_LABEL[target.role]}</dd>
-        <dt className="font-medium">Trạng thái</dt>
+      <div className={`${card} flex flex-wrap items-start gap-4`}>
+      <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full bg-blue-100 text-lg font-semibold text-blue-800">{target.fullName.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase()}</span>
+      <div className="min-w-0 flex-1">
+      <p className="break-words text-lg font-semibold">{target.fullName}</p>
+      <p className="break-all text-sm text-slate-600">{target.email}</p>
+      <dl className="mt-3 grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[8rem_1fr]">
+        <dt className="text-slate-500">Mã</dt><dd>{target.code}</dd>
+        <dt className="text-slate-500">Vai trò</dt><dd>{ROLE_LABEL[target.role]}</dd>
+        <dt className="text-slate-500">Trạng thái</dt>
         <dd className="space-x-1">
           {target.isLocked ? <Badge tone="red">Đã khóa</Badge> : <Badge tone="green">Hoạt động</Badge>}
           {target.mustChangePassword && <Badge tone="amber">Chờ đổi mật khẩu</Badge>}
         </dd>
-        <dt className="font-medium">Tạo lúc</dt><dd>{fmtDateTime(target.createdAt)}</dd>
+        <dt className="text-slate-500">Tạo lúc</dt><dd>{fmtDateTime(target.createdAt)}</dd>
       </dl>
+      </div>
+      {!isSelf && (
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={btnGhost} onClick={() => ask(target.isLocked ? 'unlock' : 'lock')}>
+            {target.isLocked ? <LockOpen aria-hidden="true" className="size-4" /> : <Lock aria-hidden="true" className="size-4" />}{target.isLocked ? 'Mở khóa' : 'Khóa'}
+          </button>
+          <button type="button" className={btnGhost} onClick={() => ask('reset')}><KeyRound aria-hidden="true" className="size-4" />Đặt lại mật khẩu</button>
+        </div>
+      )}
+      </div>
 
       {tempPassword && <TempPasswordBox password={tempPassword} onClose={() => setTempPassword(null)} />}
 
-      {!isSelf && (
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className={btnGhost} onClick={() => ask(target.isLocked ? 'unlock' : 'lock')}>{target.isLocked ? 'Mở khóa' : 'Khóa'}</button>
-          <button type="button" className={btnGhost} onClick={() => ask('reset')}>Đặt lại mật khẩu</button>
-        </div>
-      )}
       {confirm && (
         <ConfirmDialog title={CONFIRM[confirm][0]} message={CONFIRM[confirm][1]} confirmLabel={CONFIRM[confirm][2]} danger={confirm !== 'unlock'}
           busy={act.isPending} error={confirmError} onConfirm={() => act.mutate(confirm)} onCancel={() => setConfirm(null)} />
       )}
 
-      <form onSubmit={handleSubmit(onSave)} noValidate className="max-w-xl space-y-4" aria-label="Sửa tài khoản">
+      <form onSubmit={handleSubmit(onSave)} noValidate className={`${card} max-w-xl space-y-4`} aria-label="Sửa tài khoản">
+        <h2 className="font-semibold">Thông tin tài khoản</h2>
         <FormField label="Email" error={errors.email?.message}><input type="email" {...register('email')} /></FormField>
         <FormField label="Họ tên" error={errors.fullName?.message}><input {...register('fullName')} /></FormField>
         {target.role === 'STUDENT' && (
@@ -145,7 +156,7 @@ function UserDetail({ user: target }) {
 
       {isAdmin && target.role === 'STAFF' && (
         <div className="max-w-xl space-y-2 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
-          <h2 className="font-bold">Phạm vi khoa</h2>
+          <h2 className="font-semibold">Phạm vi khoa</h2>
           <p className="text-sm text-amber-900">Lưu sẽ thay toàn bộ phạm vi.</p>
           <CheckGroup legend="Khoa phụ trách" value={scopes} onChange={setScopes} options={(allFaculties.data ?? []).map((f) => ({ id: f.id, label: f.name }))} />
           {scopeError && <p role="alert" className="text-sm text-red-700 break-words">{scopeError}</p>}

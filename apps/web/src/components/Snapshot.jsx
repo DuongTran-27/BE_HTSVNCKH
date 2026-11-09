@@ -3,18 +3,18 @@ import { fmtDateTime } from '../lib/format.js';
 import { Badge } from './ui.jsx';
 
 const Block = ({ title, children }) => (
-  <div><h3 className="font-bold">{title}</h3><div className="whitespace-pre-wrap break-words text-slate-800">{children}</div></div>
+  <div><h3 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">{title}</h3><div className="mt-1.5 whitespace-pre-wrap break-words leading-relaxed text-slate-800">{children}</div></div>
 );
 
 /** Nội dung bất biến của một lần gửi (payload, FR17) */
 export function SnapshotBody({ payload }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <h2 className="break-words text-lg font-semibold">{payload.title}</h2>
       <Block title="Tóm tắt">{payload.summary || '—'}</Block>
       <Block title="Mục tiêu">{payload.objectives || '—'}</Block>
       <Block title="Lĩnh vực">{payload.fieldName || '—'}</Block>
-      <div><h3 className="font-bold">Từ khóa</h3><div className="flex flex-wrap gap-1">{payload.keywords?.length ? payload.keywords.map((k) => <Badge key={k}>{k}</Badge>) : '—'}</div></div>
+      <div><h3 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">Từ khóa</h3><div className="mt-2 flex flex-wrap gap-1.5">{payload.keywords?.length ? payload.keywords.map((k) => <Badge key={k} tone="blue">{k}</Badge>) : '—'}</div></div>
     </div>
   );
 }
@@ -23,7 +23,7 @@ export function SnapshotBody({ payload }) {
 export function DecisionBox({ decision, title = 'Quyết định' }) {
   return (
     <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm" data-testid="decision-box">
-      <h3 className="font-bold">{title}</h3>
+      <h3 className="font-semibold">{title}</h3>
       {decision ? (
         <>
           <p>{ACTION_LABEL[decision.action] ?? decision.action}</p>

@@ -5,7 +5,8 @@ import { useAuth } from '../../lib/auth.js';
 import { fmtDateTime, qs } from '../../lib/format.js';
 import { useScopedFaculties } from '../../lib/queries.js';
 import { inputClass } from '../../components/FormField.jsx';
-import { Badge, Options, Pager, QueryBox, btnGhost, btnPrimary, opt } from '../../components/ui.jsx';
+import { CalendarPlus } from 'lucide-react';
+import { Badge, Options, PageHeader, Pager, QueryBox, btnGhost, btnPrimary, opt, tableFrame } from '../../components/ui.jsx';
 
 // R23 – API_GD2 §4.3 GET /api/rounds
 export function RoundsPage() {
@@ -32,11 +33,10 @@ export function RoundsPage() {
 
   return (
     <section>
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-2xl font-semibold">Đợt</h1>
-        <Link to="/quan-ly/dot/moi" className={btnPrimary}>Tạo đợt mới</Link>
-      </div>
-      <form className="mt-3 grid gap-2 sm:grid-cols-3" onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc đợt">
+      <PageHeader title="Đợt" description="Đợt đăng ký đề tài: mốc thời gian và tham số kiểm tra hồ sơ của từng khoa.">
+        <Link to="/quan-ly/dot/moi" className={btnPrimary}><CalendarPlus aria-hidden="true" className="size-4" />Tạo đợt mới</Link>
+      </PageHeader>
+      <form className="grid gap-2 sm:grid-cols-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5" onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc đợt">
         <select aria-label="Khoa" className={inputClass} value={facultyId} onChange={(e) => set('facultyId', e.target.value)}>
           <Options placeholder="Mọi khoa" options={opt(faculties.data ?? [])} />
         </select>
@@ -48,22 +48,22 @@ export function RoundsPage() {
         <QueryBox query={query} empty="Chưa có đợt nào. Tạo đợt mới." isEmpty={(d) => d.items.length === 0}>
           {(d) => (
             <>
-              <div className="overflow-x-auto">
+              <div className={tableFrame}>
                 <table className="w-full min-w-[48rem] text-left text-sm">
-                  <thead><tr className="border-b bg-slate-100">
-                    {['Tên', 'Khoa', 'Năm học', 'Mở đăng ký', 'Đóng đăng ký', 'Hạn xét duyệt', 'Kết thúc', ''].map((h) => <th key={h} scope="col" className="p-2">{h}</th>)}
+                  <thead><tr>
+                    {['Tên', 'Khoa', 'Năm học', 'Mở đăng ký', 'Đóng đăng ký', 'Hạn xét duyệt', 'Kết thúc', ''].map((h) => <th key={h} scope="col" className="px-3 py-2.5">{h}</th>)}
                   </tr></thead>
                   <tbody>
                     {d.items.map((r) => (
-                      <tr key={r.id} className="border-b">
-                        <td className="p-2 break-words"><Link className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700" to={`/quan-ly/dot/${r.id}`}>{r.name}</Link></td>
-                        <td className="p-2">{facName[r.facultyId] ?? ''}</td>
-                        <td className="p-2">{r.academicYear}</td>
-                        <td className="p-2">{fmtDateTime(r.regOpenAt)}</td>
-                        <td className="p-2">{fmtDateTime(r.regCloseAt)}</td>
-                        <td className="p-2">{fmtDateTime(r.reviewDeadline)}</td>
-                        <td className="p-2">{fmtDateTime(r.endAt)}</td>
-                        <td className="p-2">{r.registrationOpen && <Badge tone="green">Đang mở đăng ký</Badge>}</td>
+                      <tr key={r.id}>
+                        <td className="px-3 py-3 break-words"><Link className="font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700" to={`/quan-ly/dot/${r.id}`}>{r.name}</Link></td>
+                        <td className="px-3 py-3">{facName[r.facultyId] ?? ''}</td>
+                        <td className="px-3 py-3">{r.academicYear}</td>
+                        <td className="px-3 py-3">{fmtDateTime(r.regOpenAt)}</td>
+                        <td className="px-3 py-3">{fmtDateTime(r.regCloseAt)}</td>
+                        <td className="px-3 py-3">{fmtDateTime(r.reviewDeadline)}</td>
+                        <td className="px-3 py-3">{fmtDateTime(r.endAt)}</td>
+                        <td className="px-3 py-3">{r.registrationOpen && <Badge tone="green">Đang mở đăng ký</Badge>}</td>
                       </tr>
                     ))}
                   </tbody>

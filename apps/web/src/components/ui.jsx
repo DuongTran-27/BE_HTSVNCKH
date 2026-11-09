@@ -6,6 +6,21 @@ export const btn = 'inline-flex min-h-11 items-center justify-center gap-2 round
 export const btnPrimary = `${btn} bg-blue-700 text-white hover:bg-blue-800`;
 export const btnGhost = `${btn} border border-slate-300 bg-white text-slate-800 hover:bg-slate-100`;
 export const btnDanger = `${btn} bg-red-700 text-white hover:bg-red-800`;
+export const card = 'rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5';
+export const tableFrame = 'overflow-x-auto rounded-xl border border-slate-300 bg-white shadow-sm';
+
+/** Đầu trang: tiêu đề + mô tả ngắn bên trái, nút thao tác chính bên phải */
+export function PageHeader({ title, description, children }) {
+  return (
+    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="break-words text-2xl font-semibold">{title}</h1>
+        {description && <p className="mt-1 text-sm text-slate-600">{description}</p>}
+      </div>
+      {children && <div className="flex flex-wrap gap-2">{children}</div>}
+    </div>
+  );
+}
 
 /** Trạng thái đang tải / lỗi (error.message từ API) / dữ liệu; empty: nội dung khi rỗng (UI §6) */
 export function QueryBox({ query, empty, isEmpty, children }) {

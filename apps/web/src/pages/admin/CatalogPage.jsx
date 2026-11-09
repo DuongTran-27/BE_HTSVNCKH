@@ -93,11 +93,11 @@ export function CatalogPage({ kind }) {
       <h1 className="text-2xl font-semibold">Danh mục {cfg.noun}</h1>
       <nav aria-label="Loại danh mục" className="flex flex-wrap gap-1">
         {TABS.filter(([, roles]) => roles.includes(user.role)).map(([k]) => (
-          <NavLink key={k} to={`/quan-ly/danh-muc/${k}`} className={({ isActive }) => `inline-flex min-h-11 items-center rounded-md border px-3 text-sm ${isActive ? 'border-blue-700 bg-blue-50 font-semibold' : 'border-slate-300'}`}>{KINDS[k].title}</NavLink>
+          <NavLink key={k} to={`/quan-ly/danh-muc/${k}`} className={({ isActive }) => `inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors ${isActive ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-700/15' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>{KINDS[k].title}</NavLink>
         ))}
       </nav>
 
-      <form onSubmit={handleSubmit(onCreate)} noValidate className="grid max-w-3xl gap-3 sm:grid-cols-2" aria-label={`Thêm ${cfg.noun}`}>
+      <form onSubmit={handleSubmit(onCreate)} noValidate className="grid max-w-3xl gap-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-5" aria-label={`Thêm ${cfg.noun}`}>
         {cfg.parent && (
           <FormField label={cfg.parent.label} error={errors[cfg.parent.name]?.message}>
             <select {...register(cfg.parent.name)}><Options placeholder={`Chọn ${cfg.parent.label.toLowerCase()}`} options={opt(parents.data ?? [], 'id', (p) => parentName[p.id])} /></select>
@@ -118,7 +118,7 @@ export function CatalogPage({ kind }) {
         )}
         {!cfg.synonym && (
           <label className="inline-flex min-h-11 items-center gap-2">
-            <input type="checkbox" className="size-5" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+            <input type="checkbox" className="size-5 accent-blue-700" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
             Hiện cả mục ngừng dùng
           </label>
         )}
@@ -127,19 +127,19 @@ export function CatalogPage({ kind }) {
 
       <QueryBox query={list} empty={`Chưa có ${cfg.noun} nào.`} isEmpty={(items) => items.length === 0}>
         {(items) => (
-          <ul className="divide-y rounded-md border border-slate-300 bg-white">
+          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
             {items.map((item) => {
               const inactive = item.isActive === false;
               const isEditing = editing?.id === item.id;
               const write = canWrite(item);
               return (
-                <li key={item.id} className={`flex flex-wrap items-center gap-2 p-2 ${inactive ? 'text-slate-500' : ''}`}>
+                <li key={item.id} className={`flex flex-wrap items-center gap-2 px-4 py-2.5 transition-colors hover:bg-slate-50 ${inactive ? 'text-slate-500' : ''}`}>
                   <div className="min-w-0 flex-1 break-words">
                     {cfg.synonym
                       ? <span>{item.term} → <strong>{item.canonical}</strong></span>
                       : isEditing
                         ? <input aria-label="Tên" className={inputClass} value={editing.name} onChange={(e) => setEditing({ id: item.id, name: e.target.value })} />
-                        : <span><span className="font-mono">{item.code}</span>{item.name ? ` – ${item.name}` : ''}{cfg.parent ? ` (${parentName[item.facultyId ?? item.majorId] ?? ''})` : ''}</span>}
+                        : <span><span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">{item.code}</span>{item.name ? ` – ${item.name}` : ''}{cfg.parent ? ` (${parentName[item.facultyId ?? item.majorId] ?? ''})` : ''}</span>}
                     {inactive && <> <Badge>Ngừng dùng</Badge></>}
                   </div>
                   {write && (

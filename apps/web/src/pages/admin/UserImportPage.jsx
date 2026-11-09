@@ -8,7 +8,8 @@ import { downloadCsv } from '../../lib/format.js';
 import { useCooldown } from '../../lib/useCooldown.js';
 import { useScopedFaculties } from '../../lib/queries.js';
 import { FormField } from '../../components/FormField.jsx';
-import { ConfirmDialog, Options, btnGhost, btnPrimary, opt } from '../../components/ui.jsx';
+import { CircleCheck, CircleX, Eye, FileDown, Download } from 'lucide-react';
+import { ConfirmDialog, Options, PageHeader, btnGhost, btnPrimary, card, opt, tableFrame } from '../../components/ui.jsx';
 
 const CRED_COLUMNS = [
   { key: 'code', header: 'Mã' }, { key: 'email', header: 'Email' },
@@ -78,11 +79,11 @@ export function UserImportPage() {
   if (done) {
     return (
       <section className="max-w-2xl space-y-3">
-        <h1 className="text-2xl font-semibold">Nhập tài khoản từ CSV</h1>
-        <p role="status" className="font-medium">Đã tạo {done.createdCount} tài khoản</p>
+        <PageHeader title="Nhập tài khoản từ CSV" />
+        <p role="status" className="flex items-center gap-2 font-medium text-green-800"><CircleCheck aria-hidden="true" className="size-5" />Đã tạo {done.createdCount} tài khoản</p>
         <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 font-medium text-red-800">Mật khẩu tạm chỉ có ở đây. Rời trang là mất.</p>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={btnGhost} onClick={() => downloadCsv(credentialsCsv(done.credentials), 'mat-khau-tam.csv')}>Tải lại file</button>
+          <button type="button" className={btnGhost} onClick={() => downloadCsv(credentialsCsv(done.credentials), 'mat-khau-tam.csv')}><Download aria-hidden="true" className="size-4" />Tải lại file</button>
           <button type="button" className={btnPrimary} onClick={() => setDone(null)}>Tôi đã lưu file</button>
         </div>
         {blocker.state === 'blocked' && (
@@ -96,20 +97,20 @@ export function UserImportPage() {
   const canPreview = facultyId && file && !fileError && !busy && !cd.active;
   return (
     <section className="max-w-3xl space-y-4">
-      <h1 className="text-2xl font-semibold">Nhập tài khoản từ CSV</h1>
-      <div className="space-y-3">
+      <PageHeader title="Nhập tài khoản từ CSV" description="Chọn khoa, tải file lên, xem trước rồi xác nhận. Mật khẩu tạm được tải về một lần duy nhất." />
+      <div className={`${card} space-y-4`}>
         <FormField label="Khoa">
           <select value={facultyId} onChange={(e) => { setFacultyId(e.target.value); setReport(null); }}>
             <Options placeholder="Chọn khoa" options={opt(faculties.data ?? [])} />
           </select>
         </FormField>
         <FormField label="File CSV" error={fileError} hint={`Tối đa ${USER_IMPORT_MAX_ROWS} dòng, ${USER_IMPORT_MAX_BYTES / 1024 / 1024} MB. Cột: ${USER_IMPORT_HEADERS.join(', ')}`}>
-          <input type="file" accept=".csv,text/csv" className="block w-full min-h-11 py-2" onChange={(e) => pick(e.target.files[0])} />
+          <input type="file" accept=".csv,text/csv" className="block w-full min-h-11 rounded-md border border-dashed border-slate-300 bg-slate-50 p-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-700 file:px-3 file:py-1.5 file:font-medium file:text-white" onChange={(e) => pick(e.target.files[0])} />
         </FormField>
         <div className="flex flex-wrap gap-2">
           <button type="button" className={btnGhost}
-            onClick={() => downloadCsv(toCsv([], USER_IMPORT_HEADERS.map((h) => ({ key: h, header: h }))), 'mau-nhap-tai-khoan.csv')}>Tải file mẫu</button>
-          <button type="button" className={btnPrimary} disabled={!canPreview} onClick={() => send('preview')}>{busy && !report ? 'Đang xử lý…' : 'Xem trước'}</button>
+            onClick={() => downloadCsv(toCsv([], USER_IMPORT_HEADERS.map((h) => ({ key: h, header: h }))), 'mau-nhap-tai-khoan.csv')}><FileDown aria-hidden="true" className="size-4" />Tải file mẫu</button>
+          <button type="button" className={btnPrimary} disabled={!canPreview} onClick={() => send('preview')}><Eye aria-hidden="true" className="size-4" />{busy && !report ? 'Đang xử lý…' : 'Xem trước'}</button>
         </div>
         {cd.active && <p className="text-sm text-slate-700">{cd.message}</p>}
         {formError && <p role="alert" className="text-sm text-red-700 break-words">{formError}</p>}
@@ -117,15 +118,18 @@ export function UserImportPage() {
 
       {report && (
         <div className="space-y-3" aria-label="Kết quả xem trước">
-          <p>Hợp lệ: <strong>{report.validCount}</strong> · Lỗi: <strong>{report.errorCount}</strong></p>
+          <p className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-900"><CircleCheck aria-hidden="true" className="size-4" />Hợp lệ: <strong>{report.validCount}</strong></span>
+            <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 ${report.errorCount ? 'border-red-200 bg-red-50 text-red-900' : 'border-slate-200 bg-white text-slate-700'}`}><CircleX aria-hidden="true" className="size-4" />Lỗi: <strong>{report.errorCount}</strong></span>
+          </p>
           {report.errorCount > 0 && (
             <>
               <p role="alert" className="text-red-800">Sửa file rồi tải lên lại{report.errorCount > report.errors.length ? ` (chỉ hiện ${report.errors.length} lỗi đầu)` : ''}.</p>
-              <div className="overflow-x-auto"><table className="w-full min-w-[24rem] text-left text-sm">
+              <div className={tableFrame}><table className="w-full min-w-[24rem] text-left text-sm">
                 <caption className="sr-only">Các dòng lỗi</caption>
-                <thead><tr className="border-b bg-slate-100"><th className="p-2">Dòng</th><th className="p-2">Trường</th><th className="p-2">Lỗi</th></tr></thead>
+                <thead><tr><th className="px-3 py-2.5">Dòng</th><th className="px-3 py-2.5">Trường</th><th className="px-3 py-2.5">Lỗi</th></tr></thead>
                 <tbody>{report.errors.map((e, i) => (
-                  <tr key={i} className="border-b"><td className="p-2">{e.row}</td><td className="p-2">{e.field ?? 'Cả dòng'}</td><td className="p-2 break-words">{e.message}</td></tr>
+                  <tr key={i}><td className="px-3 py-3">{e.row}</td><td className="px-3 py-3">{e.field ?? 'Cả dòng'}</td><td className="px-3 py-3 break-words">{e.message}</td></tr>
                 ))}</tbody>
               </table></div>
             </>
@@ -133,12 +137,12 @@ export function UserImportPage() {
           {report.preview?.length > 0 && (
             <>
               {report.validCount > report.preview.length && <p className="text-sm text-slate-700">Chỉ hiện {report.preview.length} dòng đầu.</p>}
-              <div className="overflow-x-auto"><table className="w-full min-w-[32rem] text-left text-sm">
+              <div className={tableFrame}><table className="w-full min-w-[32rem] text-left text-sm">
                 <caption className="sr-only">Các dòng hợp lệ</caption>
-                <thead><tr className="border-b bg-slate-100">{['Dòng', 'Mã', 'Email', 'Họ tên', 'Vai trò', 'Lớp'].map((h) => <th key={h} className="p-2">{h}</th>)}</tr></thead>
+                <thead><tr>{['Dòng', 'Mã', 'Email', 'Họ tên', 'Vai trò', 'Lớp'].map((h) => <th key={h} className="px-3 py-2.5">{h}</th>)}</tr></thead>
                 <tbody>{report.preview.map((r) => (
-                  <tr key={r.row} className="border-b"><td className="p-2">{r.row}</td><td className="p-2">{r.code}</td><td className="p-2 break-all">{r.email}</td>
-                    <td className="p-2 break-words">{r.fullName}</td><td className="p-2">{ROLE_LABEL[r.role]}</td><td className="p-2">{r.classCode}</td></tr>
+                  <tr key={r.row}><td className="px-3 py-3">{r.row}</td><td className="px-3 py-3">{r.code}</td><td className="px-3 py-3 break-all">{r.email}</td>
+                    <td className="px-3 py-3 break-words">{r.fullName}</td><td className="px-3 py-3">{ROLE_LABEL[r.role]}</td><td className="px-3 py-3">{r.classCode}</td></tr>
                 ))}</tbody>
               </table></div>
             </>

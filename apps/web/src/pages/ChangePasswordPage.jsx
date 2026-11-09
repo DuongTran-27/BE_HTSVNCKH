@@ -11,6 +11,8 @@ import { useCooldown } from '../lib/useCooldown.js';
 import { homePath } from '../lib/nav.js';
 import { toast } from '../lib/toast.js';
 import { FormField } from '../components/FormField.jsx';
+import { btnGhost, btnPrimary } from '../components/ui.jsx';
+import { KeyRound } from 'lucide-react';
 
 // "Nhập lại" chỉ kiểm phía client (UI §4.2)
 const formSchema = changePasswordSchema
@@ -52,8 +54,10 @@ export function ChangePasswordPage() {
   };
 
   return (
-    <main className="mx-auto max-w-sm p-4">
-      <h1 className="text-2xl font-semibold">Đổi mật khẩu</h1>
+    <main className="mx-auto max-w-md py-4 sm:py-8">
+      <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5 sm:p-8">
+      <span className="grid size-11 place-items-center rounded-xl bg-blue-50 text-blue-700"><KeyRound aria-hidden="true" className="size-5" /></span>
+      <h1 className="mt-4 text-2xl font-semibold">Đổi mật khẩu</h1>
       {user.mustChangePassword && (
         <p role="status" className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">Bạn cần đổi mật khẩu trước khi tiếp tục</p>
       )}
@@ -69,13 +73,14 @@ export function ChangePasswordPage() {
         </FormField>
         {formError && <p role="alert" className="text-sm text-red-700 break-words">{formError}</p>}
         {cd.active && <p className="text-sm text-slate-700">{cd.message}</p>}
-        <button type="submit" disabled={isSubmitting || cd.active} className="min-h-11 w-full rounded-md bg-blue-700 px-4 font-medium text-white disabled:opacity-60">
+        <button type="submit" disabled={isSubmitting || cd.active} className={`${btnPrimary} w-full`}>
           {isSubmitting ? 'Đang lưu…' : 'Đổi mật khẩu'}
         </button>
       </form>
       {user.mustChangePassword && (
-        <button type="button" onClick={logout} className="mt-4 min-h-11 w-full rounded-md border border-slate-300 px-4">Đăng xuất</button>
+        <button type="button" onClick={logout} className={`${btnGhost} mt-4 w-full`}>Đăng xuất</button>
       )}
+      </div>
     </main>
   );
 }

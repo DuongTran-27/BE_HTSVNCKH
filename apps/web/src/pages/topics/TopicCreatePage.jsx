@@ -35,7 +35,7 @@ export function TopicCreatePage() {
       <h1 className="text-2xl font-semibold">Tạo đề tài</h1>
       <QueryBox query={rounds} empty="Khoa chưa mở đợt đăng ký nào." isEmpty={(d) => d.length === 0}>
         {(items) => (
-          <form noValidate onSubmit={handleSubmit((v) => create.mutate({ roundId: v.roundId, title: v.title }))} className="mt-3 max-w-xl space-y-3">
+          <form noValidate onSubmit={handleSubmit((v) => create.mutate({ roundId: v.roundId, title: v.title }))} className="mt-4 max-w-xl space-y-4 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5">
             <FormField label="Đợt đăng ký" error={errors.roundId?.message}>
               <select {...register('roundId')}>
                 <Options placeholder="Chọn đợt" options={items.map((r) => ({ value: r.id, label: `${r.name} – ${r.academicYear} (${r.registrationOpen ? 'Đang mở đăng ký' : 'Chưa mở hoặc đã đóng đăng ký'})` }))} />

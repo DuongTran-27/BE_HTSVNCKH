@@ -5,7 +5,8 @@ import { api } from '../lib/api.js';
 import { fmtDateTime, qs } from '../lib/format.js';
 import { safeNext } from '../lib/nav.js';
 import { pickPage, useUrlParams } from '../lib/urlParams.js';
-import { Badge, Pager, QueryBox, btnGhost } from '../components/ui.jsx';
+import { CheckCheck } from 'lucide-react';
+import { Badge, PageHeader, Pager, QueryBox, btnGhost } from '../components/ui.jsx';
 
 // /thong-bao – API_GD45 §8.1. Chưa đọc lọc ở server; mở một thông báo thì đánh dấu đã đọc rồi đi tới link
 export function NotificationsPage() {
@@ -29,29 +30,27 @@ export function NotificationsPage() {
   };
   return (
     <section>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">Thông báo</h1>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader title="Thông báo" description="Nhắc hạn, kết quả xét duyệt, lời mời và phản hồi về đề tài của bạn.">
           <button type="button" className={btnGhost} aria-pressed={unread === 'true'} onClick={() => u.set('unread', unread ? '' : 'true')}>Chỉ chưa đọc</button>
-          <button type="button" className={btnGhost} disabled={readAll.isPending || !query.data?.unreadCount} onClick={() => readAll.mutate()}>Đánh dấu tất cả đã đọc</button>
-        </div>
-      </div>
+          <button type="button" className={btnGhost} disabled={readAll.isPending || !query.data?.unreadCount} onClick={() => readAll.mutate()}><CheckCheck aria-hidden="true" className="size-4" />Đánh dấu tất cả đã đọc</button>
+      </PageHeader>
       {(readAll.isError || readOne.isError) && <p role="alert" className="mt-2 text-sm text-red-700">{(readAll.error ?? readOne.error).message}</p>}
-      <div className="mt-3">
+      <div>
         <QueryBox query={query} empty={unread ? 'Không có thông báo chưa đọc.' : 'Chưa có thông báo nào.'} isEmpty={(d) => d.items.length === 0}>
           {(d) => (
             <>
               <ul className="space-y-2">
                 {d.items.map((n) => (
-                  <li key={n.id} className={`rounded-md border p-3 ${n.readAt ? 'border-slate-300 bg-white' : 'border-blue-300 bg-blue-50'}`}>
-                    <button type="button" onClick={() => open(n)} className="min-h-11 w-full break-words text-left">
+                  <li key={n.id} className={`relative rounded-xl border p-4 pl-8 shadow-sm ${n.readAt ? 'border-slate-300 bg-white' : 'border-blue-200 bg-blue-50/60'}`}>
+                    {!n.readAt && <span aria-hidden="true" className="absolute top-[2.125rem] left-3.5 size-2 rounded-full bg-blue-700" />}
+                    <button type="button" onClick={() => open(n)} className="min-h-11 w-full break-words text-left hover:text-blue-700">
                       <span className={n.readAt ? '' : 'font-semibold'}>{n.title}</span>
                     </button>
-                    <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                       <Badge>{NOTIFICATION_TYPE_LABEL[n.type] ?? n.type}</Badge>
                       {!n.readAt && <Badge tone="amber">Chưa đọc</Badge>}
                       <span>{fmtDateTime(n.createdAt)}</span>
-                      {!n.readAt && <button type="button" className="underline" onClick={() => readOne.mutate(n.id)}>Đánh dấu đã đọc</button>}
+                      {!n.readAt && <button type="button" className="min-h-11 font-medium text-blue-700 hover:underline" onClick={() => readOne.mutate(n.id)}>Đánh dấu đã đọc</button>}
                     </p>
                   </li>
                 ))}
@@ -61,7 +60,7 @@ export function NotificationsPage() {
           )}
         </QueryBox>
       </div>
-      <p className="mt-4 text-sm"><Link to="/" className="underline">Về trang chủ</Link></p>
+      <p className="mt-4 text-sm"><Link to="/" className="text-blue-700 hover:underline">Về trang chủ</Link></p>
     </section>
   );
 }

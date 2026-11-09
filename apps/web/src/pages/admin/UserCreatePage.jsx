@@ -10,7 +10,7 @@ import { applyServerErrors } from '../../lib/forms.js';
 import { useCooldown } from '../../lib/useCooldown.js';
 import { useCatalog, useScopedFaculties } from '../../lib/queries.js';
 import { FormField } from '../../components/FormField.jsx';
-import { CheckGroup, Options, TempPasswordBox, btnPrimary, opt } from '../../components/ui.jsx';
+import { CheckGroup, Options, PageHeader, TempPasswordBox, btnPrimary, card, opt } from '../../components/ui.jsx';
 
 const FIELDS = ['code', 'email', 'fullName', 'role', 'facultyId', 'classId', 'staffFacultyIds'];
 
@@ -61,15 +61,15 @@ export function UserCreatePage() {
   if (created) {
     return (
       <section>
-        <h1 className="mb-3 text-2xl font-semibold">Đã tạo tài khoản</h1>
+        <PageHeader title="Đã tạo tài khoản" />
         <TempPasswordBox password={created.password} onClose={() => navigate(`/quan-ly/tai-khoan/${created.id}`, { replace: true })} />
       </section>
     );
   }
   return (
     <section className="max-w-xl">
-      <h1 className="text-2xl font-semibold">Tạo tài khoản</h1>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-4 space-y-4">
+      <PageHeader title="Tạo tài khoản" description="Mật khẩu tạm được tạo tự động và chỉ hiện một lần sau khi tạo." />
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className={`${card} space-y-4`}>
         <FormField label="Mã" error={errors.code?.message}><input autoComplete="off" {...register('code')} /></FormField>
         <FormField label="Email" error={errors.email?.message}><input type="email" autoComplete="off" {...register('email')} /></FormField>
         <FormField label="Họ tên" error={errors.fullName?.message}><input autoComplete="off" {...register('fullName')} /></FormField>

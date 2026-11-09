@@ -68,9 +68,9 @@ function Match({ m }) {
 export function SimilarityPanel({ check }) {
   if (!check) return <p className="text-slate-700">Chưa kiểm tra lần nào.</p>;
   const err = isError(check);
-  const box = err ? 'border-slate-400 bg-slate-50' : { NONE: 'border-green-500 bg-green-50', REVIEW: 'border-amber-500 bg-amber-50', HIGH: 'border-red-600 bg-red-50' }[check.level];
+  const box = err ? 'border-slate-300 bg-slate-50' : { NONE: 'border-green-300 bg-green-50', REVIEW: 'border-amber-300 bg-amber-50', HIGH: 'border-red-300 bg-red-50' }[check.level];
   return (
-    <div className={`space-y-3 rounded-md border-2 p-3 ${box}`} data-testid="similarity-panel" data-level={err ? 'ERROR' : check.level}>
+    <div className={`space-y-3 rounded-xl border p-4 ${box}`} data-testid="similarity-panel" data-level={err ? 'ERROR' : check.level}>
       <p className="flex flex-wrap items-center gap-2 font-bold">
         {err ? 'Chưa kiểm tra được' : SIMILARITY_LEVEL_LABEL[check.level]}
         <span className="text-sm font-normal text-slate-700">{fmtDateTime(check.createdAt)}</span>
@@ -81,7 +81,7 @@ export function SimilarityPanel({ check }) {
       {!err && check.level === 'NONE' && <p>Không phát hiện đề tài tương tự đáng kể.</p>}
       {check.matches?.length > 0 && <ul className="space-y-2">{check.matches.slice(0, 5).map((m, i) => <Match key={m.code ?? i} m={m} />)}</ul>}
       {check.justification && (
-        <div className="rounded bg-white p-2"><p className="font-medium">Giải trình của nhóm</p><p className="whitespace-pre-wrap break-words">{check.justification}</p></div>
+        <div className="rounded-lg bg-white p-3"><p className="font-medium">Giải trình của nhóm</p><p className="whitespace-pre-wrap break-words">{check.justification}</p></div>
       )}
       <details className="text-sm text-slate-700">
         <summary className="min-h-11 cursor-pointer">Chi tiết kỹ thuật</summary>
