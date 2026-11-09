@@ -69,11 +69,11 @@ export function TopicListPage() {
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold">{TITLE[user?.role] ?? 'Đề tài'}</h1>
+        <h1 className="text-2xl font-semibold">{TITLE[user?.role] ?? 'Đề tài'}</h1>
         {isStudent && <Link to="/de-tai/moi" className={btnPrimary}>Tạo đề tài</Link>}
       </div>
       {isStudent && pending > 0 && (
-        <p role="status" className="mt-3 rounded-md bg-blue-50 p-3 text-blue-900">
+        <p role="status" className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-4 text-blue-900">
           Bạn có {pending} lời mời đang chờ. <Link to="/loi-moi" className="font-medium underline">Xem lời mời</Link>
         </p>
       )}
@@ -91,8 +91,8 @@ export function TopicListPage() {
             <>
               <ul className="space-y-2">
                 {d.items.map((t) => (
-                  <li key={t.id} className="rounded-md border border-slate-300 p-3">
-                    <Link to={`/de-tai/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-800 underline">{t.code} – {t.title}</Link>
+                  <li key={t.id} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                    <Link to={`/de-tai/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title}</Link>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
                       <Badge>{TOPIC_STATUS_LABEL[t.status]}</Badge>
                       {t.round?.registrationOpen === false && STUCK.includes(t.status) && <Badge tone="amber">Đã đóng đăng ký</Badge>}

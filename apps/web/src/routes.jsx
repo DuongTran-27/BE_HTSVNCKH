@@ -48,7 +48,7 @@ export class ChunkErrorBoundary extends Component {
   render() {
     if (!this.state.failed) return this.props.children;
     return (
-      <div role="alert" className="m-4 rounded-md bg-red-50 p-3 text-red-800">
+      <div role="alert" className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
         <p>Không tải được nội dung trang. Có thể do mất kết nối hoặc hệ thống vừa cập nhật.</p>
         <button type="button" onClick={() => window.location.reload()} className="mt-2 inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-4 font-medium text-slate-900">Tải lại trang</button>
       </div>

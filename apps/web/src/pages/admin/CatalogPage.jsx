@@ -90,7 +90,7 @@ export function CatalogPage({ kind }) {
 
   return (
     <section className="space-y-4">
-      <h1 className="text-xl font-bold">Danh mục {cfg.noun}</h1>
+      <h1 className="text-2xl font-semibold">Danh mục {cfg.noun}</h1>
       <nav aria-label="Loại danh mục" className="flex flex-wrap gap-1">
         {TABS.filter(([, roles]) => roles.includes(user.role)).map(([k]) => (
           <NavLink key={k} to={`/quan-ly/danh-muc/${k}`} className={({ isActive }) => `inline-flex min-h-11 items-center rounded-md border px-3 text-sm ${isActive ? 'border-blue-700 bg-blue-50 font-semibold' : 'border-slate-300'}`}>{KINDS[k].title}</NavLink>

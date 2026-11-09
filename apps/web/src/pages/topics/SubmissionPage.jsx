@@ -11,21 +11,21 @@ export function SubmissionPage() {
   const query = useSubmission(id, Number(seq));
   return (
     <section>
-      <Link to={`/de-tai/${id}/lich-su`} className="inline-flex min-h-11 items-center text-blue-800 underline">← Lịch sử</Link>
+      <Link to={`/de-tai/${id}/lich-su`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">← Lịch sử</Link>
       <QueryBox query={query}>
         {(s) => (
           <div className="space-y-4">
             <header>
-              <h1 className="text-xl font-bold">Lần gửi {s.seq}</h1>
+              <h1 className="text-2xl font-semibold">Lần gửi {s.seq}</h1>
               <p className="text-sm text-slate-700">{fmtDateTime(s.createdAt)} · {s.createdBy?.fullName}</p>
-              {s.seq > 1 && <Link to={`/de-tai/${id}/so-sanh?from=${s.seq - 1}&to=${s.seq}`} className="text-blue-800 underline">So sánh với lần trước</Link>}
+              {s.seq > 1 && <Link to={`/de-tai/${id}/so-sanh?from=${s.seq - 1}&to=${s.seq}`} className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">So sánh với lần trước</Link>}
             </header>
             <SnapshotBody payload={s.payload} />
             <div>
               <h2 className="font-bold">Kiểm tra trùng lặp {s.unchecked && <UncheckedFlag />}</h2>
               <SimilarityPanel check={s.similarityCheck} />
               {s.similarityBypass && (
-                <p role="note" className="mt-2 break-words rounded-md bg-amber-50 p-3">
+                <p role="note" className="mt-2 break-words rounded-lg border border-amber-200 bg-amber-50 p-4">
                   {s.similarityBypass.grantedBy?.fullName} đã cho phép gửi khi chưa kiểm tra được trùng lặp ({fmtDateTime(s.similarityBypass.createdAt)}).
                   {s.similarityBypass.reason && <> Lý do: {s.similarityBypass.reason}</>}
                 </p>

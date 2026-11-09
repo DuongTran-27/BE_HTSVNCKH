@@ -78,8 +78,8 @@ export function SubmissionDiffPage() {
   const subs = useSubmissions(id, !given);
   return (
     <section>
-      <Link to={`/de-tai/${id}/lich-su`} className="inline-flex min-h-11 items-center text-blue-800 underline">← Lịch sử</Link>
-      <h1 className="text-xl font-bold">So sánh các lần gửi</h1>
+      <Link to={`/de-tai/${id}/lich-su`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">← Lịch sử</Link>
+      <h1 className="text-2xl font-semibold">So sánh các lần gửi</h1>
       <div className="mt-3">
         {given ? <DiffView id={id} from={Math.min(qFrom, qTo)} to={Math.max(qFrom, qTo)} /> : (
           <QueryBox query={subs} empty="Cần có ít nhất 2 lần gửi để so sánh." isEmpty={(d) => d.length < 2}>

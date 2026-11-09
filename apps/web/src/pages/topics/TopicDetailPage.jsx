@@ -37,7 +37,7 @@ function TopicDetail({ topic: t }) {
     <div className="space-y-4">
       <header>
         <p data-testid="topic-code" className="text-sm text-slate-700">{t.code}</p>
-        <h1 className="break-words text-xl font-bold">{t.title || '(Chưa đặt tên)'}</h1>
+        <h1 className="break-words text-2xl font-semibold">{t.title || '(Chưa đặt tên)'}</h1>
         <p className="mt-1 space-x-2 text-sm">
           <Badge>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Badge>
           <span>{t.round.name} – {t.round.academicYear}</span>
@@ -56,18 +56,18 @@ function TopicDetail({ topic: t }) {
         </div>
       )}
       {t.status === 'WAITING_ADVISOR' && t.pendingAdvisorRequest && (
-        <p role="note" className="rounded-md bg-blue-50 p-3">
+        <p role="note" className="rounded-lg border border-blue-100 bg-blue-50 p-4">
           Đang chờ {t.pendingAdvisorRequest.lecturer.fullName} phản hồi – {t.pendingAdvisorRequest.pendingDays} ngày
         </p>
       )}
       {t.round.registrationOpen === false && NOTICE_STATUSES.includes(t.status) && (
-        <p role="note" className="rounded-md bg-amber-50 p-3 text-amber-900">Đã hết thời gian đăng ký của đợt – không gửi đề nghị/gửi xét duyệt được</p>
+        <p role="note" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">Đã hết thời gian đăng ký của đợt – không gửi đề nghị/gửi xét duyệt được</p>
       )}
       {t.status === 'WAITING_CLOSE' && (
-        <p role="note" className="rounded-md bg-blue-50 p-3">Đang chờ cán bộ khoa xác nhận đóng đề tài – không sửa được mốc, tiến độ, tài liệu, kết quả.</p>
+        <p role="note" className="rounded-lg border border-blue-100 bg-blue-50 p-4">Đang chờ cán bộ khoa xác nhận đóng đề tài – không sửa được mốc, tiến độ, tài liệu, kết quả.</p>
       )}
       {t.status === 'UNDER_REVIEW' && sub && (
-        <p role="note" className="rounded-md bg-blue-50 p-3">
+        <p role="note" className="rounded-lg border border-blue-100 bg-blue-50 p-4">
           Đang chờ cán bộ xét duyệt – lần gửi {sub.seq} lúc {fmtDateTime(sub.createdAt)}; hạn xét duyệt {fmtDateTime(t.round.reviewDeadline)}
         </p>
       )}
@@ -85,7 +85,7 @@ function TopicDetail({ topic: t }) {
         <ul className="list-disc pl-5">
           {t.members.map((m) => <li key={m.userId}>{m.fullName} ({m.code}){m.role === 'LEADER' && ' – trưởng nhóm'}</li>)}
         </ul>
-        <Link to={`/de-tai/${t.id}/nhom`} className="text-blue-800 underline">Quản lý nhóm</Link>
+        <Link to={`/de-tai/${t.id}/nhom`} className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Quản lý nhóm</Link>
         <div className="mt-2"><LeaveGroupButton topic={t} /></div>
       </div>
       <div>
@@ -93,7 +93,7 @@ function TopicDetail({ topic: t }) {
         <SimilarityBadge similarity={t.latestSimilarity} />
         {sub?.unchecked && <> <UncheckedFlag /></>}
         {t.latestSimilarity && (
-          <button type="button" className="ml-2 min-h-11 text-blue-800 underline" aria-expanded={showSim} onClick={() => setShowSim((v) => !v)}>
+          <button type="button" className="ml-2 min-h-11 text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700" aria-expanded={showSim} onClick={() => setShowSim((v) => !v)}>
             {showSim ? 'Ẩn chi tiết' : 'Xem chi tiết'}
           </button>
         )}
@@ -101,10 +101,10 @@ function TopicDetail({ topic: t }) {
         {showSim && <div className="mt-2">{sim.isPending ? <p role="status">Đang tải…</p> : sim.isError ? <p role="alert" className="text-red-800">{sim.error.message}</p> : <SimilarityPanel check={sim.data} />}</div>}
       </div>
       <p className="space-x-4">
-        {sub && <Link to={`/de-tai/${t.id}/lan-gui/${sub.seq}`} className="text-blue-800 underline">Lần gửi gần nhất (lần {sub.seq})</Link>}
-        {canHistory && <Link to={`/de-tai/${t.id}/lich-su`} className="text-blue-800 underline">Lịch sử</Link>}
-        <Link to={`/de-tai/${t.id}/yeu-cau`} className="text-blue-800 underline">Yêu cầu thay đổi{pending > 0 && ` (${pending} đang chờ)`}</Link>
-        {t.permissions?.edit && <Link to={`/de-tai/${t.id}/sua`} className="text-blue-800 underline">Sửa hồ sơ</Link>}
+        {sub && <Link to={`/de-tai/${t.id}/lan-gui/${sub.seq}`} className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Lần gửi gần nhất (lần {sub.seq})</Link>}
+        {canHistory && <Link to={`/de-tai/${t.id}/lich-su`} className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Lịch sử</Link>}
+        <Link to={`/de-tai/${t.id}/yeu-cau`} className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Yêu cầu thay đổi{pending > 0 && ` (${pending} đang chờ)`}</Link>
+        {t.permissions?.edit && <Link to={`/de-tai/${t.id}/sua`} className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Sửa hồ sơ</Link>}
       </p>
       <ResultSection topic={t} />
       <TopicActionBar topic={t} />

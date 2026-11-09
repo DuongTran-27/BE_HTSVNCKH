@@ -30,7 +30,7 @@ export function NotificationsPage() {
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold">Thông báo</h1>
+        <h1 className="text-2xl font-semibold">Thông báo</h1>
         <div className="flex flex-wrap gap-2">
           <button type="button" className={btnGhost} aria-pressed={unread === 'true'} onClick={() => u.set('unread', unread ? '' : 'true')}>Chỉ chưa đọc</button>
           <button type="button" className={btnGhost} disabled={readAll.isPending || !query.data?.unreadCount} onClick={() => readAll.mutate()}>Đánh dấu tất cả đã đọc</button>

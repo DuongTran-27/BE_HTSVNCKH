@@ -49,16 +49,16 @@ function Invite({ topic: t }) {
     <div className="space-y-3">
       <header>
         <p className="text-sm text-slate-700">{t.code}</p>
-        <h1 className="text-xl font-bold">Mời giảng viên hướng dẫn</h1>
+        <h1 className="text-2xl font-semibold">Mời giảng viên hướng dẫn</h1>
       </header>
       {missing.length > 0 && (
-        <div role="alert" className="rounded-md bg-amber-50 p-3 text-amber-900">
+        <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
           <p className="font-bold">Hồ sơ chưa đủ thông tin bắt buộc</p>
           <ul className="list-disc pl-5">{missing.map(([k, label]) => <li key={k}>{label}: {problems[k]}</li>)}</ul>
           {t.permissions?.edit && <Link to={`/de-tai/${t.id}/sua`} className={`${btnGhost} mt-2`}>Sửa hồ sơ</Link>}
         </div>
       )}
-      {error && !pick && <p role="alert" className="break-words rounded-md bg-red-50 p-3 text-red-800">{error}</p>}
+      {error && !pick && <p role="alert" className="break-words rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error}</p>}
       <input type="search" aria-label="Tìm giảng viên" placeholder="Tìm theo mã hoặc họ tên" className={inputClass} value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
       <QueryBox query={list} empty="Khoa chưa có giảng viên nào trong đợt này." isEmpty={(d) => d.items.length === 0 && !q.trim()}>
         {(d) => (
@@ -66,7 +66,7 @@ function Invite({ topic: t }) {
             {d.items.length === 0 ? <p className="text-slate-700">Không tìm thấy giảng viên phù hợp.</p> : (
               <ul className="space-y-2">
                 {d.items.map((l) => (
-                  <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-300 p-3">
+                  <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
                     <span className="break-words">{l.code} – {l.fullName} · Đã nhận {l.activeTopicCount}/{l.maxTopics} {l.isFull && <Badge tone="amber">Đã đủ</Badge>}</span>
                     <button type="button" className={btnPrimary} onClick={() => ask(l)}>Chọn</button>
                   </li>

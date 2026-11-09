@@ -41,7 +41,7 @@ function MilestoneCard({ topic: t, m }) {
   const toggle = (x) => setMode((v) => (v === x ? null : x));
   const d = m.latestDocument;
   return (
-    <li className="space-y-2 rounded-md border border-slate-300 p-3">
+    <li className="space-y-2 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="break-words font-bold">{m.order}. {m.name}</h2>
         <Badge tone={EVAL_TONE[m.evaluation]}>{MILESTONE_EVAL_LABEL[m.evaluation] ?? m.evaluation}</Badge>
@@ -52,7 +52,7 @@ function MilestoneCard({ topic: t, m }) {
       <p>Hạn: {fmtDateTime(m.dueAt)}{m.dueChangeCount > 0 && ` · đã đổi hạn ${m.dueChangeCount} lần`}</p>
       <p>
         Bản nộp mới nhất: {d ? <>phiên bản {d.version} lúc {fmtDateTime(d.uploadedAt)} {d.isLate && <Badge tone="red">Nộp muộn</Badge>}</> : 'chưa nộp'}
-        {' · '}<Link to={`/de-tai/${t.id}/tai-lieu`} className="text-blue-800 underline">Tài liệu</Link>
+        {' · '}<Link to={`/de-tai/${t.id}/tai-lieu`} className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Tài liệu</Link>
       </p>
       {m.reopenCount > 0 && (
         <p className="break-words text-sm" data-testid="reopen-note">
@@ -106,7 +106,7 @@ function MilestoneForm({ topic, m, onDone }) {
     onDone();
   });
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-3 rounded-md bg-slate-50 p-3" aria-label={m ? 'Sửa mốc' : 'Thêm mốc'}>
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-300 bg-white p-5 shadow-sm" aria-label={m ? 'Sửa mốc' : 'Thêm mốc'}>
       <FormField label="Tên mốc" error={errors.name?.message}><input type="text" {...register('name')} /></FormField>
       <FormField label="Đầu ra yêu cầu" error={errors.output?.message}><textarea rows={3} {...register('output')} /></FormField>
       {!m && <FormField label="Hạn (giờ Việt Nam)" error={errors.dueAt?.message}><input type="datetime-local" {...register('dueAt')} /></FormField>}
@@ -132,7 +132,7 @@ function DueChangeForm({ topic, m, onDone }) {
     onDone();
   });
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-3 rounded-md bg-slate-50 p-3" aria-label="Đổi hạn mốc">
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-300 bg-white p-5 shadow-sm" aria-label="Đổi hạn mốc">
       <FormField label="Hạn mới (giờ Việt Nam)" error={errors.newDueAt?.message}><input type="datetime-local" {...register('newDueAt')} /></FormField>
       <FormField label="Lý do đổi hạn" error={errors.reason?.message}><textarea rows={3} {...register('reason')} /></FormField>
       <FormError error={errors.root?.message} />

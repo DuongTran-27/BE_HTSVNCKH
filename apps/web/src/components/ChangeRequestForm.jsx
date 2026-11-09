@@ -76,7 +76,7 @@ export function ChangeRequestForm({ topic, kind, onClose }) {
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
       <form role="dialog" aria-modal="true" aria-label={CHANGE_TYPE_LABEL[kind]} noValidate onSubmit={handleSubmit((v) => create.mutate(v))}
         className="w-full max-w-lg space-y-3 rounded-lg bg-white p-4 shadow-lg">
-        <h2 className="text-lg font-bold">{CHANGE_TYPE_LABEL[kind]}</h2>
+        <h2 className="text-lg font-semibold">{CHANGE_TYPE_LABEL[kind]}</h2>
         <p className="text-sm text-slate-700">{HINT[kind]}</p>
         {kind === 'ADVISOR_CHANGE' && <LecturerSelect topic={topic} register={register} error={errors.newLecturerId?.message} />}
         {kind === 'TOPIC_CHANGE' && (

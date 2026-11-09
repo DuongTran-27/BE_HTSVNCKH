@@ -15,14 +15,14 @@ export function PastTopicsPage() {
   const query = useQuery({ queryKey: ['past-topics', page], queryFn: () => api(`/me/past-topics?page=${page}&pageSize=20`) });
   return (
     <section className="space-y-3">
-      <h1 className="text-xl font-bold">Lịch sử tham gia</h1>
+      <h1 className="text-2xl font-semibold">Lịch sử tham gia</h1>
       <QueryBox query={query} empty="Bạn chưa rời nhóm nào" isEmpty={(d) => d.items.length === 0}>
         {(d) => (
           <>
             <ul className="space-y-2">
               {d.items.map((t) => (
-                <li key={t.topicId} className="rounded-md border border-slate-300 p-3">
-                  <Link to={`/lich-su-tham-gia/${t.topicId}`} className="break-words font-medium text-blue-800 underline">{t.code} – {t.title ?? 'Không có tên trong thời gian bạn tham gia'}</Link>
+                <li key={t.topicId} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                  <Link to={`/lich-su-tham-gia/${t.topicId}`} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title ?? 'Không có tên trong thời gian bạn tham gia'}</Link>
                   <p className="text-sm text-slate-700">Thời gian tham gia: <Windows windows={t.windows} />. {t.submissionCount} lần gửi, {t.documentCount} tài liệu.</p>
                 </li>
               ))}
@@ -49,7 +49,7 @@ function PastDocument({ d }) {
     }
   };
   return (
-    <li className="space-y-1 rounded-md border border-slate-300 p-3">
+    <li className="space-y-1 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
       <p className="break-all">{d.fileName ?? d.title}</p>
       <p className="text-sm text-slate-700">{d.uploadedBy?.fullName} · {fmtDateTime(d.uploadedAt)}</p>
       {d.kind === 'FILE' && <button type="button" className={btnGhost} disabled={busy} onClick={download}>{busy ? 'Đang xử lý…' : 'Tải về'}</button>}
@@ -69,8 +69,8 @@ export function PastTopicDetailPage() {
   return (
     <section className="space-y-6">
       <div>
-        <Link to="/lich-su-tham-gia" className="inline-flex min-h-11 items-center text-blue-800 underline">← Lịch sử tham gia</Link>
-        <h1 className="text-xl font-bold">Phiên bản trong thời gian tham gia</h1>
+        <Link to="/lich-su-tham-gia" className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">← Lịch sử tham gia</Link>
+        <h1 className="text-2xl font-semibold">Phiên bản trong thời gian tham gia</h1>
       </div>
       <div>
         <h2 className="font-bold">Các lần gửi hồ sơ</h2>
@@ -79,10 +79,10 @@ export function PastTopicDetailPage() {
             <>
               <ul className="mt-2 space-y-2">
                 {items.map((s) => (
-                  <li key={s.id} className="rounded-md border border-slate-300 p-3">
+                  <li key={s.id} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
                     <label className="inline-flex min-h-11 items-center gap-2">
                       <input type="checkbox" className="size-5" checked={picked.includes(s.seq)} onChange={() => toggle(s.seq)} aria-label={`Chọn lần gửi ${s.seq} để so sánh`} />
-                      <Link to={`/de-tai/${topicId}/lan-gui/${s.seq}`} className="font-medium text-blue-800 underline">Lần gửi {s.seq}</Link>
+                      <Link to={`/de-tai/${topicId}/lan-gui/${s.seq}`} className="font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Lần gửi {s.seq}</Link>
                     </label>
                     <p className="flex flex-wrap items-center gap-x-3 text-sm">{fmtDateTime(s.createdAt)} <SimilarityLevelCell level={s.similarityLevel} status={s.similarityStatus} unchecked={s.unchecked} /></p>
                   </li>

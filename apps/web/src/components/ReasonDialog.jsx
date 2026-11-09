@@ -21,7 +21,7 @@ export function ReasonDialog({ title, message, label = 'Lý do', confirmLabel, o
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
       <form ref={ref} role="dialog" aria-modal="true" aria-label={title} noValidate onSubmit={handleSubmit(submit)} className="w-full max-w-md space-y-3 rounded-lg bg-white p-4 shadow-lg">
-        <h2 className="text-lg font-bold">{title}</h2>
+        <h2 className="text-lg font-semibold">{title}</h2>
         {message && <p className="text-slate-700">{message}</p>}
         <FormField label={label} error={errors.reason?.message}><textarea rows={4} {...register('reason')} /></FormField>
         {errors.root?.message && <p role="alert" className="text-sm text-red-700 break-words">{errors.root.message}</p>}

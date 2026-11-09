@@ -34,9 +34,9 @@ function TopicRequests({ topic: t }) {
   return (
     <div className="space-y-4">
       <header className="space-y-2">
-        <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-800 underline">← Chi tiết đề tài</Link>
+        <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">← Chi tiết đề tài</Link>
         <p className="break-words text-sm text-slate-700">{t.code}</p>
-        <h1 className="break-words text-xl font-bold">Yêu cầu thay đổi</h1>
+        <h1 className="break-words text-2xl font-semibold">Yêu cầu thay đổi</h1>
         <ExecTabs topic={t} />
       </header>
       <ReadOnlyBanner topic={t} />

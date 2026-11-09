@@ -61,14 +61,14 @@ export function UserCreatePage() {
   if (created) {
     return (
       <section>
-        <h1 className="mb-3 text-xl font-bold">Đã tạo tài khoản</h1>
+        <h1 className="mb-3 text-2xl font-semibold">Đã tạo tài khoản</h1>
         <TempPasswordBox password={created.password} onClose={() => navigate(`/quan-ly/tai-khoan/${created.id}`, { replace: true })} />
       </section>
     );
   }
   return (
     <section className="max-w-xl">
-      <h1 className="text-xl font-bold">Tạo tài khoản</h1>
+      <h1 className="text-2xl font-semibold">Tạo tài khoản</h1>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-4 space-y-4">
         <FormField label="Mã" error={errors.code?.message}><input autoComplete="off" {...register('code')} /></FormField>
         <FormField label="Email" error={errors.email?.message}><input type="email" autoComplete="off" {...register('email')} /></FormField>

@@ -11,7 +11,7 @@ export function TopicQuery({ children }) {
   const status = query.error?.status;
   if (status === 403 || status === 404) {
     return (
-      <div role="alert" className="rounded-md bg-red-50 p-3 text-red-800">
+      <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
         <p>{status === 403 ? 'Bạn không có quyền xem đề tài này' : 'Không tìm thấy đề tài'}</p>
         <Link to="/de-tai" className={`${btnGhost} mt-2`}>Về danh sách đề tài</Link>
       </div>
@@ -47,7 +47,7 @@ export function ExecShell({ title, children }) {
           <div className="space-y-4">
             <header className="space-y-2">
               <p className="break-words text-sm text-slate-700">{t.code} · {TOPIC_STATUS_LABEL[t.status] ?? t.status}</p>
-              <h1 className="break-words text-xl font-bold">{title}</h1>
+              <h1 className="break-words text-2xl font-semibold">{title}</h1>
               <ExecTabs topic={t} />
             </header>
             {children(t)}

@@ -65,7 +65,7 @@ function DocumentRow({ topic: t, d, milestone }) {
   const canEvaluate = t.permissions?.giveFeedback && d.milestoneId && d.isLatest && milestone && milestone.evaluation !== 'PASSED';
   const safeLink = d.externalUrl?.startsWith('https://') ? d.externalUrl : null;
   return (
-    <li className="space-y-2 rounded-md border border-slate-300 p-3">
+    <li className="space-y-2 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">Phiên bản {d.version}</span>
         <Badge>{DOCUMENT_STAGE_LABEL[d.stage] ?? d.stage}</Badge>
@@ -144,7 +144,7 @@ function SubmitForm({ topic: t, milestones }) {
     if (err?.status === 429) cd.start(err.retryAfter);
   };
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-3 rounded-md bg-slate-50 p-3" aria-label="Nộp tài liệu">
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-300 bg-white p-5 shadow-sm" aria-label="Nộp tài liệu">
       <h2 className="font-bold">Nộp tài liệu</h2>
       <fieldset className="flex flex-wrap gap-4">
         <legend className="sr-only">Hình thức nộp</legend>

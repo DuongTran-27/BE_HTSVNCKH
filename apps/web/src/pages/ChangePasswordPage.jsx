@@ -53,9 +53,9 @@ export function ChangePasswordPage() {
 
   return (
     <main className="mx-auto max-w-sm p-4">
-      <h1 className="text-xl font-bold">Đổi mật khẩu</h1>
+      <h1 className="text-2xl font-semibold">Đổi mật khẩu</h1>
       {user.mustChangePassword && (
-        <p role="status" className="mt-3 rounded-md bg-amber-50 p-3 text-amber-900">Bạn cần đổi mật khẩu trước khi tiếp tục</p>
+        <p role="status" className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">Bạn cần đổi mật khẩu trước khi tiếp tục</p>
       )}
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-4 space-y-4">
         <FormField label="Mật khẩu hiện tại" error={errors.currentPassword?.message}>

@@ -1,28 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
+import { AlertCircle, ChevronLeft, ChevronRight, Inbox, KeyRound, Loader2 } from 'lucide-react';
 
-export const btn = 'inline-flex min-h-11 items-center justify-center rounded-md px-4 font-medium disabled:opacity-60';
-export const btnPrimary = `${btn} bg-blue-700 text-white`;
-export const btnGhost = `${btn} border border-slate-300 bg-white`;
-export const btnDanger = `${btn} bg-red-700 text-white`;
+export const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium shadow-sm transition-colors '
+  + 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:pointer-events-none disabled:opacity-50';
+export const btnPrimary = `${btn} bg-blue-700 text-white hover:bg-blue-800`;
+export const btnGhost = `${btn} border border-slate-300 bg-white text-slate-800 hover:bg-slate-100`;
+export const btnDanger = `${btn} bg-red-700 text-white hover:bg-red-800`;
 
 /** Trạng thái đang tải / lỗi (error.message từ API) / dữ liệu; empty: nội dung khi rỗng (UI §6) */
 export function QueryBox({ query, empty, isEmpty, children }) {
-  if (query.isPending) return <p role="status" className="text-slate-700">Đang tải…</p>;
+  if (query.isPending) return <p role="status" className="flex items-center gap-2 py-6 text-slate-600"><Loader2 aria-hidden="true" className="size-4 animate-spin" />Đang tải…</p>;
   if (query.isError) {
     return (
-      <div role="alert" className="rounded-md bg-red-50 p-3 text-red-800">
-        <p className="break-words">{query.error.message}</p>
+      <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+        <p className="flex items-start gap-2 break-words"><AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />{query.error.message}</p>
         <button type="button" onClick={() => query.refetch()} className={`${btnGhost} mt-2`}>Thử lại</button>
       </div>
     );
   }
-  if (empty && isEmpty?.(query.data)) return <p className="text-slate-700">{empty}</p>;
+  if (empty && isEmpty?.(query.data)) return (
+    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-slate-600">
+      <Inbox aria-hidden="true" className="size-8 text-slate-400" />
+      <p>{empty}</p>
+    </div>
+  );
   return children(query.data);
 }
 
 export function Badge({ children, tone = 'slate' }) {
-  const t = { slate: 'bg-slate-200 text-slate-800', green: 'bg-green-100 text-green-900', amber: 'bg-amber-100 text-amber-900', red: 'bg-red-100 text-red-900' }[tone];
-  return <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${t}`}>{children}</span>;
+  const t = {
+    slate: 'bg-slate-100 text-slate-700 ring-slate-500/20', green: 'bg-green-50 text-green-800 ring-green-600/20',
+    amber: 'bg-amber-50 text-amber-900 ring-amber-600/25', red: 'bg-red-50 text-red-800 ring-red-600/20',
+  }[tone];
+  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${t}`}>{children}</span>;
 }
 
 const FOCUSABLE = 'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -59,12 +69,12 @@ export function useDialogA11y(onEscape) {
 export function ConfirmDialog({ title, message, confirmLabel = 'Xác nhận', danger, busy, error, onConfirm, onCancel }) {
   const ref = useDialogA11y(onCancel);
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md rounded-lg bg-white p-4 shadow-lg">
-        <h2 className="text-lg font-bold">{title}</h2>
-        <p className="mt-2 text-slate-700">{message}</p>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <p className="mt-2 text-sm text-slate-600">{message}</p>
         {error && <p role="alert" className="mt-2 text-sm text-red-700 break-words">{error}</p>}
-        <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
           <button type="button" onClick={onCancel} className={btnGhost}>Hủy</button>
           <button type="button" onClick={onConfirm} disabled={busy} className={danger ? btnDanger : btnPrimary}>{busy ? 'Đang xử lý…' : confirmLabel}</button>
         </div>
@@ -85,9 +95,9 @@ export function TempPasswordBox({ password, onClose }) {
     }
   };
   return (
-    <div role="alertdialog" aria-label="Mật khẩu tạm" className="rounded-md border border-amber-400 bg-amber-50 p-4">
-      <h2 className="font-bold">Mật khẩu tạm</h2>
-      <p className="mt-2 break-all rounded bg-white p-2 font-mono text-lg" data-testid="temp-password">{password}</p>
+    <div role="alertdialog" aria-label="Mật khẩu tạm" className="rounded-xl border border-amber-300 bg-amber-50 p-5">
+      <h2 className="flex items-center gap-2 font-semibold"><KeyRound aria-hidden="true" className="size-4" />Mật khẩu tạm</h2>
+      <p className="mt-2 break-all rounded-md border border-amber-200 bg-white p-3 font-mono text-lg tracking-wider" data-testid="temp-password">{password}</p>
       <p className="mt-2 text-sm text-red-800">Mật khẩu chỉ hiện một lần. Người dùng phải đổi mật khẩu ở lần đăng nhập đầu.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" onClick={copy} className={btnGhost}>{copied ? 'Đã sao chép' : 'Sao chép'}</button>
@@ -100,10 +110,12 @@ export function TempPasswordBox({ password, onClose }) {
 export function Pager({ page, pageSize, total, onPage }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-      <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} className={btnGhost}>Trang trước</button>
-      <span>Trang {page}/{pages} ({total} mục)</span>
-      <button type="button" disabled={page >= pages} onClick={() => onPage(page + 1)} className={btnGhost}>Trang sau</button>
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+      <span className="text-slate-600">Trang {page}/{pages} ({total} mục)</span>
+      <div className="flex gap-2">
+        <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} className={btnGhost}><ChevronLeft aria-hidden="true" className="size-4" />Trang trước</button>
+        <button type="button" disabled={page >= pages} onClick={() => onPage(page + 1)} className={btnGhost}>Trang sau<ChevronRight aria-hidden="true" className="size-4" /></button>
+      </div>
     </div>
   );
 }
@@ -117,7 +129,7 @@ export function CheckGroup({ legend, options, value = [], onChange, error }) {
       <div className="flex flex-wrap gap-x-4">
         {options.map((o) => (
           <label key={o.id} className="inline-flex min-h-11 items-center gap-2">
-            <input type="checkbox" checked={value.includes(o.id)} onChange={() => toggle(o.id)} className="size-5" />
+            <input type="checkbox" checked={value.includes(o.id)} onChange={() => toggle(o.id)} className="size-5 accent-blue-700" />
             {o.label}
           </label>
         ))}

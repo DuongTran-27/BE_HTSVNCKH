@@ -32,7 +32,7 @@ export function TopicCreatePage() {
   });
   return (
     <section>
-      <h1 className="text-xl font-bold">Tạo đề tài</h1>
+      <h1 className="text-2xl font-semibold">Tạo đề tài</h1>
       <QueryBox query={rounds} empty="Khoa chưa mở đợt đăng ký nào." isEmpty={(d) => d.length === 0}>
         {(items) => (
           <form noValidate onSubmit={handleSubmit((v) => create.mutate({ roundId: v.roundId, title: v.title }))} className="mt-3 max-w-xl space-y-3">

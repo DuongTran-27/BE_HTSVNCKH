@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { FlaskConical, Loader2, WifiOff } from 'lucide-react';
+
+const Brand = () => <p className="flex items-center gap-2 text-xl font-semibold text-blue-800"><FlaskConical aria-hidden="true" className="size-6" />NCKH Khoa CNTT</p>;
 
 // Màn tải toàn trang lúc khởi động (UI §1.1); > 5 s thì báo máy chủ đang khởi động (Render ngủ, NFR10)
 export function FullPageLoading() {
@@ -9,8 +12,8 @@ export function FullPageLoading() {
   }, []);
   return (
     <div role="status" className="flex min-h-screen flex-col items-center justify-center gap-3 p-4 text-center">
-      <p className="text-xl font-bold text-blue-800">NCKH Khoa CNTT</p>
-      <p className="text-slate-700">Đang tải…</p>
+      <Brand />
+      <p className="flex items-center gap-2 text-slate-600"><Loader2 aria-hidden="true" className="size-4 animate-spin" />Đang tải…</p>
       {slow && <p className="text-sm text-slate-600">Máy chủ đang khởi động, vui lòng chờ…</p>}
     </div>
   );
@@ -19,9 +22,10 @@ export function FullPageLoading() {
 export function FullPageOffline({ onRetry }) {
   return (
     <div role="alert" className="flex min-h-screen flex-col items-center justify-center gap-3 p-4 text-center">
-      <p className="text-xl font-bold text-blue-800">NCKH Khoa CNTT</p>
+      <Brand />
+      <WifiOff aria-hidden="true" className="size-8 text-slate-400" />
       <p className="text-slate-700">Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.</p>
-      <button type="button" onClick={onRetry} className="min-h-11 rounded-md bg-blue-700 px-4 text-white">Thử lại</button>
+      <button type="button" onClick={onRetry} className="min-h-11 rounded-md bg-blue-700 px-4 font-medium text-white hover:bg-blue-800">Thử lại</button>
     </div>
   );
 }

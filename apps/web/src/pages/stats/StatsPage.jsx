@@ -52,7 +52,7 @@ export function StatsPage() {
   const dim = STATS_DIMENSION_LABEL[params.groupBy];
   return (
     <section>
-      <h1 className="text-xl font-bold">Thống kê</h1>
+      <h1 className="text-2xl font-semibold">Thống kê</h1>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <FilterSelect label="Thống kê theo" value={params.groupBy} onChange={(v) => u.set('groupBy', v)} options={toOptions(STATS_DIMENSION_LABEL)} />
         <FilterSelect label="Đợt" value={params.roundId} onChange={(v) => u.set('roundId', v)} placeholder="Mọi đợt"

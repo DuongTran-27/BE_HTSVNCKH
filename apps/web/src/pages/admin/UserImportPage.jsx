@@ -78,9 +78,9 @@ export function UserImportPage() {
   if (done) {
     return (
       <section className="max-w-2xl space-y-3">
-        <h1 className="text-xl font-bold">Nhập tài khoản từ CSV</h1>
+        <h1 className="text-2xl font-semibold">Nhập tài khoản từ CSV</h1>
         <p role="status" className="font-medium">Đã tạo {done.createdCount} tài khoản</p>
-        <p role="alert" className="rounded-md bg-red-50 p-3 font-medium text-red-800">Mật khẩu tạm chỉ có ở đây. Rời trang là mất.</p>
+        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 font-medium text-red-800">Mật khẩu tạm chỉ có ở đây. Rời trang là mất.</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className={btnGhost} onClick={() => downloadCsv(credentialsCsv(done.credentials), 'mat-khau-tam.csv')}>Tải lại file</button>
           <button type="button" className={btnPrimary} onClick={() => setDone(null)}>Tôi đã lưu file</button>
@@ -96,7 +96,7 @@ export function UserImportPage() {
   const canPreview = facultyId && file && !fileError && !busy && !cd.active;
   return (
     <section className="max-w-3xl space-y-4">
-      <h1 className="text-xl font-bold">Nhập tài khoản từ CSV</h1>
+      <h1 className="text-2xl font-semibold">Nhập tài khoản từ CSV</h1>
       <div className="space-y-3">
         <FormField label="Khoa">
           <select value={facultyId} onChange={(e) => { setFacultyId(e.target.value); setReport(null); }}>

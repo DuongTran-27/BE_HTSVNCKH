@@ -72,12 +72,12 @@ function Group({ topic: t }) {
     <div className="space-y-5">
       <header>
         <p className="text-sm text-slate-700">{t.code}</p>
-        <h1 className="text-xl font-bold">Nhóm ({t.members.length}{max ? `/${max}` : ''})</h1>
-        <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-800 underline">Về chi tiết đề tài</Link>
+        <h1 className="text-2xl font-semibold">Nhóm ({t.members.length}{max ? `/${max}` : ''})</h1>
+        <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Về chi tiết đề tài</Link>
       </header>
       <ul className="space-y-2">
         {t.members.map((m) => (
-          <li key={m.userId} className="rounded-md border border-slate-300 p-3 break-words">
+          <li key={m.userId} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm break-words">
             {m.code} – {m.fullName} · {m.role === 'LEADER' ? 'Trưởng nhóm' : 'Thành viên'} · tham gia {fmtDateTime(m.joinedAt)}
           </li>
         ))}

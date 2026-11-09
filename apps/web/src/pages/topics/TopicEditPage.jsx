@@ -45,7 +45,7 @@ function ConflictDialog({ onTakeNew, onKeepMine }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
       <div ref={ref} role="dialog" aria-modal="true" aria-label="Hồ sơ vừa được cập nhật" className="w-full max-w-md space-y-3 rounded-lg bg-white p-4 shadow-lg">
-        <h2 className="text-lg font-bold">Hồ sơ vừa được thành viên khác cập nhật</h2>
+        <h2 className="text-lg font-semibold">Hồ sơ vừa được thành viên khác cập nhật</h2>
         <p>Chọn tải bản mới (bỏ thay đổi của bạn) hoặc giữ nội dung của bạn rồi lưu lại để ghi đè.</p>
         <div className="flex flex-wrap justify-end gap-2">
           <button type="button" onClick={onTakeNew} className={btnGhost}>Tải bản mới (bỏ thay đổi của tôi)</button>
@@ -143,7 +143,7 @@ function EditForm({ topic }) {
   return (
     <section>
       <p data-testid="topic-code" className="text-sm text-slate-700">{topic.code}</p>
-      <h1 className="text-xl font-bold">Soạn hồ sơ</h1>
+      <h1 className="text-2xl font-semibold">Soạn hồ sơ</h1>
       <form noValidate onSubmit={onSave} className="mt-3 max-w-2xl space-y-4">
         <FormField label="Tên đề tài" error={errors.title?.message}><input type="text" {...register('title')} /></FormField>
         <FormField label="Tóm tắt" error={errors.summary?.message} hint={`${words}/${cfg.minSummaryWords} từ`}><textarea rows={6} {...register('summary')} /></FormField>
@@ -166,7 +166,7 @@ function EditForm({ topic }) {
           </select>
         </FormField>
 
-        <div className="rounded-md border border-slate-300 p-3">
+        <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
           <h2 className="font-bold">Đủ điều kiện gửi</h2>
           <ul className="mt-1 space-y-1 text-sm">
             {SUBMIT_FIELDS.map(([k, label]) => (
@@ -175,7 +175,7 @@ function EditForm({ topic }) {
           </ul>
         </div>
 
-        {formError && <p role="alert" className="break-words rounded-md bg-red-50 p-3 text-red-800">{formError}</p>}
+        {formError && <p role="alert" className="break-words rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{formError}</p>}
         <div className="flex flex-wrap gap-2">
           <button type="submit" disabled={busy} className={btnPrimary}>{busy ? 'Đang xử lý…' : 'Lưu nháp'}</button>
           {topic.permissions?.checkSimilarity && (

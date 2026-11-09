@@ -37,7 +37,7 @@ export function UsersPage() {
   return (
     <section>
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-xl font-bold">Tài khoản</h1>
+        <h1 className="mr-auto text-2xl font-semibold">Tài khoản</h1>
         <Link to="/quan-ly/tai-khoan/moi" className={btnPrimary}>Tạo tài khoản</Link>
         <Link to="/quan-ly/tai-khoan/nhap-csv" className={btnGhost}>Nhập CSV</Link>
       </div>
@@ -70,7 +70,7 @@ export function UsersPage() {
                   <tbody>
                     {d.items.map((u) => (
                       <tr key={u.id} className="border-b">
-                        <td className="p-2"><Link className="text-blue-800 underline" to={`/quan-ly/tai-khoan/${u.id}`}>{u.code}</Link></td>
+                        <td className="p-2"><Link className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700" to={`/quan-ly/tai-khoan/${u.id}`}>{u.code}</Link></td>
                         <td className="p-2 break-words">{u.fullName}</td>
                         <td className="p-2 break-all">{u.email}</td>
                         <td className="p-2">{ROLE_LABEL[u.role]}</td>

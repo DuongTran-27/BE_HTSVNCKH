@@ -10,7 +10,7 @@ const Block = ({ title, children }) => (
 export function SnapshotBody({ payload }) {
   return (
     <div className="space-y-3">
-      <h2 className="break-words text-lg font-bold">{payload.title}</h2>
+      <h2 className="break-words text-lg font-semibold">{payload.title}</h2>
       <Block title="Tóm tắt">{payload.summary || '—'}</Block>
       <Block title="Mục tiêu">{payload.objectives || '—'}</Block>
       <Block title="Lĩnh vực">{payload.fieldName || '—'}</Block>
@@ -22,7 +22,7 @@ export function SnapshotBody({ payload }) {
 /** Quyết định của cán bộ; decision null -> "Chưa xử lý" */
 export function DecisionBox({ decision, title = 'Quyết định' }) {
   return (
-    <div className="rounded-md border border-slate-300 p-3" data-testid="decision-box">
+    <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm" data-testid="decision-box">
       <h3 className="font-bold">{title}</h3>
       {decision ? (
         <>

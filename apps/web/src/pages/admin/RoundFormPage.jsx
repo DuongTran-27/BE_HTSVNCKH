@@ -55,7 +55,7 @@ export function RoundFormPage({ create }) {
   if (create) return <RoundForm />;
   return (
     <section>
-      <h1 className="mb-3 text-xl font-bold">Chi tiết đợt</h1>
+      <h1 className="mb-3 text-2xl font-semibold">Chi tiết đợt</h1>
       <QueryBox query={query}>{(d) => <RoundForm key={JSON.stringify(d.round)} round={d.round} />}</QueryBox>
     </section>
   );
@@ -99,7 +99,7 @@ function RoundForm({ round }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="max-w-3xl space-y-4" aria-label={round ? 'Sửa đợt' : 'Tạo đợt'}>
-      {!round && <h1 className="text-xl font-bold">Tạo đợt</h1>}
+      {!round && <h1 className="text-2xl font-semibold">Tạo đợt</h1>}
       {round && <p className="text-sm text-slate-700">Thay đổi áp dụng từ lần kiểm tra kế tiếp, không áp dụng lại cho dữ liệu cũ.</p>}
       {!round && (
         <FormField label="Khoa" error={err('facultyId')}>

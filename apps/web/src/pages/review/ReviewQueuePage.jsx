@@ -30,7 +30,7 @@ export function ReviewQueuePage() {
   const now = Date.now();
   return (
     <section>
-      <h1 className="text-xl font-bold">Hàng chờ xét duyệt</h1>
+      <h1 className="text-2xl font-semibold">Hàng chờ xét duyệt</h1>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <select aria-label="Đợt" className={inputClass} value={roundId} onChange={(e) => set('roundId', e.target.value)}>
           <Options placeholder="Mọi đợt" options={(rounds.data ?? []).map((r) => ({ value: r.id, label: `${r.name} (${r.academicYear})` }))} />
@@ -51,8 +51,8 @@ export function ReviewQueuePage() {
                 {d.items.map((t) => {
                   const late = t.round.reviewDeadline && new Date(t.round.reviewDeadline).getTime() < now;
                   return (
-                    <li key={t.id} className="rounded-md border border-slate-300 p-3">
-                      <Link to={`/xet-duyet/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-800 underline">{t.code} – {t.title}</Link>
+                    <li key={t.id} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                      <Link to={`/xet-duyet/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title}</Link>
                       <p className="mt-1 text-sm text-slate-700">{t.round.name} · Trưởng nhóm: {t.leader?.fullName} · {t.memberCount} thành viên · GVHD: {t.advisor?.fullName ?? 'Chưa có'}</p>
                       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                         <span>Gửi lúc {fmtDateTime(t.latestSubmission?.createdAt)} (lần {t.latestSubmission?.seq})</span>

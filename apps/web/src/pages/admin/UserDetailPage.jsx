@@ -36,7 +36,7 @@ export function UserDetailPage() {
   const query = useQuery({ queryKey: ['users', 'detail', id], queryFn: () => api(`/users/${id}`) });
   return (
     <section>
-      <h1 className="text-xl font-bold">Chi tiết tài khoản</h1>
+      <h1 className="text-2xl font-semibold">Chi tiết tài khoản</h1>
       <div className="mt-3">
         {/* key theo dữ liệu: form điền lại sau khi lưu/khóa */}
         <QueryBox query={query}>{(d) => <UserDetail key={JSON.stringify(d.user)} user={d.user} />}</QueryBox>
@@ -144,7 +144,7 @@ function UserDetail({ user: target }) {
       </form>
 
       {isAdmin && target.role === 'STAFF' && (
-        <div className="max-w-xl space-y-2 rounded-md border border-slate-300 p-3">
+        <div className="max-w-xl space-y-2 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
           <h2 className="font-bold">Phạm vi khoa</h2>
           <p className="text-sm text-amber-900">Lưu sẽ thay toàn bộ phạm vi.</p>
           <CheckGroup legend="Khoa phụ trách" value={scopes} onChange={setScopes} options={(allFaculties.data ?? []).map((f) => ({ id: f.id, label: f.name }))} />

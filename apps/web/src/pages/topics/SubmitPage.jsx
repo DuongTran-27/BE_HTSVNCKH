@@ -83,13 +83,13 @@ function Submit({ topic: t }) {
     <div className="max-w-2xl space-y-4">
       <header>
         <p className="text-sm text-slate-700">{t.code}</p>
-        <h1 className="text-xl font-bold">{label}</h1>
+        <h1 className="text-2xl font-semibold">{label}</h1>
       </header>
 
       <div>
         <h2 className="font-bold">1. Đủ trường bắt buộc</h2>
         {complete ? <p className="text-green-800">Đạt</p> : (
-          <div role="alert" className="rounded-md bg-amber-50 p-3 text-amber-900">
+          <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
             <ul className="list-disc pl-5">{missing.map(([k, l]) => <li key={k}>{l}: {problems[k]}</li>)}</ul>
             {t.permissions?.edit
               ? <Link to={`/de-tai/${t.id}/sua`} className={`${btnGhost} mt-2`}>Sửa hồ sơ</Link>
@@ -105,7 +105,7 @@ function Submit({ topic: t }) {
             <BypassNote bypass={t.similarityBypass} />
             {run.isPending || latest.isPending ? <p role="status">Đang kiểm tra trùng lặp…</p>
               : latest.isError && !fresh ? (
-                <div role="alert" className="rounded-md bg-red-50 p-3 text-red-800">
+                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
                   <p className="break-words">{latest.error.message}</p>
                   <button type="button" className={`${btnGhost} mt-2`} onClick={() => latest.refetch()}>Thử lại</button>
                 </div>
@@ -126,7 +126,7 @@ function Submit({ topic: t }) {
 
           <div>
             <h2 className="font-bold">4. Gửi</h2>
-            {error && <p role="alert" className="mb-2 break-words rounded-md bg-red-50 p-3 text-red-800">{error}</p>}
+            {error && <p role="alert" className="mb-2 break-words rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error}</p>}
             <button type="button" className={btnPrimary} disabled={submit.isPending || run.isPending || (!st.ok && !(st.kind === 'unchecked' && t.similarityBypass))} onClick={() => submit.mutate()}>
               {submit.isPending ? 'Đang xử lý…' : label}
             </button>

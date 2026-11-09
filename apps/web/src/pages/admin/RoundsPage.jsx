@@ -33,7 +33,7 @@ export function RoundsPage() {
   return (
     <section>
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-xl font-bold">Đợt</h1>
+        <h1 className="mr-auto text-2xl font-semibold">Đợt</h1>
         <Link to="/quan-ly/dot/moi" className={btnPrimary}>Tạo đợt mới</Link>
       </div>
       <form className="mt-3 grid gap-2 sm:grid-cols-3" onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc đợt">
@@ -56,7 +56,7 @@ export function RoundsPage() {
                   <tbody>
                     {d.items.map((r) => (
                       <tr key={r.id} className="border-b">
-                        <td className="p-2 break-words"><Link className="text-blue-800 underline" to={`/quan-ly/dot/${r.id}`}>{r.name}</Link></td>
+                        <td className="p-2 break-words"><Link className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700" to={`/quan-ly/dot/${r.id}`}>{r.name}</Link></td>
                         <td className="p-2">{facName[r.facultyId] ?? ''}</td>
                         <td className="p-2">{r.academicYear}</td>
                         <td className="p-2">{fmtDateTime(r.regOpenAt)}</td>

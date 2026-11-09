@@ -14,7 +14,7 @@ export function ToastViewport() {
     <div aria-live="polite" className="fixed inset-x-2 bottom-2 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-4 sm:items-end">
       {toasts.map((t) => (
         <div key={t.id} role={t.type === 'error' ? 'alert' : 'status'}
-          className={`flex w-full max-w-sm items-start gap-2 rounded-md px-4 py-3 shadow-lg break-words ${STYLES[t.type] ?? STYLES.info}`}>
+          className={`flex w-full max-w-sm items-start gap-2 rounded-lg px-4 py-3 shadow-xl ring-1 ring-black/5 break-words ${STYLES[t.type] ?? STYLES.info}`}>
           <p className="flex-1 text-sm">{t.message}</p>
           {t.action && (
             <button type="button" onClick={() => { dismissToast(t.id); t.action.onClick(); }}

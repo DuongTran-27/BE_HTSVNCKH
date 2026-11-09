@@ -6,7 +6,7 @@ function Notice({ title }) {
   const { user } = useAuth();
   return (
     <section className="py-8 text-center">
-      <h1 className="text-xl font-bold">{title}</h1>
+      <h1 className="text-2xl font-semibold">{title}</h1>
       <Link to={homePath(user?.role)} className="mt-4 inline-flex min-h-11 items-center rounded-md bg-blue-700 px-4 font-medium text-white">
         Về trang chủ
       </Link>

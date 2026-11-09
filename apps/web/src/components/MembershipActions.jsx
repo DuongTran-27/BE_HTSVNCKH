@@ -77,4 +77,4 @@ export function FormerAdvisors({ topic }) {
 }
 
 export const ReadOnlyBanner = ({ topic }) => (topic.readOnlyAccess
-  ? <p role="note" className="rounded-md bg-blue-50 p-3">Bạn chỉ có quyền đọc đề tài này (giảng viên hướng dẫn trước đây).</p> : null);
+  ? <p role="note" className="rounded-lg border border-blue-100 bg-blue-50 p-4">Bạn chỉ có quyền đọc đề tài này (giảng viên hướng dẫn trước đây).</p> : null);

@@ -39,7 +39,7 @@ export function ResultSection({ topic: t }) {
             {current ? <ResultLine r={current} /> : <p className="text-slate-700">Chưa có kết quả cuối.</p>}
             {items.length > 1 && (
               <details>
-                <summary className="min-h-11 cursor-pointer py-2 text-blue-800 underline">Các phiên bản trước ({items.length - 1})</summary>
+                <summary className="min-h-11 cursor-pointer py-2 text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Các phiên bản trước ({items.length - 1})</summary>
                 <ul className="space-y-2">{items.filter((r) => !r.isCurrent).map((r) => <li key={r.id} className="rounded-md bg-slate-50 p-2"><ResultLine r={r} /></li>)}</ul>
               </details>
             )}
@@ -81,7 +81,7 @@ function ResultForm({ topic, expectedVersion }) {
     toast('Đã lưu kết quả cuối', { type: 'success' });
   });
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-3 rounded-md bg-slate-50 p-3" aria-label="Nhập kết quả cuối">
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-300 bg-white p-5 shadow-sm" aria-label="Nhập kết quả cuối">
       <p className="font-medium">{expectedVersion ? 'Nhập lại kết quả (tạo phiên bản mới)' : 'Nhập kết quả cuối'}</p>
       <FormField label="Kết quả" error={errors.result?.message}>
         <select {...register('result')}><Options placeholder="Chọn kết quả" options={Object.values(FINAL_RESULT).map((v) => ({ value: v, label: FINAL_RESULT_LABEL[v] }))} /></select>
@@ -117,7 +117,7 @@ function CorrectionForm({ topic, current, onClose }) {
     if (err?.status === 429) setError('root', { message: err.message });
   };
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-3 rounded-md bg-slate-50 p-3" aria-label="Sửa kết quả">
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-300 bg-white p-5 shadow-sm" aria-label="Sửa kết quả">
       <p className="font-medium">Sửa kết quả (tạo phiên bản {current.version + 1}, phiên bản cũ vẫn được lưu)</p>
       <FormField label="Kết quả" error={errors.result?.message}>
         <select {...register('result')}><Options options={Object.values(FINAL_RESULT).map((v) => ({ value: v, label: FINAL_RESULT_LABEL[v] }))} /></select>

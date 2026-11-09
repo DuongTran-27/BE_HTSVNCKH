@@ -25,7 +25,7 @@ function RequestCard({ r, user }) {
   const overdue = r.pendingDays != null && r.pendingDays >= DEFAULT_ROUND_CONFIG.advisorReminderDays;
   const actions = isLecturer && r.status === 'PENDING' ? availableActions(t.status, 'LECTURER') : [];
   return (
-    <li className="rounded-md border border-slate-300 p-3">
+    <li className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
       <p className="break-words font-medium">{t.code}{t.title ? ` – ${t.title}` : ''}</p>
       <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
         {t.status && <Badge>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Badge>}
@@ -35,7 +35,7 @@ function RequestCard({ r, user }) {
       </p>
       {r.reason && <p className="mt-1 break-words text-sm text-slate-700">Lý do: {r.reason}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
-        {!closedForLecturer && <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-800 underline">Xem hồ sơ</Link>}
+        {!closedForLecturer && <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Xem hồ sơ</Link>}
         {actions.length > 0 && <AdvisingActions topic={t} actions={actions} redirectOnDecline={false} />}
       </div>
     </li>
@@ -65,7 +65,7 @@ export function AdvisorRequestsPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-bold">Đề nghị hướng dẫn</h1>
+      <h1 className="text-2xl font-semibold">Đề nghị hướng dẫn</h1>
       <div role="tablist" aria-label="Trạng thái đề nghị" className="mt-3 flex flex-wrap gap-2">
         {TABS.map((s) => (
           <button key={s} type="button" role="tab" aria-selected={s === status} onClick={() => set('status', s === 'PENDING' ? '' : s)}

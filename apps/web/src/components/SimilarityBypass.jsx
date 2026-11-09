@@ -9,7 +9,7 @@ import { btnGhost } from './ui.jsx';
 
 /** Thông báo "đã được cho phép gửi" (mọi người xem được `similarityBypass`) – dùng ở chi tiết đề tài và trang gửi */
 export const BypassNote = ({ bypass }) => (bypass ? (
-  <p role="note" className="break-words rounded-md bg-amber-50 p-3 text-amber-900">
+  <p role="note" className="break-words rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
     Cán bộ đã cho phép gửi dù chưa kiểm tra được trùng lặp ({bypass.grantedBy?.fullName}, {fmtDateTime(bypass.createdAt)}). Quyền chỉ áp dụng cho một lần gửi kế tiếp; hệ thống sẽ tự kiểm tra lại khi hết lỗi.
     {bypass.reason && <> Lý do: {bypass.reason}</>}
   </p>

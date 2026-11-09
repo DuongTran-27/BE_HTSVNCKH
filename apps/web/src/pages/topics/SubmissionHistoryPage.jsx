@@ -20,8 +20,8 @@ export function SubmissionHistoryPage() {
   return (
     <section className="space-y-6">
       <div>
-        <Link to={`/de-tai/${id}`} className="inline-flex min-h-11 items-center text-blue-800 underline">← Chi tiết đề tài</Link>
-        <h1 className="text-xl font-bold">Lịch sử</h1>
+        <Link to={`/de-tai/${id}`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">← Chi tiết đề tài</Link>
+        <h1 className="text-2xl font-semibold">Lịch sử</h1>
       </div>
       <div>
         <h2 className="font-bold">Các lần gửi</h2>
@@ -30,10 +30,10 @@ export function SubmissionHistoryPage() {
             <>
               <ul className="mt-2 space-y-2">
                 {items.map((s) => (
-                  <li key={s.id} className="rounded-md border border-slate-300 p-3">
+                  <li key={s.id} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
                     <label className="inline-flex min-h-11 items-center gap-2">
                       <input type="checkbox" className="size-5" checked={picked.includes(s.seq)} onChange={() => toggle(s.seq)} aria-label={`Chọn lần gửi ${s.seq} để so sánh`} />
-                      <Link to={`/de-tai/${id}/lan-gui/${s.seq}`} className="font-medium text-blue-800 underline">Lần gửi {s.seq}</Link>
+                      <Link to={`/de-tai/${id}/lan-gui/${s.seq}`} className="font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Lần gửi {s.seq}</Link>
                     </label>
                     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                       <span>{fmtDateTime(s.createdAt)} · {s.createdBy?.fullName}</span>
@@ -55,7 +55,7 @@ export function SubmissionHistoryPage() {
           {(items) => (
             <ul className="mt-2 space-y-2">
               {items.map((h, i) => (
-                <li key={i} className="rounded-md border border-slate-300 p-3 text-sm">
+                <li key={i} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm text-sm">
                   <p className="font-medium">{TOPIC_STATUS_LABEL[h.from] ?? h.from ?? '—'} → {TOPIC_STATUS_LABEL[h.to] ?? h.to} ({ACTION_LABEL[h.action] ?? h.action})</p>
                   <p>{h.actor?.fullName} ({ROLE_LABEL[h.actor?.role] ?? h.actor?.role}) · {fmtDateTime(h.at)}</p>
                   {h.reason && <p className="whitespace-pre-wrap break-words">Lý do: {h.reason}</p>}
