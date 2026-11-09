@@ -42,3 +42,10 @@ Yêu cầu trực tiếp của chủ dự án: dùng skill/thư viện giao di�
 - `ErrorPages` (icon + gợi ý), `ChangePasswordPage` (thẻ giữa trang), `NotificationsPage` (chấm chưa đọc), form `TopicCreate`/`TopicEdit`/`GroupPage` trong thẻ.
 - Bằng chứng: `npm run lint` sạch; `npm test -w @nckh/web` 28 file, 230/230 đạt; build xong; ảnh chụp API giả lập: tài khoản (1366/360), chi tiết tài khoản, đợt, sửa đợt, danh mục, nhập CSV, hàng chờ, xét duyệt (1366/360), thông báo, đổi mật khẩu, 404.
 - Vẫn chưa chạy E2E (Docker Desktop tắt).
+
+## Sửa theo review (reviewer v1: APPROVED, 4 MINOR)
+- MINOR 1: link "Quản lý nhóm" (`TopicDetailPage.jsx`) thêm `inline-flex min-h-11 items-center`.
+- MINOR 3: bỏ hằng `card` cục bộ ở `StatsPage.jsx`, `TopicDetailPage.jsx`, dùng `card` của `ui.jsx`.
+- MINOR 4: `initials` chuyển vào `ui.jsx`, `Layout.jsx` và `UserDetailPage.jsx` dùng chung.
+- MINOR 2 (style inline ở Legend): giữ nguyên – React gán qua CSSOM, CSP hiện tại không chặn; ghi nhận nếu sau này siết `style-src-attr`.
+- Bằng chứng: `npm run lint` sạch; `npm test -w @nckh/web` 28 file, 230/230 đạt; build xong.

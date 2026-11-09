@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { FINAL_RESULT_LABEL, TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { useAuth } from '../../lib/auth.js';
 import { fmtDateTime } from '../../lib/format.js';
-import { Badge, STATUS_TONE } from '../../components/ui.jsx';
+import { Badge, STATUS_TONE, card } from '../../components/ui.jsx';
 import { Award, CalendarRange, FileClock, GitPullRequestArrow, History, Info, Layers, Pencil, ScanSearch, TriangleAlert, UserRound, Users } from 'lucide-react';
 import { useSimilarityLatest } from '../../lib/queries.js';
 import { ExecTabs, TopicQuery } from '../../components/ExecShell.jsx';
@@ -14,7 +14,6 @@ import { SimilarityBadge, SimilarityPanel, UncheckedFlag } from '../../component
 import { BypassNote, GrantBypass } from '../../components/SimilarityBypass.jsx';
 
 const NOTICE_STATUSES = ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR'];
-const card = 'rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5';
 const h2 = 'flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-500 uppercase';
 const link = 'inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-blue-700';
 const Block = ({ title, children }) => (
@@ -121,7 +120,7 @@ function TopicDetail({ topic: t }) {
               ))}
             </ul>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Link to={`/de-tai/${t.id}/nhom`} className="text-sm font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Quản lý nhóm</Link>
+              <Link to={`/de-tai/${t.id}/nhom`} className="inline-flex min-h-11 items-center text-sm font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Quản lý nhóm</Link>
               <LeaveGroupButton topic={t} />
             </div>
           </div>

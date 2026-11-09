@@ -10,12 +10,11 @@ import { pickEnum, pickYear, useUrlParams } from '../../lib/urlParams.js';
 import { DebouncedInput, FilterSelect } from '../../components/ListFilters.jsx';
 import { StatsChart } from '../../components/StatsChart.jsx';
 import { StuckTopics } from '../../components/StuckTopics.jsx';
-import { QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
+import { QueryBox, btnGhost, btnPrimary, card } from '../../components/ui.jsx';
 
 const toOptions = (labels) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 const STATUS_NO_DRAFT = Object.fromEntries(Object.entries(TOPIC_STATUS_LABEL).filter(([k]) => k !== 'DRAFT')); // API_GD45 §9.1
 const CHARTS = { bar: ['Biểu đồ cột', ChartColumn], pie: ['Biểu đồ tròn', ChartPie] };
-const card = 'rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5';
 const pct = (n, total) => (total ? `${Math.round((n / total) * 1000) / 10}%` : '—');
 
 function Tile({ label, value, note }) {

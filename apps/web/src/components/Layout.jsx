@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth.js';
 import { ROLE_LABEL } from '@nckh/shared';
 import { NotificationBell } from './NotificationBell.jsx';
 import { MENU } from '../lib/nav.js';
+import { initials } from './ui.jsx';
 
 // Biểu tượng theo đường dẫn menu (nav.js giữ nhãn và quyền, ở đây chỉ trang trí)
 const ICON = {
@@ -19,7 +20,6 @@ const ICON = {
 const linkClass = ({ isActive }) => 'inline-flex min-h-11 shrink-0 items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors '
   + (isActive ? 'bg-blue-50 text-blue-800' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900');
 
-const initials = (name = '') => name.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
 // Khung các trang sau đăng nhập. Mật khẩu tạm: chỉ còn "Đăng xuất" (UI §1.2).
 export function Layout() {

@@ -12,7 +12,7 @@ import { useCatalog, useScopedFaculties } from '../../lib/queries.js';
 import { toast } from '../../lib/toast.js';
 import { FormField } from '../../components/FormField.jsx';
 import { KeyRound, Lock, LockOpen } from 'lucide-react';
-import { Badge, CheckGroup, ConfirmDialog, Options, PageHeader, QueryBox, TempPasswordBox, btnGhost, btnPrimary, card, opt } from '../../components/ui.jsx';
+import { Badge, CheckGroup, ConfirmDialog, Options, PageHeader, QueryBox, TempPasswordBox, btnGhost, btnPrimary, card, initials, opt } from '../../components/ui.jsx';
 
 const FIELDS = ['email', 'fullName', 'classId', 'facultyId'];
 
@@ -104,7 +104,7 @@ function UserDetail({ user: target }) {
   return (
     <div className="space-y-4">
       <div className={`${card} flex flex-wrap items-start gap-4`}>
-      <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full bg-blue-100 text-lg font-semibold text-blue-800">{target.fullName.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase()}</span>
+      <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full bg-blue-100 text-lg font-semibold text-blue-800">{initials(target.fullName)}</span>
       <div className="min-w-0 flex-1">
       <p className="break-words text-lg font-semibold">{target.fullName}</p>
       <p className="break-all text-sm text-slate-600">{target.email}</p>

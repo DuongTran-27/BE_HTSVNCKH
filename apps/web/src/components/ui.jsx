@@ -8,6 +8,8 @@ export const btnGhost = `${btn} border border-slate-300 bg-white text-slate-800 
 export const btnDanger = `${btn} bg-red-700 text-white hover:bg-red-800`;
 export const card = 'rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5';
 export const tableFrame = 'overflow-x-auto rounded-xl border border-slate-300 bg-white shadow-sm';
+/** Chữ tắt cho ô avatar: chữ đầu của 2 từ cuối họ tên ("Nguyễn Thị Minh Anh" → "MA") */
+export const initials = (name = '') => name.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
 /** Đầu trang: tiêu đề + mô tả ngắn bên trái, nút thao tác chính bên phải */
 export function PageHeader({ title, description, children }) {
