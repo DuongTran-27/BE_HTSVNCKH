@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { api } from '../lib/api.js';
 import { fmtDateTime, qs } from '../lib/format.js';
+import { TriangleAlert } from 'lucide-react';
 import { Badge, Pager, QueryBox } from './ui.jsx';
 
 // FR16.5 (BUG-012): server lọc stuck=true và phân trang; widget hiển thị total + Pager
@@ -15,8 +16,8 @@ export function StuckTopics({ roundId }) {
     placeholderData: keepPreviousData,
   });
   return (
-    <section aria-labelledby="stuck-h" className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3">
-      <h2 id="stuck-h" className="font-semibold">Đề tài kẹt sau khi đóng đăng ký</h2>
+    <section aria-labelledby="stuck-h" className="mt-6 rounded-xl border border-amber-200 bg-amber-50/60 p-4 sm:p-5">
+      <h2 id="stuck-h" className="flex items-center gap-2 font-semibold text-amber-900"><TriangleAlert aria-hidden="true" className="size-4" />Đề tài kẹt sau khi đóng đăng ký</h2>
       <p className="text-sm text-slate-700">Đề tài chờ hoặc đã có GVHD nhưng chưa gửi xét duyệt, trong khi đợt đã đóng đăng ký.</p>
       <div className="mt-2">
         <QueryBox query={query} empty="Không có đề tài nào bị kẹt." isEmpty={(d) => d.items.length === 0}>

@@ -9,7 +9,7 @@ import { useCatalog } from '../../lib/queries.js';
 import { pickEnum, pickPage, pickYear, useUrlParams } from '../../lib/urlParams.js';
 import { DebouncedInput, FilterSelect } from '../../components/ListFilters.jsx';
 import { SimilarityLevelCell } from '../../components/SimilarityPanel.jsx';
-import { Badge, Pager, QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
+import { Badge, Pager, QueryBox, STATUS_TONE, btnGhost, btnPrimary } from '../../components/ui.jsx';
 
 const TITLE = { STUDENT: 'Đề tài của tôi', LECTURER: 'Đề tài hướng dẫn', STAFF: 'Đề tài của khoa' };
 const SORTS = { updatedAt_desc: 'Mới cập nhật', updatedAt_asc: 'Cập nhật cũ nhất', code_asc: 'Mã đề tài', title_asc: 'Tên đề tài' };
@@ -94,7 +94,7 @@ export function TopicListPage() {
                   <li key={t.id} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
                     <Link to={`/de-tai/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title}</Link>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
-                      <Badge>{TOPIC_STATUS_LABEL[t.status]}</Badge>
+                      <Badge tone={STATUS_TONE[t.status]}>{TOPIC_STATUS_LABEL[t.status]}</Badge>
                       {t.round?.registrationOpen === false && STUCK.includes(t.status) && <Badge tone="amber">Đã đóng đăng ký</Badge>}
                       {t.result && <Badge tone="green">{FINAL_RESULT_LABEL[t.result] ?? t.result}</Badge>}
                     </p>

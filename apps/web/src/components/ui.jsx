@@ -27,10 +27,17 @@ export function QueryBox({ query, empty, isEmpty, children }) {
   return children(query.data);
 }
 
+/** Màu nhãn trạng thái đề tài: chờ người khác = blue, cần sinh viên xử lý = amber, đang chạy = green, kết thúc xấu = red */
+export const STATUS_TONE = {
+  WAITING_ADVISOR: 'blue', HAS_ADVISOR: 'blue', UNDER_REVIEW: 'blue', WAITING_CLOSE: 'blue',
+  NEEDS_REVISION: 'amber', IN_PROGRESS: 'green', REJECTED: 'red',
+};
+
 export function Badge({ children, tone = 'slate' }) {
   const t = {
     slate: 'bg-slate-100 text-slate-700 ring-slate-500/20', green: 'bg-green-50 text-green-800 ring-green-600/20',
     amber: 'bg-amber-50 text-amber-900 ring-amber-600/25', red: 'bg-red-50 text-red-800 ring-red-600/20',
+    blue: 'bg-blue-50 text-blue-800 ring-blue-700/20',
   }[tone];
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${t}`}>{children}</span>;
 }

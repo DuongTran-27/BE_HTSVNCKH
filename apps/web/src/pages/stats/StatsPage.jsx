@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { ChartColumn, ChartPie, Download, FilterX } from 'lucide-react';
 import { FINAL_RESULT_LABEL, STATS_DIMENSION_LABEL, STATS_GROUP_BY, TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { useAuth } from '../../lib/auth.js';
@@ -13,7 +14,19 @@ import { QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
 
 const toOptions = (labels) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 const STATUS_NO_DRAFT = Object.fromEntries(Object.entries(TOPIC_STATUS_LABEL).filter(([k]) => k !== 'DRAFT')); // API_GD45 §9.1
-const CHARTS = { bar: 'Biểu đồ cột', pie: 'Biểu đồ tròn' };
+const CHARTS = { bar: ['Biểu đồ cột', ChartColumn], pie: ['Biểu đồ tròn', ChartPie] };
+const card = 'rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5';
+const pct = (n, total) => (total ? `${Math.round((n / total) * 1000) / 10}%` : '—');
+
+function Tile({ label, value, note }) {
+  return (
+    <div className={card}>
+      <p className="text-sm text-slate-600">{label}</p>
+      <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
+      {note && <p className="mt-1 break-words text-sm text-slate-500">{note}</p>}
+    </div>
+  );
+}
 
 // /thong-ke – API_GD45 §9. Biểu đồ, bảng và CSV dùng cùng một chuỗi query (FR14)
 export function StatsPage() {
@@ -52,8 +65,15 @@ export function StatsPage() {
   const dim = STATS_DIMENSION_LABEL[params.groupBy];
   return (
     <section>
-      <h1 className="text-2xl font-semibold">Thống kê</h1>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Thống kê</h1>
+          <p className="mt-1 text-sm text-slate-600">Số đề tài theo {dim.toLowerCase()}; biểu đồ, bảng và file CSV dùng cùng bộ lọc.</p>
+        </div>
+        <button type="button" className={btnPrimary} disabled={busy} onClick={exportCsv}><Download aria-hidden="true" className="size-4" />{busy ? 'Đang tải…' : 'Xuất CSV'}</button>
+      </div>
+      {csvError && <p role="alert" className="mt-2 text-sm text-red-700">{csvError}</p>}
+      <div className={`${card} mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4`}>
         <FilterSelect label="Thống kê theo" value={params.groupBy} onChange={(v) => u.set('groupBy', v)} options={toOptions(STATS_DIMENSION_LABEL)} />
         <FilterSelect label="Đợt" value={params.roundId} onChange={(v) => u.set('roundId', v)} placeholder="Mọi đợt"
           options={(rounds.data ?? []).map((r) => ({ value: r.id, label: `${r.name} (${r.academicYear})` }))} />
@@ -69,34 +89,52 @@ export function StatsPage() {
         )}
         <FilterSelect label="Trạng thái" value={params.status} onChange={(v) => u.set('status', v)} placeholder="Mọi trạng thái" options={toOptions(STATUS_NO_DRAFT)} />
         <FilterSelect label="Kết quả" value={params.result} onChange={(v) => u.set('result', v)} placeholder="Mọi kết quả" options={toOptions(FINAL_RESULT_LABEL)} />
+        {u.any && <div className="flex items-end"><button type="button" className={btnGhost} onClick={u.clear}><FilterX aria-hidden="true" className="size-4" />Xóa bộ lọc</button></div>}
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        {u.any && <button type="button" className={btnGhost} onClick={u.clear}>Xóa bộ lọc</button>}
-        <button type="button" className={btnPrimary} disabled={busy} onClick={exportCsv}>{busy ? 'Đang tải…' : 'Xuất CSV'}</button>
-        <div className="flex gap-1" role="group" aria-label="Kiểu biểu đồ">
-          {Object.entries(CHARTS).map(([k, l]) => <button key={k} type="button" className={btnGhost} aria-pressed={chart === k} onClick={() => setChart(k)}>{l}</button>)}
-        </div>
-      </div>
-      {csvError && <p role="alert" className="mt-2 text-sm text-red-700">{csvError}</p>}
       <div className="mt-4">
         <QueryBox query={stats} empty="Không có đề tài nào khớp bộ lọc." isEmpty={(d) => d.rows.length === 0}>
-          {(d) => (
-            <>
-              <StatsChart rows={d.rows} type={chart} label={dim} />
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full border-collapse text-left text-sm">
-                  <caption className="mb-2 text-left font-medium">Số đề tài theo {dim.toLowerCase()} (tổng {d.total})</caption>
-                  <thead><tr className="border-b border-slate-400"><th scope="col" className="p-2">{dim}</th><th scope="col" className="p-2 text-right">Số đề tài</th></tr></thead>
-                  <tbody>
-                    {d.rows.map((r) => (
-                      <tr key={String(r.key)} className="border-b border-slate-200"><td className="break-words p-2">{r.label}</td><td className="p-2 text-right">{r.count}</td></tr>
-                    ))}
-                  </tbody>
-                  <tfoot><tr><th scope="row" className="p-2 text-left">Tổng</th><td className="p-2 text-right font-semibold">{d.total}</td></tr></tfoot>
-                </table>
+          {(d) => {
+            const top = d.rows.reduce((a, r) => (r.count > a.count ? r : a), d.rows[0]);
+            return (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Tile label="Tổng số đề tài" value={d.total} />
+                  <Tile label={`Số nhóm theo ${dim.toLowerCase()}`} value={d.rows.length} />
+                  <Tile label="Nhóm nhiều đề tài nhất" value={top.count} note={`${top.label} · ${pct(top.count, d.total)}`} />
+                </div>
+                <div className={card}>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="font-semibold">Phân bố theo {dim.toLowerCase()}</h2>
+                    <div className="inline-flex rounded-lg bg-slate-100 p-1" role="group" aria-label="Kiểu biểu đồ">
+                      {Object.entries(CHARTS).map(([k, [l, Icon]]) => (
+                        <button key={k} type="button" aria-pressed={chart === k} onClick={() => setChart(k)}
+                          className={`inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${chart === k ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                          <Icon aria-hidden="true" className="size-4" />{l}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <StatsChart rows={d.rows} type={chart} label={dim} />
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-slate-300 bg-white shadow-sm">
+                  <table className="text-left">
+                    <caption className="px-4 pt-4 pb-3 text-left font-semibold sm:px-5">Số đề tài theo {dim.toLowerCase()} (tổng {d.total})</caption>
+                    <thead><tr><th scope="col" className="px-4 py-2 sm:px-5">{dim}</th><th scope="col" className="px-4 py-2 text-right">Số đề tài</th><th scope="col" className="px-4 py-2 text-right sm:px-5">Tỉ lệ</th></tr></thead>
+                    <tbody>
+                      {d.rows.map((r) => (
+                        <tr key={String(r.key)}>
+                          <td className="break-words px-4 py-2.5 sm:px-5">{r.label}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums">{r.count}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-600 tabular-nums sm:px-5">{pct(r.count, d.total)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot><tr className="bg-slate-50"><th scope="row" className="px-4 py-2.5 text-left sm:px-5">Tổng</th><td className="px-4 py-2.5 text-right font-semibold tabular-nums">{d.total}</td><td className="px-4 py-2.5 text-right sm:px-5">100%</td></tr></tfoot>
+                  </table>
+                </div>
               </div>
-            </>
-          )}
+            );
+          }}
         </QueryBox>
       </div>
       {isStaff && <StuckTopics key={params.roundId} roundId={params.roundId} />}

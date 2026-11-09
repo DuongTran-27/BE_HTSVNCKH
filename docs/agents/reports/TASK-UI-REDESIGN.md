@@ -21,3 +21,12 @@ Yêu cầu trực tiếp của chủ dự án: dùng skill/thư viện giao di�
 - `npm run build -w @nckh/web` → build xong (cảnh báo chunk > 500 kB).
 - Ảnh chụp với API giả lập (Playwright, 1366px và 360px): đăng nhập, danh sách đề tài – hiển thị đúng.
 - **Chưa chạy** `npm run test:e2e`: Docker Desktop không chạy (`dockerDesktopLinuxEngine` không tìm thấy) nên không có DB test.
+
+## Đợt 2 – Thống kê và chi tiết đề tài (2026-11-09)
+- `StatsPage`: nút Xuất CSV lên đầu trang, bộ lọc gom vào một thẻ, 3 ô số liệu (tổng, số nhóm, nhóm lớn nhất kèm %), biểu đồ trong thẻ với nút chuyển kiểu dạng segmented, bảng thêm cột Tỉ lệ.
+- `StatsChart`: cột một màu (accent), bo đầu 4px, lưới ngang nhạt, tooltip riêng. Tròn → donut, bảng màu 8 sắc cố định (skill dataviz), quá 8 nhóm gộp "Khác" (bảng vẫn đủ dòng), chú giải chữ trung tính, đúng thứ tự lát.
+  - `validate_palette.js --mode light` → ALL CHECKS PASS; WARN tương phản 3 màu được bù bằng chú giải + bảng.
+- `TopicDetailPage`: thẻ tiêu đề (mã, trạng thái có màu, đợt, lĩnh vực, kết quả), thông báo có icon, bố cục 2 cột (hồ sơ + trùng lặp | GVHD, nhóm, liên kết nhanh). `STATUS_TONE` trong `ui.jsx` dùng chung với danh sách đề tài.
+- `ExecTabs`, `TopicActionBar`, `StuckTopics`: kiểu mới.
+- Bằng chứng: `npm run lint` sạch; `npm test -w @nckh/web` 28 file, 230/230 đạt; build xong; ảnh chụp với API giả lập (1366px, 360px) cho thống kê (cột/tròn) và chi tiết đề tài.
+- Vẫn chưa chạy E2E (Docker Desktop tắt).

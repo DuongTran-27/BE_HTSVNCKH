@@ -20,7 +20,8 @@ export function TopicQuery({ children }) {
   return <QueryBox query={query}>{children}</QueryBox>;
 }
 
-const tab = ({ isActive }) => `inline-flex min-h-11 items-center rounded-md px-3 ${isActive ? 'bg-blue-700 text-white' : 'border border-slate-300 bg-white'}`;
+const tab = ({ isActive }) => 'inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors '
+  + (isActive ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-700/15' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900');
 
 /** Tab thực hiện của đề tài (UI §2.7). Hiện theo permissions.readExecution của server */
 export function ExecTabs({ topic: t }) {
@@ -28,7 +29,7 @@ export function ExecTabs({ topic: t }) {
   const exec = EXEC_STATUSES.includes(t.status);
   const base = `/de-tai/${t.id}`;
   return (
-    <nav aria-label="Thực hiện đề tài" className="flex flex-wrap gap-2">
+    <nav aria-label="Thực hiện đề tài" className="flex flex-wrap gap-1">
       <NavLink end to={base} className={tab}>Thông tin</NavLink>
       {exec && <NavLink to={`${base}/moc`} className={tab}>Mốc</NavLink>}
       {exec && <NavLink to={`${base}/tien-do`} className={tab}>Tiến độ</NavLink>}
