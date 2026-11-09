@@ -536,6 +536,7 @@ Mỗi thành phần, hook, route có **đúng một** task chủ. Không có quy
 | U6 | Kho đề tài (R25) làm ở T308 | API §9.2 thuộc GĐ2 (T213) và thuộc FR08 như T308. Mô tả T504 đã bỏ "kho tra cứu công khai" (G3: kho cần đăng nhập) |
 | U7 | Mọi thành phần, route có chủ cố định (mục 9.1). R6 + `TopicActionBar` thuộc T306; R4 thuộc T308; R15 (cả phía cán bộ) thuộc T306 | Bỏ cơ chế "task nào làm trước" vì T304–T308 chạy song song sau T303, dễ trùng khi gộp (review FE MAJOR 2). T306 chỉ cần T210, xong trước T305 (cần T212a), nên giữ khung R6. R15 một route một chủ: phía cán bộ chỉ là danh sách chỉ đọc cùng endpoint, thêm cột GV |
 | U8 | Không có màn riêng cho cán bộ xem hạn mức GV | Không có FR yêu cầu; R9 (SV) và R15 (GV) đã hiện "Đã nhận x/y" |
+| U9 | Thư viện giao diện được duyệt (`apps/web`, ghim chính xác): `lucide-react` 1.70.0 (icon, ISC) và `@fontsource-variable/inter` 5.3.0 (font tự host, OFL-1.1). Không dùng Radix/cva/tailwind-merge | Duyệt bởi KTS, xem `reviews/TASK-UI-REDESIGN-kien-truc-su-v1.md`. Icon luôn import theo tên và có `aria-hidden` khi trang trí |
 
 ## 11. Schema cần thêm ở `packages/shared`
 Không có schema mới. UI dùng lại các schema, hằng và nhãn đã liệt kê ở API §11 (T206, T207a, T207b, T208–T213) và `countWords` có sẵn. Nếu frontend cần hàm định dạng thời gian dùng chung với backend (CSV thống kê GĐ5), đề xuất ở T400.
