@@ -51,7 +51,7 @@ export function InvitationsPage() {
             <>
               <ul className="space-y-2">
                 {d.items.map((inv) => (
-                  <li key={inv.id} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                  <li key={inv.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
                     <p className="break-words font-medium">{inv.topic.code}{inv.topic.title ? ` – ${inv.topic.title}` : ''}</p>
                     <p className="break-words text-sm text-slate-700">{inv.topic.round?.name} · Trưởng nhóm: {inv.topic.leader.fullName} ({inv.topic.leader.code}) · {inv.topic.memberCount} thành viên · Mời lúc {fmtDateTime(inv.createdAt)}</p>
                     {inv.status === 'PENDING' && (

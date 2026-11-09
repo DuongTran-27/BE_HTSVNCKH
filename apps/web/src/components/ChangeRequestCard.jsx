@@ -83,7 +83,7 @@ export function ChangeRequestCard({ cr, linkTopic = true }) {
   const needReason = cr.type === 'CANCEL';
 
   return (
-    <li className="space-y-2 rounded-xl border border-slate-300 bg-white p-4 shadow-sm" data-testid="change-request">
+    <li className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm" data-testid="change-request">
       <p className="flex flex-wrap items-center gap-2">
         <Badge>{CHANGE_TYPE_LABEL[cr.type]}</Badge>
         <Badge tone={TONE[cr.status]}>{REQUEST_STATUS_LABEL[cr.status]}</Badge>

@@ -21,7 +21,7 @@ export function PastTopicsPage() {
           <>
             <ul className="space-y-2">
               {d.items.map((t) => (
-                <li key={t.topicId} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                <li key={t.topicId} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
                   <Link to={`/lich-su-tham-gia/${t.topicId}`} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title ?? 'Không có tên trong thời gian bạn tham gia'}</Link>
                   <p className="text-sm text-slate-700">Thời gian tham gia: <Windows windows={t.windows} />. {t.submissionCount} lần gửi, {t.documentCount} tài liệu.</p>
                 </li>
@@ -49,7 +49,7 @@ function PastDocument({ d }) {
     }
   };
   return (
-    <li className="space-y-1 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+    <li className="space-y-1 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
       <p className="break-all">{d.fileName ?? d.title}</p>
       <p className="text-sm text-slate-700">{d.uploadedBy?.fullName} · {fmtDateTime(d.uploadedAt)}</p>
       {d.kind === 'FILE' && <button type="button" className={btnGhost} disabled={busy} onClick={download}>{busy ? 'Đang xử lý…' : 'Tải về'}</button>}
@@ -79,7 +79,7 @@ export function PastTopicDetailPage() {
             <>
               <ul className="mt-2 space-y-2">
                 {items.map((s) => (
-                  <li key={s.id} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                  <li key={s.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
                     <label className="inline-flex min-h-11 items-center gap-2">
                       <input type="checkbox" className="size-5" checked={picked.includes(s.seq)} onChange={() => toggle(s.seq)} aria-label={`Chọn lần gửi ${s.seq} để so sánh`} />
                       <Link to={`/de-tai/${topicId}/lan-gui/${s.seq}`} className="font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Lần gửi {s.seq}</Link>

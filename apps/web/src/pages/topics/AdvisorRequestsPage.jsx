@@ -25,7 +25,7 @@ function RequestCard({ r, user }) {
   const overdue = r.pendingDays != null && r.pendingDays >= DEFAULT_ROUND_CONFIG.advisorReminderDays;
   const actions = isLecturer && r.status === 'PENDING' ? availableActions(t.status, 'LECTURER') : [];
   return (
-    <li className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+    <li className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
       <p className="break-words font-medium">{t.code}{t.title ? ` – ${t.title}` : ''}</p>
       <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
         {t.status && <Badge>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Badge>}

@@ -22,7 +22,7 @@ export function SnapshotBody({ payload }) {
 /** Quyết định của cán bộ; decision null -> "Chưa xử lý" */
 export function DecisionBox({ decision, title = 'Quyết định' }) {
   return (
-    <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm" data-testid="decision-box">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm" data-testid="decision-box">
       <h3 className="font-semibold">{title}</h3>
       {decision ? (
         <>

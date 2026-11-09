@@ -97,7 +97,7 @@ export function CatalogPage({ kind }) {
         ))}
       </nav>
 
-      <form onSubmit={handleSubmit(onCreate)} noValidate className="grid max-w-3xl gap-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-5" aria-label={`Thêm ${cfg.noun}`}>
+      <form onSubmit={handleSubmit(onCreate)} noValidate className="grid max-w-3xl gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-5" aria-label={`Thêm ${cfg.noun}`}>
         {cfg.parent && (
           <FormField label={cfg.parent.label} error={errors[cfg.parent.name]?.message}>
             <select {...register(cfg.parent.name)}><Options placeholder={`Chọn ${cfg.parent.label.toLowerCase()}`} options={opt(parents.data ?? [], 'id', (p) => parentName[p.id])} /></select>
@@ -127,7 +127,7 @@ export function CatalogPage({ kind }) {
 
       <QueryBox query={list} empty={`Chưa có ${cfg.noun} nào.`} isEmpty={(items) => items.length === 0}>
         {(items) => (
-          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
             {items.map((item) => {
               const inactive = item.isActive === false;
               const isEditing = editing?.id === item.id;

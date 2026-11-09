@@ -36,7 +36,7 @@ export function RoundsPage() {
       <PageHeader title="Đợt" description="Đợt đăng ký đề tài: mốc thời gian và tham số kiểm tra hồ sơ của từng khoa.">
         <Link to="/quan-ly/dot/moi" className={btnPrimary}><CalendarPlus aria-hidden="true" className="size-4" />Tạo đợt mới</Link>
       </PageHeader>
-      <form className="grid gap-2 sm:grid-cols-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5" onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc đợt">
+      <form className="grid gap-2 sm:grid-cols-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5" onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc đợt">
         <select aria-label="Khoa" className={inputClass} value={facultyId} onChange={(e) => set('facultyId', e.target.value)}>
           <Options placeholder="Mọi khoa" options={opt(faculties.data ?? [])} />
         </select>

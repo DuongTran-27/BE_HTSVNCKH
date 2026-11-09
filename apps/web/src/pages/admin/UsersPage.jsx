@@ -41,7 +41,7 @@ export function UsersPage() {
         <Link to="/quan-ly/tai-khoan/nhap-csv" className={btnGhost}><Upload aria-hidden="true" className="size-4" />Nhập CSV</Link>
         <Link to="/quan-ly/tai-khoan/moi" className={btnPrimary}><UserPlus aria-hidden="true" className="size-4" />Tạo tài khoản</Link>
       </PageHeader>
-      <form className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5" onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc tài khoản">
+      <form className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5" onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc tài khoản">
         <select aria-label="Vai trò" className={inputClass} value={params.role} onChange={(e) => set('role', e.target.value)}>
           <Options placeholder="Mọi vai trò" options={roles.map((r) => ({ value: r, label: ROLE_LABEL[r] }))} />
         </select>

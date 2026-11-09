@@ -101,7 +101,7 @@ function RoundForm({ round }) {
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="max-w-3xl space-y-4" aria-label={round ? 'Sửa đợt' : 'Tạo đợt'}>
       {!round && <h1 className="text-2xl font-semibold">Tạo đợt</h1>}
       {round && <p className="text-sm text-slate-700">Thay đổi áp dụng từ lần kiểm tra kế tiếp, không áp dụng lại cho dữ liệu cũ.</p>}
-      <div className="space-y-4 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5">
+      <div className="space-y-4 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
       {!round && (
         <FormField label="Khoa" error={err('facultyId')}>
           <select {...register('facultyId')}><Options placeholder="Chọn khoa" options={opt(faculties.data ?? [])} /></select>
@@ -110,13 +110,13 @@ function RoundForm({ round }) {
       <FormField label="Tên đợt" error={err('name')}><input {...register('name')} /></FormField>
       <FormField label="Năm học" hint="Dạng 2026-2027" error={err('academicYear')}><input {...register('academicYear')} /></FormField>
       </div>
-      <fieldset className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5 grid gap-3 sm:grid-cols-2">
+      <fieldset className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5 grid gap-3 sm:grid-cols-2">
         <legend className="float-left mb-1 w-full font-semibold sm:col-span-2">Mốc thời gian (giờ Việt Nam)</legend>
         {MILESTONES.map(([k, label]) => (
           <FormField key={k} label={label} error={err(k)}><input type="datetime-local" {...register(k)} /></FormField>
         ))}
       </fieldset>
-      <fieldset className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5 grid gap-3 sm:grid-cols-2">
+      <fieldset className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5 grid gap-3 sm:grid-cols-2">
         <legend className="float-left mb-1 w-full font-semibold sm:col-span-2">Cấu hình tham số</legend>
         {CONFIG_FIELDS.map(([k, label]) => {
           const isDefault = sameAsDefault(k, getPath(config, k));

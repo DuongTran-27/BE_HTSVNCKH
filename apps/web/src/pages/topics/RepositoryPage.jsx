@@ -39,7 +39,7 @@ export function RepositoryPage() {
             <>
               <ul className="space-y-2">
                 {d.items.map((t) => (
-                  <li key={t.code} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                  <li key={t.code} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
                     <Link to={`/kho/${encodeURIComponent(t.code)}`} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title}</Link>
                     <p className="mt-1 break-words text-sm text-slate-800">{t.summaryExcerpt}</p>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-700">

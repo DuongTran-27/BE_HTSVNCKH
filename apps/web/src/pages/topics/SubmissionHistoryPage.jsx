@@ -30,7 +30,7 @@ export function SubmissionHistoryPage() {
             <>
               <ul className="mt-2 space-y-2">
                 {items.map((s) => (
-                  <li key={s.id} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                  <li key={s.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
                     <label className="inline-flex min-h-11 items-center gap-2">
                       <input type="checkbox" className="size-5" checked={picked.includes(s.seq)} onChange={() => toggle(s.seq)} aria-label={`Chọn lần gửi ${s.seq} để so sánh`} />
                       <Link to={`/de-tai/${id}/lan-gui/${s.seq}`} className="font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Lần gửi {s.seq}</Link>
@@ -55,7 +55,7 @@ export function SubmissionHistoryPage() {
           {(items) => (
             <ul className="mt-2 space-y-2">
               {items.map((h, i) => (
-                <li key={i} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm text-sm">
+                <li key={i} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm text-sm">
                   <p className="font-medium">{TOPIC_STATUS_LABEL[h.from] ?? h.from ?? '—'} → {TOPIC_STATUS_LABEL[h.to] ?? h.to} ({ACTION_LABEL[h.action] ?? h.action})</p>
                   <p>{h.actor?.fullName} ({ROLE_LABEL[h.actor?.role] ?? h.actor?.role}) · {fmtDateTime(h.at)}</p>
                   {h.reason && <p className="whitespace-pre-wrap break-words">Lý do: {h.reason}</p>}

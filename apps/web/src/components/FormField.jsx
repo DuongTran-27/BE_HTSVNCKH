@@ -1,8 +1,8 @@
 import { cloneElement, useId } from 'react';
 
 // Ô nhập ≥ 16 px (iOS không tự phóng to), vùng chạm ≥ 44 px (UI §8)
-export const inputClass = 'block w-full min-h-11 rounded-md border border-slate-300 bg-white px-3 py-2 text-base shadow-sm transition-colors '
-  + 'placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-3 focus:ring-blue-600/20 '
+export const inputClass = 'block w-full min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base shadow-sm transition '
+  + 'placeholder:text-slate-400 hover:border-slate-400/60 focus:border-blue-600 focus:outline-none focus:ring-3 focus:ring-blue-600/20 '
   + 'disabled:bg-slate-100 aria-invalid:border-red-600 aria-invalid:ring-red-600/20';
 
 /**

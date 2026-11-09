@@ -38,7 +38,7 @@ function InviteForm({ topic }) {
     onSettled: () => refresh(qc, topic.id),
   });
   return (
-    <form noValidate onSubmit={handleSubmit((v) => invite.mutate(v))} className="max-w-sm space-y-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5">
+    <form noValidate onSubmit={handleSubmit((v) => invite.mutate(v))} className="max-w-sm space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
       <FormField label="Mã sinh viên" error={errors.inviteeCode?.message}><input type="text" {...register('inviteeCode')} /></FormField>
       <button type="submit" disabled={invite.isPending} className={btnPrimary}>{invite.isPending ? 'Đang xử lý…' : 'Mời thành viên'}</button>
     </form>
@@ -77,7 +77,7 @@ function Group({ topic: t }) {
       </header>
       <ul className="space-y-2">
         {t.members.map((m) => (
-          <li key={m.userId} className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm break-words">
+          <li key={m.userId} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm break-words">
             {m.code} – {m.fullName} · {m.role === 'LEADER' ? 'Trưởng nhóm' : 'Thành viên'} · tham gia {fmtDateTime(m.joinedAt)}
           </li>
         ))}
@@ -101,7 +101,7 @@ function Group({ topic: t }) {
       {t.permissions?.invite && <InviteForm topic={t} />}
 
       {t.permissions?.transferLeader && others.length > 0 && (
-        <div className="max-w-sm space-y-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5">
+        <div className="max-w-sm space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
           <FormField label="Đổi trưởng nhóm sang">
             <select value={newLeader} onChange={(e) => setNewLeader(e.target.value)}>
               <Options placeholder="Chọn thành viên" options={others.map((m) => ({ value: m.userId, label: `${m.code} – ${m.fullName}` }))} />

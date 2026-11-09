@@ -17,7 +17,7 @@ export function TopicActionBar({ topic }) {
   const close = topic.availableActions.filter((a) => CLOSE_ACTIONS.includes(a));
   if (advising.length === 0 && student.length === 0 && !review && close.length === 0) return null;
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white p-3 shadow-sm max-sm:sticky max-sm:bottom-0 max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:shadow-[0_-4px_12px_rgb(0_0_0/0.06)]" role="group" aria-label="Hành động">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm max-sm:sticky max-sm:bottom-0 max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0 max-sm:shadow-[0_-4px_12px_rgb(0_0_0/0.06)]" role="group" aria-label="Hành động">
       {advising.length > 0 && <AdvisingActions topic={topic} actions={advising} />}
       {review && <Link to={`/xet-duyet/${topic.id}`} className={btnPrimary}>Xét duyệt</Link>}
       {student.length > 0 && <StudentActions topic={topic} actions={student} />}

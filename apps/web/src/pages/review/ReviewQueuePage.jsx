@@ -32,7 +32,7 @@ export function ReviewQueuePage() {
   return (
     <section>
       <PageHeader title="Hàng chờ xét duyệt" description="Hồ sơ gửi sớm nhất nằm trên cùng. Hồ sơ quá hạn xét duyệt được đánh dấu đỏ." />
-      <div className="grid gap-2 sm:grid-cols-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:p-5">
+      <div className="grid gap-2 sm:grid-cols-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
         <select aria-label="Đợt" className={inputClass} value={roundId} onChange={(e) => set('roundId', e.target.value)}>
           <Options placeholder="Mọi đợt" options={(rounds.data ?? []).map((r) => ({ value: r.id, label: `${r.name} (${r.academicYear})` }))} />
         </select>

@@ -115,7 +115,7 @@ export function StatsPage() {
                   </div>
                   <StatsChart rows={d.rows} type={chart} label={dim} />
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-slate-300 bg-white shadow-sm">
+                <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-sm">
                   <table className="text-left">
                     <caption className="px-4 pt-4 pb-3 text-left font-semibold sm:px-5">Số đề tài theo {dim.toLowerCase()} (tổng {d.total})</caption>
                     <thead><tr><th scope="col" className="px-4 py-2 sm:px-5">{dim}</th><th scope="col" className="px-4 py-2 text-right">Số đề tài</th><th scope="col" className="px-4 py-2 text-right sm:px-5">Tỉ lệ</th></tr></thead>

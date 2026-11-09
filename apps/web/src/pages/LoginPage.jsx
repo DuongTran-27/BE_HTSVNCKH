@@ -45,23 +45,27 @@ export function LoginPage() {
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div aria-hidden="true" className="absolute -top-24 -right-24 size-96 rounded-full bg-white/10 blur-3xl" />
-        <p className="relative flex items-center gap-2 text-lg font-semibold"><FlaskConical aria-hidden="true" className="size-6" />NCKH Khoa CNTT</p>
+      <div className="relative hidden overflow-hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div aria-hidden="true" className="absolute -top-32 -right-24 size-[28rem] rounded-full bg-violet-600/50 blur-3xl" />
+        <div aria-hidden="true" className="absolute -bottom-40 -left-24 size-[30rem] rounded-full bg-blue-600/50 blur-3xl" />
+        <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle,rgb(255_255_255/0.12)_1px,transparent_1px)] [mask-image:linear-gradient(to_bottom,black,transparent)] bg-[size:22px_22px]" />
+        <p className="relative flex items-center gap-2.5 text-lg font-semibold">
+          <span className="grid size-10 place-items-center rounded-xl bg-white/10 ring-1 ring-white/20 backdrop-blur"><FlaskConical aria-hidden="true" className="size-5" /></span>NCKH Khoa CNTT
+        </p>
         <div className="relative">
-          <p className="text-3xl leading-tight font-semibold tracking-tight">Quản lý nghiên cứu khoa học sinh viên</p>
-          <ul className="mt-8 space-y-4 text-blue-100">
+          <p className="max-w-md bg-gradient-to-br from-white to-blue-200 bg-clip-text text-4xl leading-tight font-bold tracking-tight text-transparent">Quản lý nghiên cứu khoa học sinh viên</p>
+          <ul className="mt-10 space-y-3 text-slate-200">
             {FEATURES.map(([Icon, text]) => (
-              <li key={text} className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-white/10"><Icon aria-hidden="true" className="size-4" /></span>{text}</li>
+              <li key={text} className="flex items-center gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-white/10 backdrop-blur"><span className="grid size-9 place-items-center rounded-lg bg-gradient-to-br from-blue-500/40 to-violet-500/40"><Icon aria-hidden="true" className="size-4" /></span>{text}</li>
             ))}
           </ul>
         </div>
-        <p className="relative text-sm text-blue-200">Khoa Công nghệ Thông tin</p>
+        <p className="relative text-sm text-slate-400">Khoa Công nghệ Thông tin</p>
       </div>
       <div className="flex items-center justify-center p-4 sm:p-8">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm animate-fade-up rounded-2xl border border-slate-200/80 bg-white/80 p-6 shadow-xl backdrop-blur-xl sm:p-8">
       <p className="mb-8 flex items-center gap-2 font-semibold text-blue-800 lg:hidden"><FlaskConical aria-hidden="true" className="size-5" />NCKH Khoa CNTT</p>
-      <h1 className="text-2xl font-semibold">Đăng nhập</h1>
+      <h1 className="text-2xl font-bold">Đăng nhập</h1>
       <p className="mt-1 text-sm text-slate-600">Dùng mã sinh viên/giảng viên hoặc email do khoa cấp.</p>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6 space-y-4">
         <FormField label="Mã hoặc email" error={errors.identifier?.message}>

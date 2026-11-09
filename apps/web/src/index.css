@@ -2,8 +2,9 @@
 @import "@fontsource-variable/inter";
 
 /*
- * Giao diện theo phong cách shadcn/ui: nền trung tính, một màu nhấn (indigo), viền mảnh, bo góc đều.
- * Đổi giá trị palette tại đây để mọi trang (đang dùng blue-*, slate-*) đổi theo, không phải sửa từng file.
+ * Giao diện phong cách shadcn/ui hiện đại: nền trung tính có quầng màu nhẹ, một màu nhấn (indigo → violet),
+ * viền mảnh, bóng nhiều lớp mềm, bo góc lớn. Đổi giá trị palette tại đây để mọi trang (đang dùng blue-*, slate-*)
+ * đổi theo, không phải sửa từng file.
  */
 @theme {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
@@ -19,21 +20,46 @@
   /* Viền nhẹ hơn: slate-300 dùng làm viền thẻ/ô nhập khắp nơi */
   --color-slate-300: oklch(0.912 0.012 264.5);
 
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  /* Bo góc lớn hơn một bậc cho cảm giác mềm, hiện đại */
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+
+  /* Bóng nhiều lớp, ám màu nhấn rất nhẹ thay cho bóng xám đơn */
+  --shadow-sm: 0 1px 2px oklch(0.3 0.05 275 / 0.06), 0 1px 3px oklch(0.3 0.05 275 / 0.04);
+  --shadow-md: 0 2px 4px oklch(0.3 0.05 275 / 0.05), 0 8px 20px -4px oklch(0.3 0.08 275 / 0.1);
+  --shadow-xl: 0 4px 8px oklch(0.3 0.05 275 / 0.06), 0 24px 48px -12px oklch(0.3 0.1 275 / 0.25);
+
+  --animate-fade-up: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
 }
 
 @layer base {
   html { -webkit-font-smoothing: antialiased; }
-  body { @apply bg-slate-50 text-slate-900; font-feature-settings: "cv11", "ss01"; }
+  body {
+    @apply bg-slate-50 text-slate-900;
+    font-feature-settings: "cv11", "ss01";
+    /* Quầng màu nhấn mờ ở góc trên, cố định khi cuộn */
+    background-image:
+      radial-gradient(60rem 30rem at 100% -10%, oklch(0.93 0.05 285 / 0.55), transparent 70%),
+      radial-gradient(50rem 28rem at -10% -5%, oklch(0.94 0.04 250 / 0.5), transparent 70%);
+    background-attachment: fixed;
+  }
   h1 { @apply tracking-tight text-slate-900; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-blue-600; }
   ::selection { @apply bg-blue-100; }
 
   /* Bảng dữ liệu: đầu bảng nhạt, dòng phân cách mảnh */
   table { @apply w-full border-collapse text-sm; }
-  thead th { @apply border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-600 uppercase; }
-  tbody tr { @apply border-b border-slate-100 transition-colors hover:bg-slate-50/70; }
+  thead th { @apply border-b border-slate-200 bg-slate-50/80 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase; }
+  tbody tr { @apply border-b border-slate-100 transition-colors last:border-b-0 hover:bg-blue-50/40; }
 
   details > summary { @apply select-none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
 }
