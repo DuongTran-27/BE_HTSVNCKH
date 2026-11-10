@@ -3,7 +3,7 @@ import { fmtDateTime } from '../lib/format.js';
 import { Badge } from './ui.jsx';
 
 const Block = ({ title, children }) => (
-  <div><h3 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">{title}</h3><div className="mt-1.5 whitespace-pre-wrap break-words leading-relaxed text-slate-800">{children}</div></div>
+  <div><h3 className="text-sm font-semibold text-blue-900">{title}</h3><div className="mt-1.5 whitespace-pre-wrap break-words leading-relaxed text-slate-800">{children}</div></div>
 );
 
 /** Nội dung bất biến của một lần gửi (payload, FR17) */
@@ -14,7 +14,7 @@ export function SnapshotBody({ payload }) {
       <Block title="Tóm tắt">{payload.summary || '—'}</Block>
       <Block title="Mục tiêu">{payload.objectives || '—'}</Block>
       <Block title="Lĩnh vực">{payload.fieldName || '—'}</Block>
-      <div><h3 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">Từ khóa</h3><div className="mt-2 flex flex-wrap gap-1.5">{payload.keywords?.length ? payload.keywords.map((k) => <Badge key={k} tone="blue">{k}</Badge>) : '—'}</div></div>
+      <div><h3 className="text-sm font-semibold text-blue-900">Từ khóa</h3><div className="mt-2 flex flex-wrap gap-1.5">{payload.keywords?.length ? payload.keywords.map((k) => <Badge key={k} tone="blue">{k}</Badge>) : '—'}</div></div>
     </div>
   );
 }

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ChevronLeft, ChevronRight, Inbox, KeyRound, Loader2 } from 'lucide-react';
 
-export const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium shadow-sm transition-all duration-200 '
-  + 'active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:pointer-events-none disabled:opacity-50';
-export const btnPrimary = `${btn} bg-gradient-to-b from-blue-600 to-blue-700 text-white shadow-blue-700/25 ring-1 ring-inset ring-white/10 hover:from-blue-700 hover:to-blue-800 hover:shadow-md`;
-export const btnGhost = `${btn} border border-slate-300 bg-white text-slate-800 hover:border-slate-400/60 hover:bg-slate-50`;
-export const btnDanger = `${btn} bg-gradient-to-b from-red-600 to-red-700 text-white shadow-red-700/25 hover:from-red-700 hover:to-red-800 hover:shadow-md`;
-export const card = 'rounded-xl border border-slate-200/80 bg-white/90 p-4 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md sm:p-5';
-export const tableFrame = 'overflow-x-auto rounded-xl border border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-sm';
+export const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-colors '
+  + 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:pointer-events-none disabled:opacity-50';
+export const btnPrimary = `${btn} bg-blue-700 text-white hover:bg-blue-900`;
+export const btnGhost = `${btn} border border-blue-700/30 bg-white text-blue-800 hover:border-blue-700 hover:bg-blue-50`;
+export const btnDanger = `${btn} bg-red-700 text-white hover:bg-red-800`;
+export const card = 'rounded-lg border border-slate-300 bg-white p-4 sm:p-5';
+export const tableFrame = 'overflow-x-auto rounded-lg border border-slate-300 bg-white';
 /** Chữ tắt cho ô avatar: chữ đầu của 2 từ cuối họ tên ("Nguyễn Thị Minh Anh" → "MA") */
 export const initials = (name = '') => name.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
@@ -36,8 +36,8 @@ export function QueryBox({ query, empty, isEmpty, children }) {
     );
   }
   if (empty && isEmpty?.(query.data)) return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-12 text-center text-slate-600">
-      <span className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-50 to-violet-100 text-blue-700"><Inbox aria-hidden="true" className="size-7" /></span>
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-600">
+      <Inbox aria-hidden="true" className="size-8 text-blue-500" />
       <p>{empty}</p>
     </div>
   );
@@ -56,7 +56,16 @@ export function Badge({ children, tone = 'slate' }) {
     amber: 'bg-amber-50 text-amber-900 ring-amber-600/25', red: 'bg-red-50 text-red-800 ring-red-600/20',
     blue: 'bg-blue-50 text-blue-800 ring-blue-700/20',
   }[tone];
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${t}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${t}`}>{children}</span>;
+}
+
+/** Con dấu trạng thái ở đầu trang chi tiết đề tài – điểm nhấn duy nhất của giao diện, luôn màu son */
+export function Stamp({ children }) {
+  return (
+    <span className="inline-flex animate-stamp items-center rounded-sm border-[4px] border-double border-seal px-4 py-1.5 text-base font-bold tracking-wide text-seal">
+      {children}
+    </span>
+  );
 }
 
 const FOCUSABLE = 'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -93,8 +102,8 @@ export function useDialogA11y(onEscape) {
 export function ConfirmDialog({ title, message, confirmLabel = 'Xác nhận', danger, busy, error, onConfirm, onCancel }) {
   const ref = useDialogA11y(onCancel);
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md animate-fade-up rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-blue-900/50 p-4">
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md animate-fade-up rounded-lg border border-slate-300 bg-white p-6 shadow-xl">
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="mt-2 text-sm text-slate-600">{message}</p>
         {error && <p role="alert" className="mt-2 text-sm text-red-700 break-words">{error}</p>}

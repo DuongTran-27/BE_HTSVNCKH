@@ -44,7 +44,7 @@ export function ReviewPage() {
                     <div className={`${card} space-y-5`}>
                       <SnapshotBody payload={s.payload} />
                       <div className="border-t border-slate-200 pt-4">
-                        <h3 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-500 uppercase"><Users aria-hidden="true" className="size-4" />Nhóm</h3>
+                        <h3 className="flex items-center gap-2 text-sm font-semibold text-blue-900"><Users aria-hidden="true" className="size-4" />Nhóm</h3>
                         <ul className="mt-1.5 list-disc pl-5">{t.members.map((m) => <li key={m.userId}>{m.fullName} ({m.code}){m.role === 'LEADER' && ' – trưởng nhóm'}</li>)}</ul>
                         <p className="mt-2 text-sm">GVHD: <span className="font-medium">{t.advisor?.fullName ?? 'Chưa có'}</span></p>
                       </div>

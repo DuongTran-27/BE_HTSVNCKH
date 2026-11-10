@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { FINAL_RESULT_LABEL, TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { useAuth } from '../../lib/auth.js';
 import { fmtDateTime } from '../../lib/format.js';
-import { Badge, STATUS_TONE, card } from '../../components/ui.jsx';
+import { Badge, Stamp, card } from '../../components/ui.jsx';
 import { Award, CalendarRange, FileClock, GitPullRequestArrow, History, Info, Layers, Pencil, ScanSearch, TriangleAlert, UserRound, Users } from 'lucide-react';
 import { useSimilarityLatest } from '../../lib/queries.js';
 import { ExecTabs, TopicQuery } from '../../components/ExecShell.jsx';
@@ -14,7 +14,7 @@ import { SimilarityBadge, SimilarityPanel, UncheckedFlag } from '../../component
 import { BypassNote, GrantBypass } from '../../components/SimilarityBypass.jsx';
 
 const NOTICE_STATUSES = ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR'];
-const h2 = 'flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-500 uppercase';
+const h2 = 'flex items-center gap-2 text-sm font-semibold text-blue-900';
 const link = 'inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-blue-700';
 const Block = ({ title, children }) => (
   <div><h2 className={h2}>{title}</h2><div className="mt-1.5 whitespace-pre-wrap break-words leading-relaxed text-slate-800">{children}</div></div>
@@ -43,10 +43,14 @@ function TopicDetail({ topic: t }) {
   return (
     <div className="space-y-4">
       <header className={card}>
-        <p data-testid="topic-code" className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-medium text-slate-700">{t.code}</p>
-        <h1 className="mt-2 break-words text-2xl font-semibold">{t.title || '(Chưa đặt tên)'}</h1>
-        <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
-          <Badge tone={STATUS_TONE[t.status]}>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Badge>
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <p data-testid="topic-code" className="text-sm font-medium text-slate-600">{t.code}</p>
+            <h1 className="mt-1 break-words text-2xl font-bold">{t.title || '(Chưa đặt tên)'}</h1>
+          </div>
+          <Stamp>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Stamp>
+        </div>
+        <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
           <span className="inline-flex items-center gap-1.5"><CalendarRange aria-hidden="true" className="size-4" />{t.round.name} – {t.round.academicYear}</span>
           {t.field && <span className="inline-flex items-center gap-1.5"><Layers aria-hidden="true" className="size-4" />{t.field.name}</span>}
           {t.currentResult && <span className="inline-flex items-center gap-1.5 font-medium text-green-800"><Award aria-hidden="true" className="size-4" />Kết quả: {FINAL_RESULT_LABEL[t.currentResult.result]}</span>}
