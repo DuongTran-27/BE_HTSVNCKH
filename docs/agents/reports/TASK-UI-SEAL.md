@@ -66,3 +66,18 @@ $ npm run build -w @nckh/web          ✓ built in 608ms
 $ grep -l "Nckh@2026\|Đăng nhập nhanh" apps/web/dist/assets/*.js   → không có (dist sạch)
 $ curl POST /api/auth/login (QT001, CB001, GV001, SV22010, mật khẩu seed) → 200 cả 4
 ```
+
+## Sửa lỗi 2026-11-10: đăng nhập lại bằng vai trò khác bị đưa tới trang 403
+Người dùng báo (ảnh): quản trị viên đăng nhập xong thấy "Bạn không có quyền truy cập trang này" ở `/yeu-cau`.
+Nguyên nhân: phiên cũ (sinh viên) hết hạn ở `/yeu-cau` → `/dang-nhap?next=/yeu-cau`; `LoginPage` chuyển tới `next`
+mà không xét vai trò của người vừa đăng nhập.
+- `lib/nav.js`: chuyển bảng `SCREENS` (đường dẫn → vai trò) từ `routes.jsx` sang đây, thêm `canVisit(role, path)` (dùng `matchPath`).
+  `routes.jsx` import lại `SCREENS`, không đổi hành vi guard.
+- `LoginPage.jsx`: chỉ dùng `next` khi `canVisit(user.role, next)`, ngược lại về `homePath(role)`.
+- `tests/auth-pages.test.jsx`: test tái hiện lỗi (ADMIN + `next=/yeu-cau` → `/quan-ly/tai-khoan`) và test `canVisit`.
+
+```
+$ npm run lint                 (không lỗi)
+$ npm test -w @nckh/web        Test Files 28 passed (28) · Tests 233 passed (233)
+$ npm run build -w @nckh/web   ✓ built in 648ms
+```

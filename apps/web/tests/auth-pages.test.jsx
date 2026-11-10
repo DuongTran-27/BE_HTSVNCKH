@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { LoginPage } from '../src/pages/LoginPage.jsx';
 import { ChangePasswordPage } from '../src/pages/ChangePasswordPage.jsx';
-import { homePath, safeNext } from '../src/lib/nav.js';
+import { canVisit, homePath, safeNext } from '../src/lib/nav.js';
 import { auth } from '../src/lib/auth.js';
 
 const json = (status, body, headers = {}) =>
@@ -59,6 +59,20 @@ describe('LoginPage', () => {
     router = renderAt('/dang-nhap?next=%2F%2Fevil.com');
     submit();
     await waitFor(() => expect(router.state.location.pathname).toBe('/de-tai'));
+  });
+  it('next của vai trò khác bị bỏ → trang chủ vai trò mới (phiên SV hết hạn ở /yeu-cau, đăng nhập lại bằng quản trị)', async () => {
+    fetch.mockResolvedValueOnce(json(200, { accessToken: 't', user: user({ role: 'ADMIN' }) }));
+    const router = renderAt('/dang-nhap?next=%2Fyeu-cau');
+    submit();
+    await waitFor(() => expect(router.state.location.pathname).toBe('/quan-ly/tai-khoan'));
+  });
+  it('canVisit theo bảng quyền SCREENS', () => {
+    expect(canVisit('ADMIN', '/yeu-cau')).toBe(false);
+    expect(canVisit('STUDENT', '/yeu-cau?x=1')).toBe(true);
+    expect(canVisit('STAFF', '/de-tai/abc/tai-lieu')).toBe(true);
+    expect(canVisit('LECTURER', '/xet-duyet/abc')).toBe(false);
+    expect(canVisit('ADMIN', '/khong-ton-tai')).toBe(false);
+    expect(canVisit('ADMIN', '/doi-mat-khau')).toBe(true);
   });
   it('mustChangePassword → /doi-mat-khau dù có next', async () => {
     fetch.mockResolvedValueOnce(json(200, { accessToken: 't', user: user({ mustChangePassword: true }) }));

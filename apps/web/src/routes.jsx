@@ -2,7 +2,7 @@ import { Component, Suspense, lazy } from 'react';
 import { Navigate, redirect } from 'react-router';
 import { bootstrapSession } from './lib/api.js';
 import { auth, useAuth } from './lib/auth.js';
-import { homePath } from './lib/nav.js';
+import { SCREENS, homePath } from './lib/nav.js';
 import { Layout } from './components/Layout.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { ChangePasswordPage } from './pages/ChangePasswordPage.jsx';
@@ -78,50 +78,6 @@ function RequireRole({ roles, children }) {
   return user && roles.includes(user.role) ? children : <Forbidden />;
 }
 
-const S = 'STUDENT';
-const L = 'LECTURER';
-const F = 'STAFF';
-const A = 'ADMIN';
-// [đường dẫn, vai trò được vào, tiêu đề] – UI §3
-const SCREENS = [
-  ['de-tai', [S, L, F], 'Đề tài'],
-  ['de-tai/moi', [S], 'Tạo đề tài'],
-  ['de-tai/:id', [S, L, F], 'Chi tiết đề tài'],
-  ['de-tai/:id/sua', [S], 'Soạn hồ sơ'],
-  ['de-tai/:id/nhom', [S, L, F], 'Nhóm'],
-  ['de-tai/:id/moi-gvhd', [S], 'Mời giảng viên hướng dẫn'],
-  ['de-tai/:id/gui', [S], 'Gửi xét duyệt'],
-  ['de-tai/:id/lich-su', [S, L, F], 'Lịch sử'],
-  ['de-tai/:id/lan-gui/:seq', [S, L, F], 'Lần gửi'],
-  ['de-tai/:id/so-sanh', [S, L, F], 'So sánh các lần gửi'],
-  ['de-tai/:id/moc', [S, L, F], 'Mốc thực hiện'],
-  ['de-tai/:id/tien-do', [S, L, F], 'Tiến độ'],
-  ['de-tai/:id/tai-lieu', [S, L, F], 'Tài liệu'],
-  ['de-tai/:id/yeu-cau', [S, L, F], 'Yêu cầu thay đổi'],
-  ['yeu-cau', [S, L, F], 'Yêu cầu thay đổi'],
-  ['lich-su-tham-gia', [S], 'Lịch sử tham gia'],
-  ['lich-su-tham-gia/:topicId', [S], 'Phiên bản đã tham gia'],
-  ['loi-moi', [S], 'Lời mời'],
-  ['de-nghi-huong-dan', [L, F], 'Đề nghị hướng dẫn'],
-  ['xet-duyet', [F], 'Xét duyệt'],
-  ['xet-duyet/:id', [F], 'Màn xét duyệt'],
-  ['quan-ly/tai-khoan', [A, F], 'Tài khoản'],
-  ['quan-ly/tai-khoan/moi', [A, F], 'Tạo tài khoản'],
-  ['quan-ly/tai-khoan/nhap-csv', [A, F], 'Nhập tài khoản từ CSV'],
-  ['quan-ly/tai-khoan/:id', [A, F], 'Chi tiết tài khoản'],
-  ['quan-ly/danh-muc/khoa', [A], 'Danh mục khoa'],
-  ['quan-ly/danh-muc/nganh', [A, F], 'Danh mục ngành'],
-  ['quan-ly/danh-muc/lop', [A, F], 'Danh mục lớp'],
-  ['quan-ly/danh-muc/linh-vuc', [A, F], 'Danh mục lĩnh vực'],
-  ['quan-ly/danh-muc/dong-nghia', [F], 'Từ đồng nghĩa'],
-  ['quan-ly/dot', [F], 'Đợt'],
-  ['quan-ly/dot/moi', [F], 'Tạo đợt'],
-  ['quan-ly/dot/:id', [F], 'Chi tiết đợt'],
-  ['thong-bao', [S, L, F, A], 'Thông báo'],
-  ['thong-ke', [L, F], 'Thống kê'],
-  ['kho', [S, L, F, A], 'Kho đề tài'],
-  ['kho/:code', [S, L, F, A], 'Chi tiết kho đề tài'],
-];
 
 // Màn đã làm (T304–T308); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
 const SCREEN_ELEMENT = {

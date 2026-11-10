@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { login } from '../lib/api.js';
 import { applyServerErrors } from '../lib/forms.js';
 import { useCooldown } from '../lib/useCooldown.js';
-import { homePath, safeNext } from '../lib/nav.js';
+import { canVisit, homePath, safeNext } from '../lib/nav.js';
 import { FormField } from '../components/FormField.jsx';
 import { btnPrimary } from '../components/ui.jsx';
 import { BookOpenCheck, Eye, EyeOff, FlaskConical, ShieldCheck, Users } from 'lucide-react';
@@ -37,7 +37,9 @@ export function LoginPage() {
     setFormError('');
     try {
       const user = await login(values);
-      navigate(user.mustChangePassword ? '/doi-mat-khau' : (safeNext(params.get('next')) ?? homePath(user.role)), { replace: true });
+      // next là trang của phiên trước (có thể vai trò khác): vai trò mới không vào được thì về trang chủ của vai trò
+      const next = safeNext(params.get('next'));
+      navigate(user.mustChangePassword ? '/doi-mat-khau' : (next && canVisit(user.role, next) ? next : homePath(user.role)), { replace: true });
     } catch (err) {
       if (err.status === 429) cd.start(err.retryAfter);
       const msgs = applyServerErrors(err, setError, ['identifier', 'password']);
