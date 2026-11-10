@@ -36,3 +36,17 @@ $ npm run build -w @nckh/web
 Chụp màn hình bằng Playwright trên dev server (đăng nhập, danh sách đề tài, chi tiết đề tài 1360 px và 390 px): con dấu hiện đúng,
 không tràn ngang ở mobile. Chỉ đổi class CSS và thêm một component trình bày, không đổi logic nên không thêm test.
 Chưa chạy E2E (`npm run test:e2e`).
+
+## Cập nhật 2026-11-10: bảng màu theo vlu.edu.vn
+Yêu cầu người dùng: lấy màu theo web Đại học Văn Lang. Mã màu đếm từ CSS thật của trang (`/_next/static/css/*.css`):
+đỏ `#D72134` (67 lần), navy `#1F2251` (24), viền `#E2E4E9`, vàng `#FEBD25`, nền `#F2F5FF`/`#F5F6FC`, đỏ đậm `#B50315`, navy đậm `#101129`.
+- `index.css`: thang `blue-*` → navy VLU; `slate-50/200/300` → nền/viền VLU; thêm `vlu-red`, `vlu-red-dark`, `vlu-gold`; `seal` = đỏ VLU.
+- `ui.jsx`: nút chính đỏ VLU (chữ trắng trên `#D72134` tương phản 5,0:1, đạt AA); nút nguy hiểm đổi sang dạng viền đỏ để không lẫn với nút chính.
+- `Layout.jsx`: vạch đánh dấu mục menu đang mở màu vàng VLU.
+
+```
+$ npm run lint            (không lỗi)
+$ npm test -w @nckh/web   Test Files 28 passed (28) · Tests 230 passed (230)
+$ npm run build -w @nckh/web   ✓ built in 719ms
+```
+Đã chụp lại trang đăng nhập và chi tiết đề tài để soát.

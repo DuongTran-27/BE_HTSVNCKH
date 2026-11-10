@@ -3,9 +3,9 @@ import { AlertCircle, ChevronLeft, ChevronRight, Inbox, KeyRound, Loader2 } from
 
 export const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-colors '
   + 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:pointer-events-none disabled:opacity-50';
-export const btnPrimary = `${btn} bg-blue-700 text-white hover:bg-blue-900`;
+export const btnPrimary = `${btn} bg-vlu-red text-white hover:bg-vlu-red-dark`;
 export const btnGhost = `${btn} border border-blue-700/30 bg-white text-blue-800 hover:border-blue-700 hover:bg-blue-50`;
-export const btnDanger = `${btn} bg-red-700 text-white hover:bg-red-800`;
+export const btnDanger = `${btn} border-2 border-red-700 bg-white text-red-700 hover:bg-red-50`;
 export const card = 'rounded-lg border border-slate-300 bg-white p-4 sm:p-5';
 export const tableFrame = 'overflow-x-auto rounded-lg border border-slate-300 bg-white';
 /** Chữ tắt cho ô avatar: chữ đầu của 2 từ cuối họ tên ("Nguyễn Thị Minh Anh" → "MA") */

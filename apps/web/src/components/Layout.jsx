@@ -19,9 +19,9 @@ const ICON = {
 
 const linkClass = ({ isActive }) => 'inline-flex min-h-11 shrink-0 items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors '
   + (isActive ? 'bg-blue-50 text-blue-900' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-900');
-// Menu trên nền mực: mục đang mở có vạch trắng bên trái
+// Menu trên nền navy: mục đang mở có vạch vàng bên trái
 const navClass = ({ isActive }) => 'inline-flex min-h-11 shrink-0 items-center gap-2.5 rounded-md px-3 text-sm transition-colors '
-  + (isActive ? 'bg-white/10 font-semibold text-white shadow-[inset_3px_0_0_white]' : 'text-blue-100/80 hover:bg-white/5 hover:text-white');
+  + (isActive ? 'bg-white/10 font-semibold text-white shadow-[inset_3px_0_0_var(--color-vlu-gold)]' : 'text-blue-100/80 hover:bg-white/5 hover:text-white');
 
 
 // Khung các trang sau đăng nhập. Mật khẩu tạm: chỉ còn "Đăng xuất" (UI §1.2).
