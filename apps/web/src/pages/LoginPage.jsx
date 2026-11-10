@@ -17,13 +17,18 @@ const FEATURES = [
   [ShieldCheck, 'Kiểm tra trùng lặp và xét duyệt minh bạch'],
 ];
 
+// Chỉ dev: tài khoản dữ liệu mẫu (prisma/seed.js). Bản build production thay DEV = false nên mảng và mật khẩu bị loại khỏi bundle.
+const DEMO_ACCOUNTS = import.meta.env.DEV ? [
+  ['Quản trị viên', 'QT001'], ['Cán bộ khoa', 'CB001'], ['Giảng viên', 'GV001'], ['Sinh viên', 'SV22010'],
+].map(([label, code]) => ({ label, code, password: 'Nckh@2026-dev' })) : [];
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [show, setShow] = useState(false);
   const [formError, setFormError] = useState('');
   const cd = useCooldown();
-  const { register, handleSubmit, setError, resetField, setFocus, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, setError, resetField, setFocus, setValue, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: { identifier: '', password: '' },
   });
@@ -79,6 +84,22 @@ export function LoginPage() {
           {isSubmitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
         </button>
       </form>
+      {import.meta.env.DEV && (
+        <section aria-label="Đăng nhập nhanh" className="mt-8 border-t border-slate-300 pt-5">
+          <h2 className="text-sm font-semibold">Đăng nhập nhanh (dữ liệu mẫu)</h2>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {DEMO_ACCOUNTS.map((a) => (
+              <button
+                key={a.code} type="button" disabled={isSubmitting || cd.active}
+                onClick={() => { setValue('identifier', a.code); setValue('password', a.password); handleSubmit(onSubmit)(); }}
+                className="min-h-11 rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm hover:border-blue-700 hover:bg-blue-50 disabled:opacity-50"
+              >
+                <span className="block font-semibold">{a.label}</span><span className="text-slate-600">{a.code}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
       </div>
       </div>
     </main>

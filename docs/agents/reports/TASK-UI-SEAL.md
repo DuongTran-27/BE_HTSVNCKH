@@ -50,3 +50,19 @@ $ npm test -w @nckh/web   Test Files 28 passed (28) · Tests 230 passed (230)
 $ npm run build -w @nckh/web   ✓ built in 719ms
 ```
 Đã chụp lại trang đăng nhập và chi tiết đề tài để soát.
+
+## Cập nhật 2026-11-10: đăng nhập nhanh bằng tài khoản mẫu (chỉ dev)
+Yêu cầu người dùng: trang đăng nhập hiện các tài khoản để đăng nhập nhanh theo vai trò.
+- `LoginPage.jsx`: khối "Đăng nhập nhanh (dữ liệu mẫu)" có 4 nút QT001, CB001, GV001, SV22010. Bấm nút là điền mã cùng mật khẩu
+  seed rồi gửi qua đúng luồng `onSubmit` (vẫn qua backend, rate limit, khóa tài khoản). Mảng tài khoản và khối giao diện
+  chỉ tồn tại khi `import.meta.env.DEV`: bản build production không chứa mật khẩu mẫu.
+- `tests/auth-pages.test.jsx`: test mới, bấm "Giảng viên" thì gửi `{ identifier: 'GV001', password: seed }` và chuyển về trang chủ giảng viên.
+- DB dev (không phải code): đặt lại mật khẩu seed và bỏ cờ bắt đổi mật khẩu cho QT001, CB001, GV001, SV22010.
+
+```
+$ npm run lint                        (không lỗi)
+$ npm test -w @nckh/web               Test Files 28 passed (28) · Tests 231 passed (231)
+$ npm run build -w @nckh/web          ✓ built in 608ms
+$ grep -l "Nckh@2026\|Đăng nhập nhanh" apps/web/dist/assets/*.js   → không có (dist sạch)
+$ curl POST /api/auth/login (QT001, CB001, GV001, SV22010, mật khẩu seed) → 200 cả 4
+```

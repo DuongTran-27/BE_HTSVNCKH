@@ -37,6 +37,13 @@ describe('safeNext / homePath', () => {
 describe('LoginPage', () => {
   const submit = () => { type('Mã hoặc email', 'SV22001'); type('Mật khẩu', 'sai'); fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' })); };
 
+  it('đăng nhập nhanh (chỉ dev) gửi mã và mật khẩu mẫu của vai trò', async () => {
+    fetch.mockResolvedValueOnce(json(200, { accessToken: 't', user: user({ role: 'LECTURER' }) }));
+    const router = renderAt('/dang-nhap');
+    fireEvent.click(screen.getByRole('button', { name: /Giảng viên\s*GV001/ }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/de-nghi-huong-dan'));
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ identifier: 'GV001', password: 'Nckh@2026-dev' });
+  });
   it('thành công → trang chủ vai trò', async () => {
     fetch.mockResolvedValueOnce(json(200, { accessToken: 't', user: user() }));
     const router = renderAt('/dang-nhap');
