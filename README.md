@@ -129,7 +129,7 @@ Seed in database/host đích, rồi từ chối nếu `NODE_ENV=production`, n�
 cùng chốt NFR08 của test), hoặc nếu DB đã có người dùng (nạp lại: `prisma migrate reset` trên DB dev).
 Nội dung: khoa CNTT, 3 ngành, 6 lĩnh vực, một đợt luôn đang mở đăng ký (mốc tính từ lúc chạy seed: mở từ 60 ngày trước,
 đóng sau 90 ngày), từ điển đồng nghĩa, 30 đề tài (3 mỗi trạng thái, kết quả FR06 chạy thuật toán thật).
-Tài khoản `QT001` (quản trị), `CB001–CB002` (cán bộ), `GV001–GV008`, `SV22001–SV22040`; email `<mã viết thường>@nckh.example`;
+Tài khoản `QT001` (quản trị), `CB001–CB002` (cán bộ), `GV001–GV008`, sinh viên mã kiểu Văn Lang `23<mã ngành><4 số>` (vd. `2374802010003`, 40 tài khoản; lớp `71K29CNTT08`, `71K29KTPM02`, `71K29HTTT01`); email `<mã viết thường>@nckh.example`;
 mật khẩu chung `Nckh@2026-dev`, phải đổi ở lần đăng nhập đầu.
 
 ## Trạng thái hiện tại

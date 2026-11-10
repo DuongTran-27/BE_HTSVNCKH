@@ -81,3 +81,19 @@ $ npm run lint                 (không lỗi)
 $ npm test -w @nckh/web        Test Files 28 passed (28) · Tests 233 passed (233)
 $ npm run build -w @nckh/web   ✓ built in 648ms
 ```
+
+## Cập nhật 2026-11-10: mã sinh viên, lớp, ngành mẫu theo cách đặt mã của ĐH Văn Lang
+Yêu cầu người dùng: dùng mã kiểu Văn Lang, vd. MSSV `2374802010121`, lớp `71K29CNTT08`.
+Cấu trúc: MSSV = 2 số năm nhập học + mã ngành Bộ GD&ĐT (7 số) + 4 số thứ tự; lớp = `71` + khóa `K29` (nhập học 2023) + ngành + số lớp.
+- `prisma/seed.js`: ngành CNTT (7480201), KTPM (7480103), HTTT (7480104) thay KTPM/HTTT/KHMT; lớp `71K29CNTT08`, `71K29KTPM02`,
+  `71K29HTTT01`; 40 sinh viên mã `23<mã ngành><0001–0040>` (không trùng MSSV ví dụ của người dùng). Mã cán bộ, giảng viên,
+  quản trị giữ nguyên (không tìm được định dạng công khai).
+- `e2e/prepare.js`, `LoginPage.jsx` (đăng nhập nhanh), `README.md`: đổi theo mã mới.
+- DB dev: đổi mã tại chỗ (ngành, lớp, mã + email sinh viên), giữ nguyên mật khẩu và dữ liệu khác.
+
+```
+$ npm run db:test:reset        Đã reset DB test (migrate reset).
+$ npm test                     shared 73/73 · api Test Files 65 passed, Tests 948 passed · web 233/233
+$ npm run lint                 (không lỗi)
+$ curl POST /api/auth/login 2374801030010 / mật khẩu seed → 200
+```

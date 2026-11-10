@@ -238,15 +238,16 @@ export async function seed(prisma, { now = new Date() } = {}) {
   await prisma.$transaction(
     async (tx) => {
       const faculty = await tx.faculty.create({ data: { code: 'CNTT', name: 'Khoa Công nghệ Thông tin' } });
+      // Theo cách đặt mã của ĐH Văn Lang: [viết tắt, tên ngành, mã ngành Bộ GD&ĐT, lớp khóa K29 (nhập học 2023)]
       const majors = [
-        ['KTPM', 'Kỹ thuật phần mềm'],
-        ['HTTT', 'Hệ thống thông tin'],
-        ['KHMT', 'Khoa học máy tính'],
+        ['CNTT', 'Công nghệ thông tin', '7480201', '71K29CNTT08'],
+        ['KTPM', 'Kỹ thuật phần mềm', '7480103', '71K29KTPM02'],
+        ['HTTT', 'Hệ thống thông tin', '7480104', '71K29HTTT01'],
       ];
       const classes = [];
-      for (const [code, name] of majors) {
+      for (const [code, name, , classCode] of majors) {
         const major = await tx.major.create({ data: { facultyId: faculty.id, code, name } });
-        classes.push(await tx.class.create({ data: { majorId: major.id, code: `D22${code}1` } }));
+        classes.push(await tx.class.create({ data: { majorId: major.id, code: classCode } }));
       }
       const fields = {};
       for (const [code, name] of FIELDS) fields[code] = await tx.field.create({ data: { code, name } });
@@ -287,7 +288,8 @@ export async function seed(prisma, { now = new Date() } = {}) {
       }
       const students = [];
       for (let i = 1; i <= 40; i += 1) {
-        const code = `SV22${String(i).padStart(3, '0')}`;
+        // MSSV kiểu Văn Lang: 2 số năm nhập học + mã ngành + 4 số thứ tự, vd. 2374802010027
+        const code = `23${majors[i % 3][2]}${String(i).padStart(4, '0')}`;
         students.push(
           await tx.user.create({
             data: account('STUDENT', code, nameOf(i), { facultyId: faculty.id, classId: classes[i % 3].id }),

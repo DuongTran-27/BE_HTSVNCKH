@@ -136,7 +136,7 @@ async function buildDataset(P) {
   const draft = await mkTopic('DRAFT', sv[18], { members: [sv[19]], lecturer: null, content: { title: `Đề tài nháp ${P}` }, version: 1 });
 
   const closedOk = await prisma.topic.findMany({ where: { status: 'CLOSED', results: { some: { isCurrent: true, result: { in: ['EXCELLENT', 'GOOD', 'PASS'] } } } }, select: { code: true, title: true, summary: true }, orderBy: { code: 'asc' } });
-  const leaders = await prisma.user.findMany({ where: { code: { in: ['SV22027', 'SV22028'] } }, select: { fullName: true } });
+  const leaders = await prisma.user.findMany({ where: { code: { in: ['2374802010027', '2374801030028'] } }, select: { fullName: true } });
   const u = (x) => ({ id: x.id, code: x.code, name: x.fullName });
   const t = (x) => ({ id: x.id, code: x.code, title: x.title });
   return {

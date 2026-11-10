@@ -19,7 +19,7 @@ const FEATURES = [
 
 // Chỉ dev: tài khoản dữ liệu mẫu (prisma/seed.js). Bản build production thay DEV = false nên mảng và mật khẩu bị loại khỏi bundle.
 const DEMO_ACCOUNTS = import.meta.env.DEV ? [
-  ['Quản trị viên', 'QT001'], ['Cán bộ khoa', 'CB001'], ['Giảng viên', 'GV001'], ['Sinh viên', 'SV22010'],
+  ['Quản trị viên', 'QT001'], ['Cán bộ khoa', 'CB001'], ['Giảng viên', 'GV001'], ['Sinh viên', '2374801030010'],
 ].map(([label, code]) => ({ label, code, password: 'Nckh@2026-dev' })) : [];
 
 export function LoginPage() {
