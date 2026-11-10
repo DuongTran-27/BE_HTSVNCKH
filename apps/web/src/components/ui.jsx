@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ChevronLeft, ChevronRight, Inbox, KeyRound, Loader2 } from 'lucide-react';
 
-export const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-colors '
+export const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold '
+  // Phản hồi khi nhấn: co 3% trong 150ms (skill review-animations); prefers-reduced-motion tắt ở index.css
+  + 'transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] '
   + 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:pointer-events-none disabled:opacity-50';
 export const btnPrimary = `${btn} bg-vlu-red text-white hover:bg-vlu-red-dark`;
 export const btnGhost = `${btn} border border-blue-700/30 bg-white text-blue-800 hover:border-blue-700 hover:bg-blue-50`;

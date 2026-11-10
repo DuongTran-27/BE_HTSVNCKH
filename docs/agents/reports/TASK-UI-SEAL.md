@@ -117,3 +117,31 @@ $ npm run lint                         (không lỗi)
 $ npm test                             shared 73/73 · api 66 files, 954/954 · web 233/233
 $ git status --short | grep local.json → không có (file đã bị ignore)
 ```
+
+## Cập nhật 2026-11-10: cài skill/MCP thiết kế và áp dụng
+Người dùng yêu cầu cài các skill/plugin thiết kế phổ biến trên GitHub. Đã kiểm repo (sao, giấy phép, lần cập nhật) và đọc nội dung trước khi cài.
+- **Đã cài**
+  - 14 skill web của `emilkowalski/skills` (MIT, ~55,6k sao) vào `.claude/skills/` (kèm LICENSE): animate, animation-performance,
+    animation-vocabulary, apple-design, break-ui, choreograph, emil-design-eng, find-animation-opportunities, gestures,
+    improve-animations, pick-ui-library, prototype, remove-animations, review-animations. Bỏ animate-expo, write-swift,
+    mobile-native, ask-sonner (React Native/Swift/Sonner, dự án không dùng). Chỉ là markdown, không có script.
+  - MCP phạm vi local (chỉ máy này, không commit): `context7` = `@upstash/context7-mcp@4.4.4`, `playwright` = `@playwright/mcp@0.0.83`
+    (ghim bản phát hành ≥ 2 tuần). Cả hai `✔ Connected`.
+  - `frontend-design` (Anthropic) đã cài từ trước ở `~/.claude/skills`.
+- **Không cài**
+  - `marvkr/better-design`: lệnh cài `npx better-design` tự tạo tài khoản/API key trên dịch vụ ngoài và sửa cấu hình công cụ
+    → trái quy tắc 6. Bộ theme Linear/Stripe/Vercel cũng không hợp với nhận diện Văn Lang đã chọn.
+  - `claudekit/frontend-design-pro-demo`: không có giấy phép; bắt chèn ảnh link thẳng Unsplash (CSP `img-src 'self'` chặn) và đẩy về kính mờ/gradient đã bỏ.
+- **Áp dụng** (theo `review-animations/STANDARDS.md`)
+  - `ui.jsx`: nút có phản hồi nhấn `active:scale-[0.97]`, 150 ms, ease-out.
+  - `index.css`: thêm `--ease-out-strong` cubic-bezier(0.23, 1, 0.32, 1) cho hộp thoại (ease-out mặc định quá yếu).
+    Con dấu giữ 350 ms vì là chuyển động hiếm (được phép > 300 ms).
+- **Soát giao diện bằng Playwright** (trang xét duyệt, thống kê, tài khoản): phát hiện cột biểu đồ còn tím `#432dd7` (giá trị blue-700 cũ
+  ghi cứng) → `StatsChart.jsx` đổi `ACCENT` sang navy `#1f2251`.
+
+```
+$ claude mcp list   → context7 ✔ Connected · playwright ✔ Connected
+$ npm run lint      (không lỗi)
+$ npm test -w @nckh/web   Tests 233 passed (233)
+$ npm run build -w @nckh/web   ✓ built in 642ms
+```

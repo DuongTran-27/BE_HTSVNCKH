@@ -2,7 +2,7 @@ import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveCo
 
 // Bảng màu phân loại đã kiểm định (skill dataviz, palette.md), dùng theo thứ tự cố định, không xoay vòng
 const COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'];
-const ACCENT = '#432dd7'; // = blue-700 trong index.css
+const ACCENT = '#1f2251'; // = blue-700 (navy Văn Lang) trong index.css; SVG fill không đọc được biến CSS
 const AXIS = { fontSize: 12, fill: '#64748b' };
 
 // Biểu đồ tròn quá 8 lát không phân biệt được: gộp phần đuôi thành "Khác" (bảng bên dưới vẫn đủ từng dòng)
