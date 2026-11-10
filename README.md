@@ -26,6 +26,7 @@ Tạo `apps/api/.env` (không commit) với `DATABASE_URL` và `DIRECT_URL` = `p
 `JWT_ACCESS_SECRET` ≥ 32 ký tự ngẫu nhiên, `CORS_ORIGIN=http://localhost:5173`. Rồi:
 ```bash
 cd apps/api && npx prisma migrate deploy && npx prisma db seed && cd ../..
+npm run demo:people -w @nckh/api   # tùy chọn: thay một số tài khoản mẫu bằng danh sách thật trong apps/api/prisma/demo-people.local.json (gitignore, không commit)
 npm run dev:api           # http://localhost:4000/api/health (tự nạp apps/api/.env)
 npm run dev:web           # http://localhost:5173 (proxy /api → 4000)
 npm run db:dev:down       # dừng DB dev

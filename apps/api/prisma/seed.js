@@ -12,6 +12,10 @@ import { compare, contentHash } from '../src/modules/similarity/engine.js';
 import { PENDING_SAME_ROUND_STATUSES, PUBLIC_CORPUS_STATUSES } from '../src/modules/similarity/service.js';
 
 export const SEED_PASSWORD = 'Nckh@2026-dev';
+// Mã ngành Bộ GD&ĐT theo thứ tự ngành trong seed (CNTT, KTPM, HTTT); sinh viên thứ i thuộc ngành i % 3
+const MAJOR_MOET = ['7480201', '7480103', '7480104'];
+/** MSSV kiểu Văn Lang của sinh viên mẫu thứ i: 2 số năm nhập học + mã ngành + 4 số thứ tự, vd. 2374802010027 */
+export const seedStudentCode = (i) => `23${MAJOR_MOET[i % 3]}${String(i).padStart(4, '0')}`;
 
 const DAY = 86400000;
 const CORPUS_STATUSES = [...PUBLIC_CORPUS_STATUSES, ...PENDING_SAME_ROUND_STATUSES]; // mọi đề tài mẫu cùng một đợt
@@ -167,7 +171,7 @@ const nameOf = (i) => `${FAMILY[i % 10]} ${MIDDLE[(i * 3) % 8]} ${GIVEN[(i * 7) 
 // Xác nhận gắn với CHÍNH DB đích (review bao-mat T203 #1): trên Supabase mọi DB tên "postgres" nên tên DB không phân
 // biệt được demo với production. Chỉ chạy khi DB đã được bật cờ nckh.seed_allowed (làm một lần trên DB dev/demo)
 // hoặc là DB test cục bộ "*_test" (DB_LEVEL_CHECK_SQL, cùng chốt NFR08 của test).
-async function assertSeedAllowedDb(prisma) {
+export async function assertSeedAllowedDb(prisma) {
   // Đọc cờ ở mức database trong pg_db_role_setting (setrole = 0): phiên không ghi đè được bằng SET hay `options` trên URL.
   const [{ db, allowed }] = await prisma.$queryRaw`
     SELECT current_database() AS db, EXISTS (
@@ -238,14 +242,14 @@ export async function seed(prisma, { now = new Date() } = {}) {
   await prisma.$transaction(
     async (tx) => {
       const faculty = await tx.faculty.create({ data: { code: 'CNTT', name: 'Khoa Công nghệ Thông tin' } });
-      // Theo cách đặt mã của ĐH Văn Lang: [viết tắt, tên ngành, mã ngành Bộ GD&ĐT, lớp khóa K29 (nhập học 2023)]
+      // Theo cách đặt mã của ĐH Văn Lang: [viết tắt, tên ngành, lớp khóa K29 (nhập học 2023)]; mã ngành ở MAJOR_MOET
       const majors = [
-        ['CNTT', 'Công nghệ thông tin', '7480201', '71K29CNTT08'],
-        ['KTPM', 'Kỹ thuật phần mềm', '7480103', '71K29KTPM02'],
-        ['HTTT', 'Hệ thống thông tin', '7480104', '71K29HTTT01'],
+        ['CNTT', 'Công nghệ thông tin', '71K29CNTT08'],
+        ['KTPM', 'Kỹ thuật phần mềm', '71K29KTPM02'],
+        ['HTTT', 'Hệ thống thông tin', '71K29HTTT01'],
       ];
       const classes = [];
-      for (const [code, name, , classCode] of majors) {
+      for (const [code, name, classCode] of majors) {
         const major = await tx.major.create({ data: { facultyId: faculty.id, code, name } });
         classes.push(await tx.class.create({ data: { majorId: major.id, code: classCode } }));
       }
@@ -288,8 +292,7 @@ export async function seed(prisma, { now = new Date() } = {}) {
       }
       const students = [];
       for (let i = 1; i <= 40; i += 1) {
-        // MSSV kiểu Văn Lang: 2 số năm nhập học + mã ngành + 4 số thứ tự, vd. 2374802010027
-        const code = `23${majors[i % 3][2]}${String(i).padStart(4, '0')}`;
+        const code = seedStudentCode(i);
         students.push(
           await tx.user.create({
             data: account('STUDENT', code, nameOf(i), { facultyId: faculty.id, classId: classes[i % 3].id }),

@@ -97,3 +97,23 @@ $ npm test                     shared 73/73 · api Test Files 65 passed, Tests 9
 $ npm run lint                 (không lỗi)
 $ curl POST /api/auth/login 2374801030010 / mật khẩu seed → 200
 ```
+
+## Cập nhật 2026-11-10: dữ liệu demo bằng danh sách sinh viên, giảng viên thật
+Người dùng cung cấp 19 sinh viên (MSSV, họ tên) và 5 giảng viên (họ tên, email @vlu.edu.vn) để làm dữ liệu demo.
+Đây là dữ liệu cá nhân của người thật nên **không đưa vào code/commit**: lưu ở `apps/api/prisma/demo-people.local.json`
+(mẫu `*.local.json` thêm vào `.gitignore`). `seed.js`, test và E2E vẫn dùng dữ liệu giả.
+- `scripts/demo-people.js` (`npm run demo:people -w @nckh/api`): đọc file cục bộ, kiểm tra (thiếu mã/tên, trùng, email sai, giới hạn số lượng),
+  chặn production và DB chưa bật cờ `nckh.seed_allowed` (`assertSeedAllowedDb`, nay được export), cập nhật trong một transaction:
+  sinh viên thật thay sinh viên mẫu thứ 21–39 (mã, họ tên, email `<mã>@nckh.example`), giảng viên thật thay GV001–GV005 (họ tên, email thật).
+  Không gán học hàm cho người thật. Chạy lại nhiều lần cho cùng kết quả.
+- `prisma/seed.js`: export `seedStudentCode(i)` dùng chung cho seed và script.
+- `tests/demo-people.test.js`: 6 test cho `planDemoPeople`.
+- App không gửi email ra ngoài (không có thư viện gửi mail) nên email thật chỉ dùng để đăng nhập.
+
+```
+$ npm run demo:people -w @nckh/api     Đã cập nhật 24 tài khoản demo.   (chạy 2 lần, cùng kết quả)
+$ curl POST /api/auth/login 2374802010121 | hung.hd@vlu.edu.vn | GV001 → 200
+$ npm run lint                         (không lỗi)
+$ npm test                             shared 73/73 · api 66 files, 954/954 · web 233/233
+$ git status --short | grep local.json → không có (file đã bị ignore)
+```
