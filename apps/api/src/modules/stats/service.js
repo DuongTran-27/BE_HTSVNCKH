@@ -3,7 +3,7 @@ import { TOPIC_STATUS_LABEL, FINAL_RESULT_LABEL, STATS_DIMENSION_LABEL, toCsv } 
 import { forbidden, badRequest } from '../../lib/errors.js';
 
 const MAX_ROWS = 1000;
-const EMPTY_LABEL = { lecturer: 'Chưa có GVHD', field: 'Chưa chọn lĩnh vực', result: 'Chưa có kết quả chính thức' };
+const EMPTY_LABEL = { lecturer: 'Chưa có giảng viên hướng dẫn', field: 'Chưa chọn lĩnh vực', result: 'Chưa có kết quả chính thức' };
 const labelOf = (groupBy, key, name) => {
   if (key === null) return EMPTY_LABEL[groupBy] ?? '';
   if (groupBy === 'status') return TOPIC_STATUS_LABEL[key] ?? key;

@@ -55,7 +55,7 @@ function ProgressItem({ topic: t, p }) {
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-lg font-bold">{p.percent}%</span>
         <Badge tone="amber">Tự khai</Badge>
-        {p.lockedAt && <Badge>Đã được GVHD nhận xét – không sửa được</Badge>}
+        {p.lockedAt && <Badge>Đã được giảng viên hướng dẫn nhận xét – không sửa được</Badge>}
       </div>
       <p className="break-words text-sm text-slate-700">{p.author?.fullName} ({p.author?.code}) · {fmtDateTime(p.createdAt)}</p>
       {editing ? <ProgressForm topic={t} p={p} onDone={() => setEditing(false)} /> : (

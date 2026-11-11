@@ -260,7 +260,7 @@ export async function seed(prisma, { now = new Date() } = {}) {
       const round = await tx.round.create({
         data: {
           facultyId: faculty.id,
-          name: `Đợt NCKH sinh viên ${academicYear}`,
+          name: `Đợt nghiên cứu khoa học sinh viên ${academicYear}`,
           academicYear,
           regOpenAt,
           regCloseAt: new Date(nowMs + 90 * DAY),

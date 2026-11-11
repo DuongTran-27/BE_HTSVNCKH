@@ -71,7 +71,7 @@ export const SUBJECTS = {
     ['Cảnh báo cháy sớm cho ký túc xá', ['cảnh báo cháy', 'cảm biến khói', 'ESP32', 'thông báo thời gian thực']],
   ],
 };
-const CONTEXTS = ['tại Trường Đại học Văn Lang', 'cho sinh viên Khoa CNTT', 'trên nền tảng điện toán đám mây', 'cho doanh nghiệp vừa và nhỏ'];
+const CONTEXTS = ['tại Trường Đại học Văn Lang', 'cho sinh viên Khoa Công nghệ Thông tin', 'trên nền tảng điện toán đám mây', 'cho doanh nghiệp vừa và nhỏ'];
 const FAMILY = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ'];
 const MIDDLE = ['Văn', 'Thị', 'Minh', 'Ngọc', 'Quốc', 'Thanh', 'Gia', 'Hữu', 'Bảo'];
 const GIVEN = ['An', 'Bình', 'Châu', 'Dũng', 'Giang', 'Hà', 'Khoa', 'Linh', 'Long', 'My', 'Nam', 'Phúc', 'Quân', 'Tâm', 'Trang', 'Vy', 'Yến'];
@@ -109,7 +109,7 @@ export async function demoStats(prisma) {
       for (const [academicYear, cohort, count] of YEARS) {
         const dates = roundDates(academicYear);
         const round = await tx.round.create({
-          data: { facultyId: faculty.id, name: `Đợt NCKH sinh viên ${academicYear}`, academicYear, ...dates, config: {} },
+          data: { facultyId: faculty.id, name: `Đợt nghiên cứu khoa học sinh viên ${academicYear}`, academicYear, ...dates, config: {} },
         });
         const classes = [];
         for (const m of majors) classes.push(await tx.class.create({ data: { majorId: m.id, code: `71K${cohort}${m.code}01` } }));

@@ -124,7 +124,7 @@ function RoundForm({ round }) {
           const warn = tightened(k);
           return (
             <FormField key={k} label={label} error={err(`config.${k}`)}
-              hint={[isDefault ? '(mặc định)' : '', warn ? 'Đề tài đang chờ GVHD hoặc đã có GVHD có thể không còn đủ điều kiện gửi và không tự sửa được' : ''].filter(Boolean).join(' · ') || undefined}>
+              hint={[isDefault ? '(mặc định)' : '', warn ? 'Đề tài đang chờ hoặc đã có giảng viên hướng dẫn có thể không còn đủ điều kiện gửi và không tự sửa được' : ''].filter(Boolean).join(' · ') || undefined}>
               <input type="number" inputMode="decimal" step={step} {...register(`config.${k}`, { valueAsNumber: true })} />
             </FormField>
           );

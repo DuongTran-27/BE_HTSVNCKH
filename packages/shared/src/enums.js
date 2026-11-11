@@ -21,8 +21,8 @@ export const TOPIC_STATUS = Object.freeze({
 
 export const TOPIC_STATUS_LABEL = Object.freeze({
   DRAFT: 'Nháp',
-  WAITING_ADVISOR: 'Chờ GVHD',
-  HAS_ADVISOR: 'Đã có GVHD',
+  WAITING_ADVISOR: 'Chờ giảng viên hướng dẫn',
+  HAS_ADVISOR: 'Đã có giảng viên hướng dẫn',
   UNDER_REVIEW: 'Chờ xét duyệt',
   NEEDS_REVISION: 'Cần chỉnh sửa',
   REJECTED: 'Bị từ chối',

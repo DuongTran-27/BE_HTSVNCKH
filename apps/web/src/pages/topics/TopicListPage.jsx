@@ -79,8 +79,8 @@ export function TopicListPage() {
       )}
       {isStaff && (
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" className={btnGhost} onClick={() => u.set('status', 'WAITING_ADVISOR')}>Đề tài chờ GVHD</button>
-          <button type="button" className={btnGhost} onClick={() => u.set('status', 'HAS_ADVISOR')}>Đề tài đã có GVHD chưa gửi</button>
+          <button type="button" className={btnGhost} onClick={() => u.set('status', 'WAITING_ADVISOR')}>Đề tài chờ giảng viên hướng dẫn</button>
+          <button type="button" className={btnGhost} onClick={() => u.set('status', 'HAS_ADVISOR')}>Đề tài đã có giảng viên hướng dẫn, chưa gửi</button>
         </div>
       )}
       {isStaff ? filters : <details className="mt-3" open={u.any}><summary className="min-h-11 cursor-pointer font-medium">Lọc</summary>{filters}</details>}
@@ -99,7 +99,7 @@ export function TopicListPage() {
                       {t.result && <Badge tone="green">{FINAL_RESULT_LABEL[t.result] ?? t.result}</Badge>}
                     </p>
                     <p className="mt-1 break-words text-sm text-slate-700">
-                      {t.round?.name} · {t.field?.name} · GVHD: {t.advisor?.fullName ?? 'Chưa có'} · Trưởng nhóm: {t.leader?.fullName} · {t.memberCount} thành viên
+                      {t.round?.name} · {t.field?.name} · Giảng viên hướng dẫn: {t.advisor?.fullName ?? 'Chưa có'} · Trưởng nhóm: {t.leader?.fullName} · {t.memberCount} thành viên
                     </p>
                     <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                       <span>Trùng lặp: <SimilarityLevelCell level={t.latestSimilarityLevel} status={t.latestSimilarityStatus} unchecked={t.latestSubmission?.unchecked} /></span>

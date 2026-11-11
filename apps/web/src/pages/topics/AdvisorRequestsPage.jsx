@@ -30,7 +30,7 @@ function RequestCard({ r, user }) {
       <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
         {t.status && <Badge>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Badge>}
         {r.status !== 'PENDING' && <Badge>{REQUEST_STATUS_LABEL[r.status]}</Badge>}
-        {!isLecturer && <span>GV: {r.lecturer.fullName}</span>}
+        {!isLecturer && <span>Giảng viên: {r.lecturer.fullName}</span>}
         {r.pendingDays != null && <span className={overdue ? 'font-medium text-orange-700' : ''}>Chờ {r.pendingDays} ngày</span>}
       </p>
       {r.reason && <p className="mt-1 break-words text-sm text-slate-700">Lý do: {r.reason}</p>}

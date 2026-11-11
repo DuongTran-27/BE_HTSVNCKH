@@ -47,7 +47,7 @@ describe('R4 danh sách đề tài', () => {
     auth.setSession({ accessToken: 'x', user: { id: 'u', role: 'STAFF' } });
     mount(<TopicListPage />, '/de-tai?status=HAS_ADVISOR&sort=bad&academicYear=abc&page=2');
     expect(screen.getByLabelText('Giảng viên hướng dẫn')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Đề tài chờ GVHD' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Đề tài chờ giảng viên hướng dẫn' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Tạo đề tài' })).toBeNull();
     await waitFor(() => expect(calls().some((u) => u.startsWith('/topics'))).toBe(true));
     const url = calls().find((u) => u.startsWith('/topics'));

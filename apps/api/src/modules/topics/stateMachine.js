@@ -46,11 +46,11 @@ export const checkTransition = ({ topic, action, actor, reason, justification, c
     if (!ctx.requiredMilestonesPassed) {
       throw conflict('MILESTONES_NOT_PASSED', 'Còn mốc bắt buộc chưa Đạt', ctx.pendingMilestones && { milestones: ctx.pendingMilestones });
     }
-    if (!ctx.hasFinalResult) throw conflict('NO_FINAL_RESULT', 'GVHD chưa nhập kết quả cuối và nhận xét tổng kết');
+    if (!ctx.hasFinalResult) throw conflict('NO_FINAL_RESULT', 'Giảng viên hướng dẫn chưa nhập kết quả cuối và nhận xét tổng kết');
   }
   if (action === 'CLOSE_EXPIRED') { // FR27.5: chỉ khi đợt đã hết hạn và đề tài chưa đủ điều kiện (G26)
     if (!ctx.roundEnded) throw conflict('ROUND_NOT_ENDED', 'Đợt chưa hết hạn, chưa thể đóng với kết quả Không đạt');
-    if (ctx.closeConditionsMet) throw conflict('CLOSE_CONDITIONS_MET', 'Đề tài đã đủ điều kiện đóng, hãy chờ GVHD gửi đóng');
+    if (ctx.closeConditionsMet) throw conflict('CLOSE_CONDITIONS_MET', 'Đề tài đã đủ điều kiện đóng, hãy chờ giảng viên hướng dẫn gửi đóng');
   }
   return t;
 };

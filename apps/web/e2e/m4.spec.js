@@ -102,7 +102,7 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
     for (const [name, text] of [[M_ONTIME, 'Bài làm đạt yêu cầu giữa kỳ.'], [M_LATE, 'Nộp muộn nhưng nội dung đầy đủ.']]) {
       const row = group(gv, name).getByRole('listitem').first();
       await row.getByRole('button', { name: /Nhận xét \(0\)/ }).click();
-      await row.getByLabel('Nhận xét của GVHD').fill(text);
+      await row.getByLabel('Nhận xét của giảng viên hướng dẫn').fill(text);
       await row.getByLabel('Đánh giá mốc').selectOption('PASSED');
       await row.getByRole('button', { name: 'Gửi nhận xét' }).click();
       await expect(row.getByText(text)).toBeVisible();
@@ -118,13 +118,13 @@ test.describe('M2/M3 luồng đóng đề tài', () => {
     const gv = await pageFor(browser, 'gv', S.users.gv.code);
     await gv.goto(`/de-tai/${flow.id}`);
     await expect(gv.getByText('Mốc bắt buộc: 2/2 Đạt – Đạt')).toBeVisible();
-    await expect(gv.getByText('Kết quả cuối và nhận xét tổng kết của GVHD – chưa có')).toBeVisible();
+    await expect(gv.getByText('Kết quả cuối và nhận xét tổng kết của giảng viên hướng dẫn – chưa có')).toBeVisible();
     const form = gv.getByRole('form', { name: 'Nhập kết quả cuối' });
     await form.getByLabel('Kết quả').selectOption('GOOD');
     await form.getByLabel('Nhận xét tổng kết').fill('Nhóm hoàn thành đầy đủ các mốc, nội dung có chiều sâu, trình bày rõ ràng.');
     await form.getByRole('button', { name: 'Lưu kết quả' }).click();
     await expect(gv.getByText('Đã lưu kết quả cuối')).toBeVisible();
-    await expect(gv.getByText('Kết quả cuối và nhận xét tổng kết của GVHD – đã có')).toBeVisible();
+    await expect(gv.getByText('Kết quả cuối và nhận xét tổng kết của giảng viên hướng dẫn – đã có')).toBeVisible();
 
     const sv = await pageFor(browser, 'sv', flow.sv.code);
     await sv.goto(`/de-tai/${flow.id}`);

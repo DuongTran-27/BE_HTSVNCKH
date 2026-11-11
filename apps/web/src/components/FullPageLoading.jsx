@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FlaskConical, Loader2, WifiOff } from 'lucide-react';
 
-const Brand = () => <p className="flex items-center gap-2 text-xl font-semibold text-blue-800"><FlaskConical aria-hidden="true" className="size-6" />NCKH Khoa CNTT</p>;
+const Brand = () => <p className="flex items-center gap-2 text-xl font-semibold text-blue-800"><FlaskConical aria-hidden="true" className="size-6" />Nghiên cứu khoa học sinh viên</p>;
 
 // Màn tải toàn trang lúc khởi động (UI §1.1); > 5 s thì báo máy chủ đang khởi động (Render ngủ, NFR10)
 export function FullPageLoading() {

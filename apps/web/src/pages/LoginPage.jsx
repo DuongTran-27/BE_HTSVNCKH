@@ -55,7 +55,7 @@ export function LoginPage() {
       <div className="relative isolate hidden overflow-hidden bg-blue-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div aria-hidden="true" className="pointer-events-none absolute -z-10 -top-32 -right-32 size-96 rounded-full bg-vlu-red/25 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -z-10 -bottom-40 -left-24 size-96 rounded-full bg-blue-500/40 blur-3xl" />
-        <p className="flex items-center gap-2.5 text-lg font-bold"><FlaskConical aria-hidden="true" className="size-5" />NCKH Khoa CNTT</p>
+        <p className="flex items-center gap-2.5 text-lg font-bold"><FlaskConical aria-hidden="true" className="size-5" />Nghiên cứu khoa học sinh viên</p>
         <div>
           <p className="max-w-md text-5xl leading-[1.1] font-bold tracking-tight">Quản lý nghiên cứu khoa học sinh viên</p>
           <ul className="mt-10 max-w-md divide-y divide-white/15 border-y border-white/15 text-blue-100">
@@ -68,7 +68,7 @@ export function LoginPage() {
       </div>
       <div className="flex items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-md sm:p-8">
-      <p className="mb-8 flex items-center gap-2 font-semibold text-blue-800 lg:hidden"><FlaskConical aria-hidden="true" className="size-5" />NCKH Khoa CNTT</p>
+      <p className="mb-8 flex items-center gap-2 font-semibold text-blue-800 lg:hidden"><FlaskConical aria-hidden="true" className="size-5" />Nghiên cứu khoa học sinh viên</p>
       <h1 className="text-2xl font-bold">Đăng nhập</h1>
       <p className="mt-1 text-sm text-slate-600">Dùng mã sinh viên/giảng viên hoặc email do khoa cấp.</p>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6 space-y-4">

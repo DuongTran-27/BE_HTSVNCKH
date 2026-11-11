@@ -105,7 +105,7 @@ describe('dữ liệu và bộ lọc', () => {
   it('mỗi chiều: total = số đề tài, nhãn tiếng Việt, nhóm rỗng có nhãn riêng', async () => {
     const lect = await stats('staff', { groupBy: 'lecturer' });
     expect(counts(lect)).toEqual({ [U.lectA.id]: 3, [U.lectB.id]: 2, [U.lectEvil.id]: 1, null: 1 });
-    expect(lect.body.rows.find((x) => x.key === null).label).toBe('Chưa có GVHD');
+    expect(lect.body.rows.find((x) => x.key === null).label).toBe('Chưa có giảng viên hướng dẫn');
     expect(counts(lect)[U.lectOld.id]).toBeUndefined();
     const f = await stats('staff', { groupBy: 'field' });
     expect(counts(f)).toEqual({ [AI.id]: 3, [WEB.id]: 1, [EVIL.id]: 1, null: 2 });

@@ -144,7 +144,7 @@ export const buildOpenApi = () => {
   }
   return {
     openapi: '3.1.0',
-    info: { title: 'API quản lý NCKH sinh viên Khoa CNTT', version: '0.1.0' },
+    info: { title: 'API quản lý nghiên cứu khoa học sinh viên Khoa Công nghệ Thông tin', version: '0.1.0' },
     security: [{ bearerAuth: [] }],
     paths,
     components: {

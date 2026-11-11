@@ -19,7 +19,7 @@ const assertNoStuckTopics = async (oldCfg, newCfg, q) => {
   // Chỉ đề tài trở nên không đạt vì thay đổi này; đề tài đã không đạt từ trước không chặn việc nới tham số
   const bad = (await q.pendingTopics()).filter((t) => passes(oldCfg, t) && !passes(newCfg, t));
   if (bad.length) {
-    throw conflict('ROUND_CONFIG_BLOCKS_TOPICS', `Thay đổi này làm ${bad.length} đề tài đang chờ/đã có GVHD không còn đủ điều kiện gửi xét duyệt mà nhóm không sửa được hồ sơ`,
+    throw conflict('ROUND_CONFIG_BLOCKS_TOPICS', `Thay đổi này làm ${bad.length} đề tài đang chờ/đã có giảng viên hướng dẫn không còn đủ điều kiện gửi xét duyệt mà nhóm không sửa được hồ sơ`,
       { codes: bad.slice(0, 50).map((t) => t.code), total: bad.length });
   }
 };

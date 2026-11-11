@@ -155,7 +155,7 @@ describe('Tab Tiến độ – FR10', () => {
     map['GET /topics/t1/progress'] = { items: [prog({ lockedAt: '2027-02-02T00:00:00.000Z', feedbacks: [{ id: 'f1', content: 'Tốt', lecturer: { fullName: 'Cô Lan' }, createdAt: '2027-02-02T00:00:00.000Z' }] }), prog({ id: 'p2', author: { id: 'sv2', code: 'SV2', fullName: 'Bình' } }), prog({ id: 'p3' })], page: 1, pageSize: 20, total: 3 };
     map['PATCH /progress/p3'] = apiErr(409, 'PROGRESS_LOCKED', 'Cập nhật tiến độ đã được GVHD nhận xét, không sửa được nữa');
     open('/de-tai/t1/tien-do', 'STUDENT', topic({ permissions: { addProgress: true } }));
-    expect(await screen.findByText('Đã được GVHD nhận xét – không sửa được')).toBeTruthy();
+    expect(await screen.findByText('Đã được giảng viên hướng dẫn nhận xét – không sửa được')).toBeTruthy();
     expect(screen.getByText('Tốt')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Sửa' })).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Sửa' }));
@@ -170,7 +170,7 @@ describe('Tab Tiến độ – FR10', () => {
     open('/de-tai/t1/tien-do', 'LECTURER', topic({ permissions: { giveFeedback: true } }));
     const form = await screen.findByRole('form', { name: 'Nhận xét' });
     expect(screen.queryByRole('button', { name: 'Cập nhật tiến độ' })).toBeNull();
-    type('Nhận xét của GVHD', 'Cần bổ sung số liệu', within(form));
+    type('Nhận xét của giảng viên hướng dẫn', 'Cần bổ sung số liệu', within(form));
     fireEvent.click(within(form).getByRole('button', { name: 'Gửi nhận xét' }));
     await waitFor(() => expect(sent('POST', '/progress/p1/feedbacks')[0][1].body).toEqual({ content: 'Cần bổ sung số liệu' }));
     cleanup();
@@ -244,7 +244,7 @@ describe('Tab Tài liệu – FR11, FR24, FR12', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Nhận xét (0)' }));
     const form = await screen.findByRole('form', { name: 'Nhận xét' });
     expect(await screen.findByText('Chưa có nhận xét.')).toBeTruthy();
-    type('Nhận xét của GVHD', 'Đạt yêu cầu', within(form));
+    type('Nhận xét của giảng viên hướng dẫn', 'Đạt yêu cầu', within(form));
     fireEvent.change(within(form).getByLabelText('Đánh giá mốc'), { target: { value: 'PASSED' } });
     fireEvent.click(within(form).getByRole('button', { name: 'Gửi nhận xét' }));
     expect(await within(form).findByText(/Chỉ đánh giá mốc trên bản nộp mới nhất/)).toBeTruthy();

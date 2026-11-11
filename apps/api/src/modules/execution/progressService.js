@@ -25,7 +25,7 @@ export const createProgressService = ({ repo }) => {
       if (t.status !== 'IN_PROGRESS') throw conflict('TOPIC_NOT_IN_PROGRESS', 'Chỉ thực hiện được khi đề tài đang thực hiện');
     }
   };
-  const locked = () => conflict('PROGRESS_LOCKED', 'Cập nhật tiến độ đã được GVHD nhận xét, không sửa được nữa');
+  const locked = () => conflict('PROGRESS_LOCKED', 'Cập nhật tiến độ đã được giảng viên hướng dẫn nhận xét, không sửa được nữa');
   const pick = (x) => Object.fromEntries(FIELDS.map((k) => [k, x[k]]));
 
   return {

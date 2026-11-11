@@ -56,7 +56,7 @@ export function Layout() {
         <Link to="/" className={cn('flex min-h-11 items-center gap-3 px-4 py-3 lg:h-16', collapsed && 'lg:justify-center lg:px-0')}>
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-blue-700 text-white shadow-sm"><FlaskConical aria-hidden="true" className="size-5" /></span>
           <span className={cn('leading-tight', collapsed && 'lg:sr-only')}>
-            <span className="block font-bold text-blue-900">NCKH</span>
+            <span className="block font-bold text-blue-900">Nghiên cứu khoa học</span>
             <span className="block text-xs text-muted-foreground">Khoa Công nghệ Thông tin</span>
           </span>
         </Link>

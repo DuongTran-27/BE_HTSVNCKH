@@ -45,7 +45,7 @@ export function FeedbackForm({ topicId, path, kind, evalMilestone }) {
   });
   return (
     <form noValidate onSubmit={handleSubmit(submit)} className="space-y-2" aria-label="Nhận xét">
-      <FormField label="Nhận xét của GVHD" error={errors.content?.message}><textarea rows={3} {...register('content')} /></FormField>
+      <FormField label="Nhận xét của giảng viên hướng dẫn" error={errors.content?.message}><textarea rows={3} {...register('content')} /></FormField>
       {evalMilestone && (
         <FormField label="Đánh giá mốc" error={errors.evaluation?.message} hint="Đánh giá luôn gắn với bản nộp mới nhất của mốc">
           <select {...register('evaluation')}>

@@ -58,7 +58,7 @@ test.describe('M1/M5 luồng đầy đủ', () => {
     await page.getByLabel('Tìm giảng viên').fill(S.users.gv.code);
     await page.getByRole('listitem').filter({ hasText: S.users.gv.name }).getByRole('button', { name: 'Chọn' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Gửi đề nghị' }).click();
-    await expect(page.getByText('Chờ GVHD').first()).toBeVisible();
+    await expect(page.getByText('Chờ giảng viên hướng dẫn').first()).toBeVisible();
 
     const gv = await pageFor(browser, 'gv');
     await login(gv, S.users.gv.code);

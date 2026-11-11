@@ -60,3 +60,15 @@ npm test                      → 73 + 962 + 235 passed
 npm run test:e2e -w @nckh/web → 58 passed
 ```
 Ảnh chụp: trang tạo đề tài, trang soạn hồ sơ (dữ liệu sửa trạng thái chỉ chặn ở phía trình duyệt bằng Playwright route, không ghi DB).
+
+## Vòng 4 (2026-11-11): hạn chế viết tắt trên giao diện (yêu cầu người dùng)
+- Chữ hiển thị: "GVHD" → "giảng viên hướng dẫn" (gồm nhãn trạng thái `WAITING_ADVISOR`/`HAS_ADVISOR` ở `packages/shared/src/enums.js`, thông báo lỗi API và web, tiêu đề thông báo, nhãn "Chưa có giảng viên hướng dẫn" trong thống kê/CSV); "GV:" → "Giảng viên:"; "NCKH Khoa CNTT" (đăng nhập, màn chờ, tab trình duyệt, thanh bên) → "Nghiên cứu khoa học sinh viên"/"Khoa Công nghệ Thông tin"; tên đợt trong seed/demo "Đợt NCKH…" → "Đợt nghiên cứu khoa học…"; tiêu đề OpenAPI. Không đổi comment, mã khoa `CNTT`, mã đề tài `NCKH-…` (định dạng mã, FR05).
+- DB dev: đổi tên 4 đợt (`Round.name`) trực tiếp, có `assertSeedAllowedDb` (không qua API nên không có AuditLog). Tên đề tài cũ chứa "Khoa CNTT" là nội dung đề tài, giữ nguyên (snapshot bất biến).
+- **Test đổi theo yêu cầu (không phải để cho qua):** 6 chỗ unit/integration và 4 chỗ E2E so sánh đúng chuỗi cũ do app sinh ra – `tests/advising.test.jsx:86`, `tests/execution.test.jsx:158,173,247`, `src/pages/topics/TopicListPage.test.jsx:50`, `apps/api/tests/T503-stats.test.js:108`, `e2e/m1.spec.js:61`, `e2e/m4.spec.js:105,121,127`. Dữ liệu nhập giả lập trong test (ví dụ lý do "GVHD đi công tác") giữ nguyên.
+
+Bằng chứng vòng 4:
+```
+npm run lint                  → không lỗi
+npm test                      → 73 + 962 + 235 passed
+npm run test:e2e -w @nckh/web → 58 passed
+```

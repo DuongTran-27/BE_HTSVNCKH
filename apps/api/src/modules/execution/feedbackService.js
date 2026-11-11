@@ -47,7 +47,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
         }
         const row = await o.createFeedback({ topicId: d.topicId, documentId: d.id, milestoneId: d.milestoneId, lecturerId: user.id, content: body.content, evaluation: body.evaluation ?? null });
         await o.audit({ actorId: user.id, action: 'FEEDBACK_CREATE', entityType: 'Feedback', entityId: row.id, before: null, after: { topicId: d.topicId, documentId: d.id, milestoneId: d.milestoneId, evaluation: row.evaluation }, ip });
-        await o.notify({ topicId: d.topicId, to: ['members'], actorId: user.id, type: 'FEEDBACK_CREATED', key: `FEEDBACK_CREATED:${row.id}`, link: `/de-tai/${d.topicId}/tai-lieu`, title: (x) => `GVHD đã nhận xét bản nộp "${d.fileName}" – đề tài ${topicName(x)}` });
+        await o.notify({ topicId: d.topicId, to: ['members'], actorId: user.id, type: 'FEEDBACK_CREATED', key: `FEEDBACK_CREATED:${row.id}`, link: `/de-tai/${d.topicId}/tai-lieu`, title: (x) => `Giảng viên hướng dẫn đã nhận xét bản nộp "${d.fileName}" – đề tài ${topicName(x)}` });
         return row;
       }, { advisorId: user.id }); // kiểm lại GVHD hiện hành dưới khóa (API_GD6 §1.2)
       const m = d.milestoneId ? presentMilestone(await repo.viewMilestone(d.milestoneId), now()) : null;
@@ -62,7 +62,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
         await o.lockProgress(progressId, now()); // đã khóa thì giữ nguyên lockedAt cũ
         const row = await o.createFeedback({ topicId: meta.topicId, progressUpdateId: progressId, lecturerId: user.id, content: body.content });
         await o.audit({ actorId: user.id, action: 'FEEDBACK_CREATE', entityType: 'Feedback', entityId: row.id, before: null, after: { topicId: meta.topicId, progressUpdateId: progressId }, ip });
-        await o.notify({ topicId: meta.topicId, to: ['members'], actorId: user.id, type: 'FEEDBACK_CREATED', key: `FEEDBACK_CREATED:${row.id}`, link: `/de-tai/${meta.topicId}/tien-do`, title: (x) => `GVHD đã nhận xét bản cập nhật tiến độ – đề tài ${topicName(x)}` });
+        await o.notify({ topicId: meta.topicId, to: ['members'], actorId: user.id, type: 'FEEDBACK_CREATED', key: `FEEDBACK_CREATED:${row.id}`, link: `/de-tai/${meta.topicId}/tien-do`, title: (x) => `Giảng viên hướng dẫn đã nhận xét bản cập nhật tiến độ – đề tài ${topicName(x)}` });
         // Đọc trong transaction: đúng nội dung đã bị khóa cùng nhận xét này
         return { feedback: presentFeedback(row), progress: presentProgress(await o.viewProgressTx(progressId)) };
       }, { advisorId: user.id }); // kiểm lại GVHD hiện hành dưới khóa (API_GD6 §1.2)
@@ -84,7 +84,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
         if (cur) await o.demoteResult(cur.id);
         const row = await o.createResult({ topicId, version, result: body.result, summary: body.summary, reason: null, isCurrent: true, createdById: user.id });
         await o.audit({ actorId: user.id, action: 'RESULT_CREATE', entityType: 'ResultVersion', entityId: row.id, before: cur && { result: cur.result, version: cur.version }, after: { result: row.result, version }, ip });
-        await o.notify({ topicId, to: ['members'], actorId: user.id, type: 'RESULT_ENTERED', key: `RESULT_ENTERED:${row.id}`, link: `/de-tai/${topicId}`, title: (x) => `GVHD đã nhập kết quả cuối đề tài ${topicName(x)}` });
+        await o.notify({ topicId, to: ['members'], actorId: user.id, type: 'RESULT_ENTERED', key: `RESULT_ENTERED:${row.id}`, link: `/de-tai/${topicId}`, title: (x) => `Giảng viên hướng dẫn đã nhập kết quả cuối đề tài ${topicName(x)}` });
         return row;
       }, { advisorId: user.id }); // kiểm lại GVHD hiện hành dưới khóa (API_GD6 §1.2)
       return { result: presentResult(r) };

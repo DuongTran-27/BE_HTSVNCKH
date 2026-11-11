@@ -9,7 +9,7 @@ export const CLOSE_ACTIONS = ['REQUEST_CLOSE', 'RETURN_TO_ADVISOR', 'CONFIRM_CLO
 const NEEDS_CONDITIONS = ['REQUEST_CLOSE', 'CONFIRM_CLOSE', 'CLOSE_EXPIRED'];
 // FR13 (§8.3): người nhận, khóa (phân biệt bằng version SAU chuyển cho sự kiện lặp lại được), tiêu đề
 const CLOSE_NOTICE = {
-  REQUEST_CLOSE: { type: 'CLOSE_REQUESTED', to: ['staff'], key: (id, v) => `CLOSE_REQUESTED:${id}:v${v}`, title: (x) => `GVHD đề nghị đóng đề tài ${topicName(x)}` },
+  REQUEST_CLOSE: { type: 'CLOSE_REQUESTED', to: ['staff'], key: (id, v) => `CLOSE_REQUESTED:${id}:v${v}`, title: (x) => `Giảng viên hướng dẫn đề nghị đóng đề tài ${topicName(x)}` },
   RETURN_TO_ADVISOR: { type: 'CLOSE_RETURNED', to: ['advisor', 'members'], key: (id, v) => `CLOSE_RETURNED:${id}:v${v}`, title: (x) => `Cán bộ khoa trả lại hồ sơ đóng đề tài ${topicName(x)}` },
   CONFIRM_CLOSE: { type: 'TOPIC_CLOSED', to: ['advisor', 'members'], key: (id) => `TOPIC_CLOSED:${id}`, title: (x) => `Đề tài ${topicName(x)} đã được đóng` },
   CLOSE_EXPIRED: { type: 'TOPIC_CLOSED', to: ['advisor', 'members'], key: (id) => `TOPIC_CLOSED:${id}`, title: (x) => `Đề tài ${topicName(x)} đã được đóng` },

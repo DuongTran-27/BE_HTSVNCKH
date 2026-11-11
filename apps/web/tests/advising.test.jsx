@@ -83,7 +83,7 @@ describe('Đề nghị hướng dẫn (R15)', () => {
     open('/de-nghi-huong-dan', U('STAFF', { id: 'cb1' }));
     expect(await screen.findByText(/DT-001/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Nhận hướng dẫn' })).toBeNull();
-    expect(screen.getByText('GV: Cô Lan')).toBeTruthy();
+    expect(screen.getByText('Giảng viên: Cô Lan')).toBeTruthy();
     await screen.findByRole('option', { name: /Đợt 1/ });
     fireEvent.change(screen.getByRole('combobox', { name: 'Đợt' }), { target: { value: 'r1' } });
     await waitFor(() => expect(sent('GET', '/advisor-requests').some(([p]) => p.includes('roundId=r1'))).toBe(true));

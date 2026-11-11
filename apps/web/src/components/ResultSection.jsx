@@ -62,7 +62,7 @@ function CloseReadiness({ r }) {
         <li>
           Mốc bắt buộc: {r.requiredMilestoneCount === 0 ? 'chưa có mốc bắt buộc nào' : `${r.requiredMilestoneCount - r.pendingMilestones}/${r.requiredMilestoneCount} Đạt`} – {ok(r.requiredMilestonesPassed)}
         </li>
-        <li>Kết quả cuối và nhận xét tổng kết của GVHD – {r.hasFinalResult ? 'đã có' : 'chưa có'}</li>
+        <li>Kết quả cuối và nhận xét tổng kết của giảng viên hướng dẫn – {r.hasFinalResult ? 'đã có' : 'chưa có'}</li>
       </ul>
       {r.requiredRemovedCount > 0 && <p className="mt-1 text-amber-800">Lưu ý: {r.requiredRemovedCount} mốc chưa Đạt đã bị bỏ cờ bắt buộc.</p>}
     </div>
