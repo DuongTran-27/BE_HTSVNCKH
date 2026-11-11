@@ -47,3 +47,16 @@ npm run build -w @nckh/web    → built; tổng gzip 377 900 B (+1,5 KB so với
 npm run test:e2e -w @nckh/web → 58 passed
 ```
 Đã xem ảnh chụp Playwright: đăng nhập, thống kê, tài khoản, hộp xác nhận, danh sách + chi tiết đề tài, bản di động 390 px.
+
+## Vòng 3 (2026-11-11): form tạo và sửa đề tài
+- `TopicCreatePage`: PageHeader "Bước 1/4", form trong thẻ có tiêu đề mục, nút ở chân thẻ; cột phải "Quy trình" 4 bước (bước hiện tại đỏ Văn Lang).
+- `TopicEditPage`: đầu trang (mã đề tài dạng nhãn, đợt, nút "Về chi tiết"); form chia 3 mục có icon (Thông tin chung, Nội dung, Từ khóa); từ khóa dạng chip bo tròn có nút X; cột phải dính (sticky) gồm "Đủ điều kiện gửi" có thanh tiến độ và icon Đạt/Chưa đạt (giữ chữ "Đạt –/Chưa đạt –" cho trình đọc màn hình) và các nút Lưu nháp / Kiểm tra trước; hộp xung đột dùng `dialogOverlay/dialogPanel`. Không đổi logic, nhãn ô, tên nút, `topic-code`.
+- **Sửa lỗi có sẵn** thấy khi chụp màn hình: ô "Lĩnh vực" hiện "Chọn lĩnh vực" dù đề tài đã có lĩnh vực, vì danh mục tải sau khi form gắn giá trị (dữ liệu gửi vẫn đúng). Sửa: `key={options.length}` để dựng lại ô khi có danh mục. Test mới `tests/student.test.jsx` "R7 – ô Lĩnh vực" (trượt khi gỡ bản sửa, đạt khi có).
+
+Bằng chứng vòng 3:
+```
+npm run lint                  → không lỗi
+npm test                      → 73 + 962 + 235 passed
+npm run test:e2e -w @nckh/web → 58 passed
+```
+Ảnh chụp: trang tạo đề tài, trang soạn hồ sơ (dữ liệu sửa trạng thái chỉ chặn ở phía trình duyệt bằng Playwright route, không ghi DB).

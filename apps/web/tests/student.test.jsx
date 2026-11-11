@@ -94,6 +94,20 @@ describe('R7 – soạn hồ sơ nạp giá trị một lần', () => {
   });
 });
 
+describe('R7 – ô Lĩnh vực', () => {
+  it('danh mục lĩnh vực tải xong sau form: ô vẫn hiện lĩnh vực đã lưu', async () => {
+    let release;
+    const late = new Promise((r) => { release = r; });
+    map['GET /topics/t1'] = { topic: topic({ status: 'DRAFT', permissions: { edit: true } }) };
+    map['GET /fields'] = () => late;
+    open('/de-tai/t1/sua');
+    const select = await screen.findByLabelText('Lĩnh vực');
+    expect(select.value).toBe('');
+    await act(async () => release({ items: [{ id: 'fd0', name: 'Khác' }, { id: 'fd1', name: 'AI' }] }));
+    await waitFor(() => expect(screen.getByLabelText('Lĩnh vực').value).toBe('fd1'));
+  });
+});
+
 describe('R10 – gửi xét duyệt, cảnh báo vàng/đỏ, giải trình', () => {
   const submitBtn = () => screen.getByRole('button', { name: 'Gửi xét duyệt' });
 

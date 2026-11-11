@@ -7,7 +7,15 @@ import { api } from '../../lib/api.js';
 import { applyServerErrors } from '../../lib/forms.js';
 import { toast } from '../../lib/toast.js';
 import { FormField } from '../../components/FormField.jsx';
-import { Options, QueryBox, btnPrimary } from '../../components/ui.jsx';
+import { FilePlus2 } from 'lucide-react';
+import { Options, PageHeader, QueryBox, btnPrimary, card } from '../../components/ui.jsx';
+
+const STEPS = [
+  ['Tạo nháp', 'Chọn đợt đang mở đăng ký, đặt tên tạm cho đề tài.'],
+  ['Soạn hồ sơ', 'Viết tóm tắt, mục tiêu, từ khóa, chọn lĩnh vực; mời thành viên.'],
+  ['Mời giảng viên hướng dẫn', 'Gửi đề nghị và chờ giảng viên nhận.'],
+  ['Kiểm tra trùng lặp và gửi', 'Hệ thống so với các đề tài đã có rồi chuyển hồ sơ cho khoa xét duyệt.'],
+];
 
 // R5 – UI §4.5
 export function TopicCreatePage() {
@@ -32,19 +40,44 @@ export function TopicCreatePage() {
   });
   return (
     <section>
-      <h1 className="text-2xl font-semibold">Tạo đề tài</h1>
+      <PageHeader title="Tạo đề tài" description="Bước 1/4: chọn đợt và đặt tên tạm. Nội dung đầy đủ được soạn ở bước sau." />
       <QueryBox query={rounds} empty="Khoa chưa mở đợt đăng ký nào." isEmpty={(d) => d.length === 0}>
         {(items) => (
-          <form noValidate onSubmit={handleSubmit((v) => create.mutate({ roundId: v.roundId, title: v.title }))} className="mt-4 max-w-xl space-y-4 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-            <FormField label="Đợt đăng ký" error={errors.roundId?.message}>
-              <select {...register('roundId')}>
-                <Options placeholder="Chọn đợt" options={items.map((r) => ({ value: r.id, label: `${r.name} – ${r.academicYear} (${r.registrationOpen ? 'Đang mở đăng ký' : 'Chưa mở hoặc đã đóng đăng ký'})` }))} />
-              </select>
-            </FormField>
-            <FormField label="Tên đề tài (có thể bổ sung sau)" error={errors.title?.message}><input type="text" {...register('title')} /></FormField>
-            {errors.root?.message && <p role="alert" className="break-words text-red-700">{errors.root.message}</p>}
-            <button type="submit" disabled={create.isPending} className={btnPrimary}>{create.isPending ? 'Đang xử lý…' : 'Tạo nháp'}</button>
-          </form>
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <form noValidate onSubmit={handleSubmit((v) => create.mutate({ roundId: v.roundId, title: v.title }))} className={`${card} space-y-5`}>
+              <div className="flex items-center gap-3">
+                <span aria-hidden="true" className="grid size-10 place-items-center rounded-xl bg-red-50 text-vlu-red"><FilePlus2 className="size-5" /></span>
+                <div>
+                  <h2 className="font-semibold">Thông tin ban đầu</h2>
+                  <p className="text-sm text-muted-foreground">Có thể đổi tên đề tài khi soạn hồ sơ.</p>
+                </div>
+              </div>
+              <FormField label="Đợt đăng ký" error={errors.roundId?.message}>
+                <select {...register('roundId')}>
+                  <Options placeholder="Chọn đợt" options={items.map((r) => ({ value: r.id, label: `${r.name} – ${r.academicYear} (${r.registrationOpen ? 'Đang mở đăng ký' : 'Chưa mở hoặc đã đóng đăng ký'})` }))} />
+                </select>
+              </FormField>
+              <FormField label="Tên đề tài (có thể bổ sung sau)" error={errors.title?.message}><input type="text" placeholder="Ví dụ: Ứng dụng học sâu nhận dạng chữ viết tay tiếng Việt" {...register('title')} /></FormField>
+              {errors.root?.message && <p role="alert" className="break-words rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{errors.root.message}</p>}
+              <div className="flex justify-end border-t pt-5">
+                <button type="submit" disabled={create.isPending} className={btnPrimary}>{create.isPending ? 'Đang xử lý…' : 'Tạo nháp'}</button>
+              </div>
+            </form>
+            <aside aria-label="Quy trình đăng ký đề tài" className={card}>
+              <h2 className="font-semibold">Quy trình</h2>
+              <ol className="mt-4 space-y-4">
+                {STEPS.map(([title, text], i) => (
+                  <li key={title} className="flex gap-3">
+                    <span aria-hidden="true" className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold ${i === 0 ? 'bg-vlu-red text-white' : 'bg-muted text-muted-foreground'}`}>{i + 1}</span>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-medium ${i === 0 ? 'text-blue-900' : 'text-muted-foreground'}`}>{title}</p>
+                      <p className="text-xs text-muted-foreground">{text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </aside>
+          </div>
         )}
       </QueryBox>
     </section>

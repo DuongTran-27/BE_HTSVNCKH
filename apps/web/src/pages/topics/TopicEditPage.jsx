@@ -12,7 +12,24 @@ import { toast } from '../../lib/toast.js';
 import { useCooldown } from '../../lib/useCooldown.js';
 import { FormField, inputClass } from '../../components/FormField.jsx';
 import { SimilarityPanel } from '../../components/SimilarityPanel.jsx';
-import { ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary, useDialogA11y } from '../../components/ui.jsx';
+import { ArrowLeft, CircleAlert, CircleCheck, FileText, Save, ScanSearch, Tags, X } from 'lucide-react';
+import { ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary, card, dialogOverlay, dialogPanel, useDialogA11y } from '../../components/ui.jsx';
+
+/** Một mục của form: biểu tượng + tiêu đề + mô tả ngắn, nội dung bên dưới */
+function Section({ icon: Icon, title, description, children }) {
+  return (
+    <div className={`${card} space-y-5`}>
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700"><Icon className="size-[18px]" /></span>
+        <div>
+          <h2 className="font-semibold">{title}</h2>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 const FIELD_NAMES = ['title', 'summary', 'objectives', 'keywords', 'fieldId'];
 
@@ -43,10 +60,10 @@ function KeywordsInput({ value, max, onChange, error }) {
 function ConflictDialog({ onTakeNew, onKeepMine }) {
   const ref = useDialogA11y();
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div ref={ref} role="dialog" aria-modal="true" aria-label="Hồ sơ vừa được cập nhật" className="w-full max-w-md space-y-3 rounded-lg bg-white p-4 shadow-lg">
+    <div className={dialogOverlay}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-label="Hồ sơ vừa được cập nhật" className={dialogPanel}>
         <h2 className="text-lg font-semibold">Hồ sơ vừa được thành viên khác cập nhật</h2>
-        <p>Chọn tải bản mới (bỏ thay đổi của bạn) hoặc giữ nội dung của bạn rồi lưu lại để ghi đè.</p>
+        <p className="text-sm text-muted-foreground">Chọn tải bản mới (bỏ thay đổi của bạn) hoặc giữ nội dung của bạn rồi lưu lại để ghi đè.</p>
         <div className="flex flex-wrap justify-end gap-2">
           <button type="button" onClick={onTakeNew} className={btnGhost}>Tải bản mới (bỏ thay đổi của tôi)</button>
           <button type="button" onClick={onKeepMine} className={btnPrimary}>Giữ nội dung của tôi</button>
@@ -140,55 +157,94 @@ function EditForm({ topic }) {
   const showInactive = inactiveField && fieldValue === inactiveField.id;
   const words = countWords(values.summary);
 
+  const passed = SUBMIT_FIELDS.filter(([k]) => !problems[k]).length;
+  const keywordError = errors.keywords?.message ?? Object.entries(errors.keywords ?? {}).map(([, e]) => e?.message).find(Boolean);
+
   return (
     <section>
-      <p data-testid="topic-code" className="text-sm text-slate-700">{topic.code}</p>
-      <h1 className="text-2xl font-semibold">Soạn hồ sơ</h1>
-      <form noValidate onSubmit={onSave} className="mt-4 max-w-2xl space-y-4 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-        <FormField label="Tên đề tài" error={errors.title?.message}><input type="text" {...register('title')} /></FormField>
-        <FormField label="Tóm tắt" error={errors.summary?.message} hint={`${words}/${cfg.minSummaryWords} từ`}><textarea rows={6} {...register('summary')} /></FormField>
-        <FormField label="Mục tiêu" error={errors.objectives?.message}><textarea rows={4} {...register('objectives')} /></FormField>
-        <KeywordsInput value={values.keywords ?? []} max={cfg.maxKeywords} error={errors.keywords?.message ?? Object.entries(errors.keywords ?? {}).map(([, e]) => e?.message).find(Boolean)}
-          onChange={(k) => setValue('keywords', k, { shouldDirty: true, shouldValidate: true })} />
-        {values.keywords?.length > 0 && (
-          <ul className="flex flex-wrap gap-2" aria-label="Danh sách từ khóa">
-            {values.keywords.map((k) => (
-              <li key={k} className="inline-flex items-center gap-1 rounded bg-slate-200 px-2 py-1 text-sm">
-                {k}
-                <button type="button" aria-label={`Xóa từ khóa ${k}`} className="min-h-6 px-1" onClick={() => setValue('keywords', values.keywords.filter((x) => x !== k), { shouldDirty: true })}>×</button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <FormField label="Lĩnh vực" error={errors.fieldId?.message ?? (showInactive ? 'Lĩnh vực này đã ngừng dùng, hãy chọn lĩnh vực khác trước khi lưu' : undefined)}>
-          <select {...register('fieldId')} className={inputClass}>
-            <Options placeholder="Chọn lĩnh vực" options={[...(inactiveField ? [{ value: inactiveField.id, label: `${inactiveField.name} (Ngừng dùng)` }] : []), ...options.map((f) => ({ value: f.id, label: f.name }))]} />
-          </select>
-        </FormField>
-
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <h2 className="font-bold">Đủ điều kiện gửi</h2>
-          <ul className="mt-1 space-y-1 text-sm">
-            {SUBMIT_FIELDS.map(([k, label]) => (
-              <li key={k} className={problems[k] ? 'text-red-800' : 'text-green-800'}>{problems[k] ? 'Chưa đạt' : 'Đạt'} – {label}{problems[k] ? `: ${problems[k]}` : ''}</li>
-            ))}
-          </ul>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p data-testid="topic-code" className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground tabular-nums">{topic.code}</p>
+          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Soạn hồ sơ</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{topic.round.name} · Lưu nháp thường xuyên; chỉ gửi xét duyệt khi đủ mọi điều kiện.</p>
         </div>
+        <Link to={`/de-tai/${id}`} className={btnGhost}><ArrowLeft aria-hidden="true" className="size-4" />Về chi tiết</Link>
+      </div>
 
-        {formError && <p role="alert" className="break-words rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{formError}</p>}
-        <div className="flex flex-wrap gap-2">
-          <button type="submit" disabled={busy} className={btnPrimary}>{busy ? 'Đang xử lý…' : 'Lưu nháp'}</button>
-          {topic.permissions?.checkSimilarity && (
-            <button type="button" disabled={busy || cd.active} onClick={onCheck} className={btnGhost}>Kiểm tra trước</button>
+      <form noValidate onSubmit={onSave} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0 space-y-6">
+          <Section icon={FileText} title="Thông tin chung" description="Tên đề tài và lĩnh vực nghiên cứu.">
+            <FormField label="Tên đề tài" error={errors.title?.message}><input type="text" {...register('title')} /></FormField>
+            <FormField label="Lĩnh vực" error={errors.fieldId?.message ?? (showInactive ? 'Lĩnh vực này đã ngừng dùng, hãy chọn lĩnh vực khác trước khi lưu' : undefined)}>
+              {/* key: dựng lại khi danh mục tải xong để ô hiện đúng lĩnh vực đã lưu (option đến sau khi form gắn giá trị) */}
+              <select key={options.length} {...register('fieldId')} className={inputClass}>
+                <Options placeholder="Chọn lĩnh vực" options={[...(inactiveField ? [{ value: inactiveField.id, label: `${inactiveField.name} (Ngừng dùng)` }] : []), ...options.map((f) => ({ value: f.id, label: f.name }))]} />
+              </select>
+            </FormField>
+          </Section>
+
+          <Section icon={ScanSearch} title="Nội dung" description="Tóm tắt và mục tiêu được dùng để kiểm tra trùng lặp.">
+            <FormField label="Tóm tắt" error={errors.summary?.message} hint={`${words}/${cfg.minSummaryWords} từ`}><textarea rows={7} {...register('summary')} /></FormField>
+            <FormField label="Mục tiêu" error={errors.objectives?.message}><textarea rows={4} {...register('objectives')} /></FormField>
+          </Section>
+
+          <Section icon={Tags} title="Từ khóa" description={`Tối đa ${cfg.maxKeywords} từ khóa, mỗi từ khóa là một cụm chuyên môn ngắn.`}>
+            <KeywordsInput value={values.keywords ?? []} max={cfg.maxKeywords} error={keywordError}
+              onChange={(k) => setValue('keywords', k, { shouldDirty: true, shouldValidate: true })} />
+            {values.keywords?.length > 0 && (
+              <ul className="flex flex-wrap gap-2" aria-label="Danh sách từ khóa">
+                {values.keywords.map((k) => (
+                  <li key={k} className="inline-flex items-center gap-1 rounded-full border bg-accent py-1 pr-1 pl-3 text-sm font-medium text-blue-800">
+                    {k}
+                    <button type="button" aria-label={`Xóa từ khóa ${k}`} className="grid size-6 place-items-center rounded-full text-blue-700 transition-colors hover:bg-blue-100"
+                      onClick={() => setValue('keywords', values.keywords.filter((x) => x !== k), { shouldDirty: true })}><X aria-hidden="true" className="size-3.5" /></button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Section>
+
+          {topic.permissions?.checkSimilarity && (check || latest.data) && (
+            <div><h2 className="mb-2 font-semibold">Kết quả kiểm tra trùng lặp</h2><SimilarityPanel check={check ?? latest.data} /></div>
           )}
-          <Link to={`/de-tai/${id}`} className={btnGhost}>Về chi tiết</Link>
         </div>
-        {cd.active && <p role="status" className="text-sm text-amber-900">{cd.message}</p>}
-      </form>
 
-      {topic.permissions?.checkSimilarity && (check || latest.data) && (
-        <div className="mt-4 max-w-2xl"><h2 className="mb-2 font-bold">Kết quả kiểm tra trùng lặp</h2><SimilarityPanel check={check ?? latest.data} /></div>
-      )}
+        <aside aria-label="Điều kiện gửi và thao tác" className="space-y-4 lg:sticky lg:top-24">
+          <div className={card}>
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="font-semibold">Đủ điều kiện gửi</h2>
+              <span className="text-sm font-medium text-muted-foreground tabular-nums">{passed}/{SUBMIT_FIELDS.length}</span>
+            </div>
+            <div aria-hidden="true" className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className={`h-full rounded-full transition-[width] duration-300 ${passed === SUBMIT_FIELDS.length ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${(passed / SUBMIT_FIELDS.length) * 100}%` }} />
+            </div>
+            <ul className="mt-4 space-y-3 text-sm">
+              {SUBMIT_FIELDS.map(([k, label]) => (
+                <li key={k} className="flex gap-2.5">
+                  {problems[k]
+                    ? <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber-600" />
+                    : <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-600" />}
+                  <span className="min-w-0">
+                    <span className="sr-only">{problems[k] ? 'Chưa đạt' : 'Đạt'} – </span>
+                    <span className={problems[k] ? 'font-medium text-blue-900' : 'text-muted-foreground'}>{label}</span>
+                    {problems[k] && <span className="block text-xs text-amber-800">{problems[k]}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className={`${card} space-y-2`}>
+            {formError && <p role="alert" className="break-words rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{formError}</p>}
+            <button type="submit" disabled={busy} className={`${btnPrimary} w-full`}><Save aria-hidden="true" className="size-4" />{busy ? 'Đang xử lý…' : 'Lưu nháp'}</button>
+            {topic.permissions?.checkSimilarity && (
+              <button type="button" disabled={busy || cd.active} onClick={onCheck} className={`${btnGhost} w-full`}><ScanSearch aria-hidden="true" className="size-4" />Kiểm tra trước</button>
+            )}
+            {cd.active && <p role="status" className="text-sm text-amber-900">{cd.message}</p>}
+            {isDirty && <p className="text-center text-xs text-muted-foreground">Có thay đổi chưa lưu</p>}
+          </div>
+        </aside>
+      </form>
 
       {conflict && <ConflictDialog onTakeNew={takeNew} onKeepMine={keepMine} />}
       {blocker.state === 'blocked' && (
