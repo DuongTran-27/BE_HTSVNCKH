@@ -11,6 +11,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "db:test:reset": "node scripts/reset-test-db.js",
     "demo:people": "node --env-file-if-exists=.env scripts/demo-people.js",
+    "demo:stats": "node --env-file-if-exists=.env scripts/demo-stats.js",
     "perf": "node tests/perf/run-perf.js",
     "eval:fr06": "node tests/fr06-eval/run.js"
   },
