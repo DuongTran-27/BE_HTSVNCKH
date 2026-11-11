@@ -72,3 +72,13 @@ npm run lint                  → không lỗi
 npm test                      → 73 + 962 + 235 passed
 npm run test:e2e -w @nckh/web → 58 passed
 ```
+
+## Sửa theo `reviews/TASK-UI-SHADCN-reviewer-v1.md` (APPROVED, 3 MINOR)
+1. Nút X xóa từ khóa (`TopicEditPage.jsx`): giữ hình 24 px, vùng bấm nới ra 44 px bằng `before:absolute before:-inset-2.5` (UI §8).
+2. `ChangeRequestForm.jsx`: `cn(dialogOverlay, 'items-start')` (tailwind-merge bỏ `items-center`) thay cho ghép chuỗi hai class xung đột.
+3. Bỏ `"use client"` thừa trong `components/ui/*.jsx`. **Nợ kỹ thuật ghi nhận:** `ReasonDialog`, `ConflictDialog`, `ChangeRequestForm` vẫn là hộp thoại tự quản focus (`useDialogA11y`) song song với Dialog Radix của `ConfirmDialog`; chuyển sang Radix cần viết lại test bàn phím của chúng (`dialogs.test.jsx` gửi Tab ở `document`).
+```
+npm run lint                      → không lỗi
+npx vitest run (apps/web)         → 236 passed
+npm run build -w @nckh/web        → built
+```

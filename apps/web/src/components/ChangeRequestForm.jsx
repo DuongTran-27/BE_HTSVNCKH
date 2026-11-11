@@ -13,6 +13,7 @@ import { DebouncedInput } from './ListFilters.jsx';
 import { FormField } from './FormField.jsx';
 import { SimilarityPanel } from './SimilarityPanel.jsx';
 import { FormError, Options, btnGhost, btnPrimary, dialogOverlay, dialogPanel } from './ui.jsx';
+import { cn } from '@/lib/utils';
 
 const HINT = {
   ADVISOR_CHANGE: 'Giảng viên mới phải đồng ý, sau đó cán bộ khoa duyệt. Trong lúc chờ, giảng viên hiện tại vẫn làm việc bình thường. Giảng viên cũ mất mọi quyền khi yêu cầu được duyệt, trừ khi cán bộ khoa cấp quyền chỉ đọc.',
@@ -73,7 +74,7 @@ export function ChangeRequestForm({ topic, kind, onClose }) {
   });
 
   return (
-    <div className={`${dialogOverlay} items-start`}>
+    <div className={cn(dialogOverlay, 'items-start')}>
       <form role="dialog" aria-modal="true" aria-label={CHANGE_TYPE_LABEL[kind]} noValidate onSubmit={handleSubmit((v) => create.mutate(v))}
         className={`${dialogPanel} max-w-lg`}>
         <h2 className="text-lg font-semibold">{CHANGE_TYPE_LABEL[kind]}</h2>

@@ -196,7 +196,7 @@ function EditForm({ topic }) {
                 {values.keywords.map((k) => (
                   <li key={k} className="inline-flex items-center gap-1 rounded-full border bg-accent py-1 pr-1 pl-3 text-sm font-medium text-blue-800">
                     {k}
-                    <button type="button" aria-label={`Xóa từ khóa ${k}`} className="grid size-6 place-items-center rounded-full text-blue-700 transition-colors hover:bg-blue-100"
+                    <button type="button" aria-label={`Xóa từ khóa ${k}`} className="relative grid size-6 place-items-center rounded-full text-blue-700 transition-colors before:absolute before:-inset-2.5 hover:bg-blue-100"
                       onClick={() => setValue('keywords', values.keywords.filter((x) => x !== k), { shouldDirty: true })}><X aria-hidden="true" className="size-3.5" /></button>
                   </li>
                 ))}
