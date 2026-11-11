@@ -25,6 +25,10 @@ export const errorHandler = (logger) => (err, req, res, _next) => {
       return res.status(409).json({ error: { code: 'DUPLICATE', message: 'Dữ liệu đã tồn tại', details: duplicateDetails(req, err) } });
     }
     if (err.code === 'P2025') return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy' } });
+    // Khóa ngoại: bản ghi được tham chiếu không còn (vd. người thực hiện bị xóa khi request đang chạy) – đã rollback
+    if (err.code === 'P2003') {
+      return res.status(409).json({ error: { code: 'REFERENCE_CHANGED', message: 'Dữ liệu liên quan vừa thay đổi, vui lòng tải lại' } });
+    }
     if (err.code === 'P2028') { // transaction hết hạn / hết maxWait: quá tải, không phải xung đột dữ liệu (đã rollback)
       logger?.warn({ reqId: req.id, code: err.code }, 'Transaction hết hạn');
       return res.status(503).json({ error: { code: 'SERVICE_BUSY', message: 'Hệ thống đang bận, vui lòng thử lại sau' } });

@@ -24,3 +24,12 @@ Làm theo ghi chú 1 (không chặn): `remove()` chặt như `setLocked` – ng�
 setLocked-admin-race 3/3 · TASK-LOCK-ADMIN-RACE-bao-mat 1/1 · TASK-USER-DELETE-bao-mat 3/3 · …-v2 1/1 · T207a 29/29
 npm run lint → không lỗi; npm test → 73 + 971 + 236 passed
 ```
+
+## P2003 → 409 (người dùng đồng ý 2026-11-11: "đồng ý đổi P2003")
+- `errorHandler`: lỗi khóa ngoại Prisma P2003 → 409 `REFERENCE_CHANGED` "Dữ liệu liên quan vừa thay đổi, vui lòng tải lại" (trước: 500 INTERNAL). Không lộ message/meta. Ca chính: người thực hiện bị xóa khi request đang chạy (FK AuditLog.actorId).
+- **Test đổi theo yêu cầu người dùng (quy tắc 1, có chấp thuận):** `tests/T206-errors.test.js` ca "lỗi Prisma khác → 500" trước dùng P2003 làm ví dụ, nay dùng P2011 (vẫn ghim hành vi 500 cho lỗi Prisma chưa ánh xạ); thêm ca P2003 → 409.
+- Đánh đổi (bao-mat v1 ghi chú 3): lỗi gửi id tham chiếu không tồn tại ở chỗ khác cũng nhận 409 thay vì 500.
+```
+npx vitest run tests/T206-errors.test.js → 16 passed
+npm run lint → không lỗi; npm test → 73 + 972 + 236 passed
+```

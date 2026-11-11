@@ -50,6 +50,11 @@ describe('errorHandler – lỗi Prisma', () => {
     expect(r.status).toBe(404);
     expect(r.body.error.code).toBe('NOT_FOUND');
   });
+  it('P2003 (khóa ngoại, vd. người thực hiện vừa bị xóa) -> 409 REFERENCE_CHANGED, không lộ message/meta', async () => {
+    const r = await run(known('P2003', { message: 'secret detail', meta: { field_name: 'AuditLog_actorId_fkey (index)' } }));
+    expect(r.status).toBe(409);
+    expect(r.body.error).toEqual({ code: 'REFERENCE_CHANGED', message: 'Dữ liệu liên quan vừa thay đổi, vui lòng tải lại' });
+  });
   it.each([
     ['P2010 + meta.code 55P03', known('P2010', { meta: { code: '55P03', message: 'x' } })],
     ['P2034 (deadlock / xung đột ghi)', known('P2034')],
@@ -74,10 +79,10 @@ describe('errorHandler – lỗi Prisma', () => {
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.error).not.toHaveBeenCalled();
   });
-  it('P2010 mã khác 55P03, lỗi Prisma khác, lỗi thường -> 500 INTERNAL, không lộ message', async () => {
+  it('P2010 mã khác 55P03, lỗi Prisma khác (P2011), lỗi thường -> 500 INTERNAL, không lộ message', async () => {
     for (const err of [
       known('P2010', { meta: { code: '23505' }, message: 'secret detail' }),
-      known('P2003', { message: 'secret detail' }),
+      known('P2011', { message: 'secret detail' }), // P2003 đổi sang 409 theo yêu cầu người dùng 2026-11-11
       new Error('lock timeout'),
     ]) {
       const r = await run(err, { logger: { error: vi.fn() } });
