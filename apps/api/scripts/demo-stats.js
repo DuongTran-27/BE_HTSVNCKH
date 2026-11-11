@@ -32,14 +32,44 @@ const REASONS = {
   REJECT: 'Đề tài trùng định hướng với đề tài đã thực hiện, chưa có điểm mới',
   CANCEL: 'Nhóm không đủ thành viên để tiếp tục thực hiện',
 };
-// Chủ đề theo lĩnh vực của seed; ghép với ngữ cảnh để ra tên đề tài khác nhau
-const SUBJECTS = {
-  AI: ['Nhận dạng chữ viết tay tiếng Việt bằng học sâu', 'Chatbot hỏi đáp quy chế đào tạo', 'Phát hiện tin giả tiếng Việt', 'Tóm tắt văn bản pháp luật tự động'],
-  WEB: ['Hệ thống đặt lịch phòng thí nghiệm', 'Cổng thông tin việc làm sinh viên', 'Nền tảng quản lý câu lạc bộ', 'Website bán sách cũ cho sinh viên'],
-  MOBILE: ['Ứng dụng điểm danh bằng mã QR', 'Ứng dụng học từ vựng tiếng Anh', 'Ứng dụng chia sẻ xe đi học', 'Ứng dụng theo dõi sức khỏe tinh thần'],
-  SEC: ['Phát hiện mã độc Android bằng học máy', 'Đánh giá lỗ hổng ứng dụng web', 'Hệ thống phát hiện xâm nhập mạng nội bộ', 'Xác thực đa yếu tố cho cổng sinh viên'],
-  DATA: ['Dự báo kết quả học tập của sinh viên', 'Phân tích cảm xúc phản hồi môn học', 'Trực quan hóa dữ liệu tuyển sinh', 'Gợi ý môn học tự chọn'],
-  IOT: ['Giám sát chất lượng không khí lớp học', 'Nhà kính thông minh tưới cây tự động', 'Bãi giữ xe thông minh', 'Cảnh báo cháy sớm cho ký túc xá'],
+// Chủ đề theo lĩnh vực của seed: [tên, từ khóa chuyên môn]; tên ghép với ngữ cảnh để ra tên đề tài khác nhau
+export const SUBJECTS = {
+  AI: [
+    ['Nhận dạng chữ viết tay tiếng Việt bằng học sâu', ['học sâu', 'nhận dạng chữ viết tay', 'mạng nơ-ron tích chập', 'tiếng Việt']],
+    ['Chatbot hỏi đáp quy chế đào tạo', ['chatbot', 'xử lý ngôn ngữ tự nhiên', 'mô hình ngôn ngữ lớn', 'truy xuất tài liệu']],
+    ['Phát hiện tin giả tiếng Việt', ['tin giả', 'phân loại văn bản', 'PhoBERT', 'xử lý ngôn ngữ tự nhiên']],
+    ['Tóm tắt văn bản pháp luật tự động', ['tóm tắt văn bản', 'văn bản pháp luật', 'mô hình Transformer', 'xử lý ngôn ngữ tự nhiên']],
+  ],
+  WEB: [
+    ['Hệ thống đặt lịch phòng thí nghiệm', ['đặt lịch', 'ứng dụng web', 'React', 'quản lý tài nguyên']],
+    ['Cổng thông tin việc làm sinh viên', ['việc làm', 'cổng thông tin', 'tìm kiếm toàn văn', 'Node.js']],
+    ['Nền tảng quản lý câu lạc bộ', ['câu lạc bộ', 'quản lý sự kiện', 'ứng dụng web', 'phân quyền']],
+    ['Website bán sách cũ cho sinh viên', ['thương mại điện tử', 'sách cũ', 'thanh toán trực tuyến', 'ứng dụng web']],
+  ],
+  MOBILE: [
+    ['Ứng dụng điểm danh bằng mã QR', ['điểm danh', 'mã QR', 'Flutter', 'ứng dụng di động']],
+    ['Ứng dụng học từ vựng tiếng Anh', ['học từ vựng', 'lặp lại ngắt quãng', 'React Native', 'ứng dụng di động']],
+    ['Ứng dụng chia sẻ xe đi học', ['chia sẻ xe', 'định vị GPS', 'bản đồ số', 'ứng dụng di động']],
+    ['Ứng dụng theo dõi sức khỏe tinh thần', ['sức khỏe tinh thần', 'nhật ký cảm xúc', 'thông báo đẩy', 'ứng dụng di động']],
+  ],
+  SEC: [
+    ['Phát hiện mã độc Android bằng học máy', ['mã độc', 'Android', 'học máy', 'phân tích tĩnh']],
+    ['Đánh giá lỗ hổng ứng dụng web', ['lỗ hổng bảo mật', 'OWASP Top 10', 'kiểm thử xâm nhập', 'ứng dụng web']],
+    ['Hệ thống phát hiện xâm nhập mạng nội bộ', ['phát hiện xâm nhập', 'IDS', 'phân tích lưu lượng mạng', 'học máy']],
+    ['Xác thực đa yếu tố cho cổng sinh viên', ['xác thực đa yếu tố', 'OTP', 'quản lý danh tính', 'an toàn thông tin']],
+  ],
+  DATA: [
+    ['Dự báo kết quả học tập của sinh viên', ['dự báo', 'kết quả học tập', 'học máy', 'khai phá dữ liệu giáo dục']],
+    ['Phân tích cảm xúc phản hồi môn học', ['phân tích cảm xúc', 'phản hồi sinh viên', 'xử lý ngôn ngữ tự nhiên', 'khai phá văn bản']],
+    ['Trực quan hóa dữ liệu tuyển sinh', ['trực quan hóa dữ liệu', 'tuyển sinh', 'dashboard', 'Power BI']],
+    ['Gợi ý môn học tự chọn', ['hệ gợi ý', 'lọc cộng tác', 'môn học tự chọn', 'học máy']],
+  ],
+  IOT: [
+    ['Giám sát chất lượng không khí lớp học', ['chất lượng không khí', 'cảm biến', 'ESP32', 'MQTT']],
+    ['Nhà kính thông minh tưới cây tự động', ['nhà kính thông minh', 'tưới tự động', 'cảm biến độ ẩm', 'Arduino']],
+    ['Bãi giữ xe thông minh', ['bãi giữ xe', 'nhận dạng biển số', 'RFID', 'Internet vạn vật']],
+    ['Cảnh báo cháy sớm cho ký túc xá', ['cảnh báo cháy', 'cảm biến khói', 'ESP32', 'thông báo thời gian thực']],
+  ],
 };
 const CONTEXTS = ['tại Trường Đại học Văn Lang', 'cho sinh viên Khoa CNTT', 'trên nền tảng điện toán đám mây', 'cho doanh nghiệp vừa và nhỏ'];
 const FAMILY = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ'];
@@ -100,8 +130,8 @@ export async function demoStats(prisma) {
             },
           });
           const field = fields[(n * 5) % fields.length];
-          const title = `${SUBJECTS[field.code][n % 4]} ${CONTEXTS[(n >> 2) % 4]}`;
-          const keywords = title.toLowerCase().split(' ').filter((w) => w.length > 3).slice(0, 4);
+          const [subject, keywords] = SUBJECTS[field.code][n % 4];
+          const title = `${subject} ${CONTEXTS[(n >> 2) % 4]}`;
           const content = {
             title,
             keywords,

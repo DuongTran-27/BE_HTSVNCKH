@@ -16,3 +16,11 @@ GET /api/stats?groupBy=academicYear (CB001) → 2026-2027: 27, 2025-2026: 26, 20
 npm run lint                                → không lỗi
 npm test                                    → 73 + 962 + 234 passed, 0 failed
 ```
+
+## Sửa 2026-11-11: từ khóa có nghĩa
+Từ khóa trước đây cắt từ tên đề tài ("chọn, trên, tảng"). Nay mỗi chủ đề có bộ từ khóa chuyên môn viết tay (`SUBJECTS` = [tên, từ khóa]); test kiểm từ khóa đúng bộ của chủ đề.
+DB dev: cập nhật `Topic.keywords` của 60 đề tài đã tạo (một lần, trong transaction, có `assertSeedAllowedDb`). Snapshot lần gửi (`Submission.payload`) là bất biến (trigger) nên vẫn giữ từ khóa cũ.
+```
+npx vitest run tests/demo-stats.test.js → Tests 2 passed (2)
+cập nhật DB dev                          → Đã cập nhật từ khóa 60/60 đề tài.
+```

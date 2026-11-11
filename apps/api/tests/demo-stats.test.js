@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { findTransition } from '@nckh/shared';
 import { resetData } from './db.js';
 import { seed } from '../prisma/seed.js';
-import { demoStats, YEARS } from '../scripts/demo-stats.js';
+import { demoStats, SUBJECTS, YEARS } from '../scripts/demo-stats.js';
 
 const prisma = new PrismaClient();
 const total = YEARS.reduce((s, y) => s + y[2], 0);
@@ -43,6 +43,9 @@ describe('demo-stats', () => {
         s = h.to;
       }
       expect(s, t.code).toBe(t.status);
+      // Từ khóa là bộ viết tay của đúng chủ đề (không cắt từ tên đề tài)
+      const subject = Object.values(SUBJECTS).flat().find(([name]) => t.title.startsWith(name));
+      expect(t.keywords, t.code).toEqual(subject[1]);
       expect(t.members.filter((m) => m.role === 'LEADER')).toHaveLength(1);
       expect(t.advisings.filter((a) => !a.endAt)).toHaveLength(1);
       expect(t.results.filter((r) => r.isCurrent)).toHaveLength(t.status === 'CLOSED' ? 1 : 0);
