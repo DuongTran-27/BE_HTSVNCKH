@@ -17,3 +17,10 @@ npx vitest run tests/T207a-accounts.test.js                → 29 passed
 npm run lint                                               → không lỗi
 npm test                                                   → 73 + 969 + 236 passed
 ```
+
+## Sau review `reviews/TASK-LOCK-ADMIN-RACE-bao-mat-v1.md` (APPROVED)
+Làm theo ghi chú 1 (không chặn): `remove()` chặt như `setLocked` – người thực hiện phải còn tồn tại **và chưa bị khóa** (không → 403), `adminsLeft` chỉ đếm ADMIN đang hoạt động khác đích. Trước đây race chéo "B khóa A ‖ A xóa B" chỉ được chặn gián tiếp nhờ FK AuditLog. Test mới trong `setLocked-admin-race.test.js` ("xóa: ADMIN đã bị khóa…") trượt khi gỡ bản sửa, đạt khi có. Giữ test hồi quy của bao-mat `tests/security/TASK-LOCK-ADMIN-RACE-bao-mat.test.js`.
+```
+setLocked-admin-race 3/3 · TASK-LOCK-ADMIN-RACE-bao-mat 1/1 · TASK-USER-DELETE-bao-mat 3/3 · …-v2 1/1 · T207a 29/29
+npm run lint → không lỗi; npm test → 73 + 971 + 236 passed
+```

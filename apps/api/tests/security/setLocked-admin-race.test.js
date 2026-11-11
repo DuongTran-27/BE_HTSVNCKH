@@ -31,3 +31,10 @@ it('ADMIN đã bị khóa (token cũ còn hạn ở tầng service) không khóa
   await expect(svc.setLocked(actor(a1), a2.id, true, null)).rejects.toMatchObject({ status: 403 });
   expect((await svc.setLocked(actor(a2), a1.id, false, null)).user.isLocked).toBe(false);
 });
+
+it('xóa: ADMIN đã bị khóa (token cũ còn hạn) không xóa được tài khoản khác (bao-mat TASK-LOCK-ADMIN-RACE ghi chú 1)', async () => {
+  const lec = await prisma.user.create({ data: { code: 'GVX', email: 'gvx@t.vn', fullName: 'GV', passwordHash: 'x', role: 'LECTURER' } });
+  await prisma.user.update({ where: { id: a1.id }, data: { isLocked: true } });
+  await expect(svc.remove(actor(a1), lec.id, null)).rejects.toMatchObject({ status: 403 });
+  expect(await prisma.user.findUnique({ where: { id: lec.id } })).not.toBeNull();
+});
