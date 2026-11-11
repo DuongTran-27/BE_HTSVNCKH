@@ -16,3 +16,13 @@ npm run test:e2e -w @nckh/web                     → 68 passed
 npx vitest run src/lib/changeRequests.test.js      → 1 passed (trước khi sửa: 1 failed)
 npm test                                          → 73 + 966 + 236 passed
 ```
+
+## Bổ sung: FR04, FR09, FR10 (`apps/web/e2e/gd45b.spec.js`)
+- TC-FR04-E01 cán bộ tạo đợt: mốc sai thứ tự bị chặn (thông điệp "Các mốc phải theo thứ tự…", không ghi DB), sửa đúng thì tạo được.
+- TC-FR09-E01 giảng viên hướng dẫn thêm mốc rồi đổi hạn kèm lý do: có đúng một MilestoneDueChange với lý do.
+- TC-FR10-E01 trưởng nhóm gửi cập nhật tiến độ: hiện trong danh sách, lưu percent 40.
+Dùng đề tài `S.gd6.change` (không spec nào khác kiểm mốc/tiến độ của đề tài này).
+```
+npm run test:e2e -w @nckh/web -- e2e/gd45b.spec.js → 6 passed
+npm run test:e2e -w @nckh/web                      → 74 passed
+```

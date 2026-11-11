@@ -35,3 +35,16 @@ npx vitest run tests/T207a-accounts.test.js                    → Tests 29 pass
 npm run lint                                                   → không lỗi
 npm test                                                       → 73 + 966 + 236 passed
 ```
+
+## Sửa theo `reviews/TASK-USER-DELETE-bao-mat-v2.md` (m4 – race xóa ‖ thao tác đang ghi AuditLog)
+- Migration `20261111000000_audit_actor_fk`: khóa ngoại `AuditLog.actorId → User.id ON DELETE RESTRICT ON UPDATE CASCADE` (schema: quan hệ `AuditActor`). Migration dừng với thông điệp rõ nếu DB đã có dòng AuditLog mồ côi (không tự sửa lịch sử chỉ-thêm). Hai thao tác giờ tuần tự ở mức DB: ghi AuditLog cho người vừa bị xóa thì lỗi FK và thao tác đó rollback.
+- Đã áp lên DB dev (`npx prisma migrate deploy` → nckh_dev, không có dòng mồ côi). `prisma generate` báo EPERM khi chép DLL engine (API dev đang chạy giữ file); phần JS client đã sinh lại (có `AuditActor`), engine không đổi phiên bản nên dùng được – khởi động lại API dev khi tiện.
+- Ngoài phạm vi, bao-mat ghi nhận: `setLocked` có race tương tự (hai ADMIN khóa nhau cùng lúc → không còn ADMIN hoạt động), lỗi có từ trước – đề nghị task riêng.
+```
+npx vitest run tests/security/TASK-USER-DELETE-bao-mat-v2.test.js → 1 passed (trước khi sửa: 1 failed)
+npx vitest run tests/security/TASK-USER-DELETE-bao-mat.test.js    → 3 passed
+npx vitest run tests/T207a-accounts.test.js                       → 29 passed
+npx vitest run tests/T204-audit.test.js                           → 18 passed
+npm test                                                          → 73 + 967 + 236 passed
+npm run test:e2e -w @nckh/web                                     → 74 passed
+```

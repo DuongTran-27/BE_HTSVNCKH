@@ -73,7 +73,7 @@ Kiểm tra đủ định nghĩa hoàn thành mục 4 `QUY_TRINH.md` ("mỗi FR P
 `VAN_HANH.md` §6.4 mục 1–9 (header `x-middleware-*` rỗng, chặn gọi thẳng Render, **số hop → `trust proxy`**, tắt Data API, cron qua Vercel, **nhập CSV 2.000 dòng vs timeout proxy**, tách role, header bảo mật, Swagger tắt); p95 NFR04 trên hạ tầng thật; cookie Chrome/Safari (NFR01); sao lưu hằng ngày + biên bản diễn tập khôi phục (FR26); chạy thật `reminders.yml`/`similarity-recheck.yml` (FR13, G5). **MAJOR T703c mục 3 chỉ đóng khi §6.4 có số đo thật**; mã `LOG_PROXY_HOPS` gỡ sau khi đo.
 
 ## 4. Mục chưa có test tự động (tóm tắt cho T708)
-1. E2E: FR09, FR10, FR04 (2026-11-11 đã thêm `e/gd6b.spec.js`: TC-FR18-E01, TC-FR19-E01, TC-FR20-E01, TC-FR22-E01, TC-FR23-E01; đã có từ T707b: FR24 tải tài liệu `e/m4.spec.js` TC-FR24-E01; hồ sơ cờ G5 + job similarity-recheck `e/gd6.spec.js` TC-FR06-E10). Các FR này vẫn có integration + test component (bảng trên).
+1. E2E: không còn FR P1/P2 nào chỉ có integration (2026-11-11 đã thêm `e/gd6b.spec.js`: TC-FR18-E01, TC-FR19-E01, TC-FR20-E01, TC-FR22-E01, TC-FR23-E01; `e/gd45b.spec.js`: TC-FR04-E01, TC-FR09-E01, TC-FR10-E01; đã có từ T707b: FR24 tải tài liệu `e/m4.spec.js` TC-FR24-E01; hồ sơ cờ G5 + job similarity-recheck `e/gd6.spec.js` TC-FR06-E10). Các FR này vẫn có integration + test component (bảng trên).
 2. FR26 (chạy workflow thật, diễn tập khôi phục), NFR10, "tiếng Việt toàn bộ" (NFR07), Safari (NFR01), Data API anon key (NFR03): sau deploy/thủ công.
 3. Recall ≥ 80% ở REVIEW+ đã được assert (`a/fr06-dataset.test.js` TC-FR06-93, T707b-qa); với điểm tên pg_trgm thật cũng đã assert (TC-FR06-95).
 4. (Đã xử lý T707b-qa) ID E2E FR14 đổi thành TC-FR14-E03/E04.
