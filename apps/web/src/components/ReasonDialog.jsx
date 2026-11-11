@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { reasonSchema } from '@nckh/shared';
 import { applyServerErrors } from '../lib/forms.js';
 import { FormField } from './FormField.jsx';
-import { btnDanger, btnGhost, useDialogA11y } from './ui.jsx';
+import { btnDanger, btnGhost, dialogOverlay, dialogPanel, useDialogA11y } from './ui.jsx';
 
 /** Hộp nhập lý do bắt buộc (reasonSchema 5–2000). onSubmit(reason) ném ApiError → hiện lỗi dưới ô hoặc ở hộp */
 export function ReasonDialog({ title, message, label = 'Lý do', confirmLabel, onSubmit, onCancel }) {
@@ -19,10 +19,10 @@ export function ReasonDialog({ title, message, label = 'Lý do', confirmLabel, o
     }
   };
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <form ref={ref} role="dialog" aria-modal="true" aria-label={title} noValidate onSubmit={handleSubmit(submit)} className="w-full max-w-md space-y-3 rounded-lg bg-white p-4 shadow-lg">
+    <div className={dialogOverlay}>
+      <form ref={ref} role="dialog" aria-modal="true" aria-label={title} noValidate onSubmit={handleSubmit(submit)} className={dialogPanel}>
         <h2 className="text-lg font-semibold">{title}</h2>
-        {message && <p className="text-slate-700">{message}</p>}
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
         <FormField label={label} error={errors.reason?.message}><textarea rows={4} {...register('reason')} /></FormField>
         {errors.root?.message && <p role="alert" className="text-sm text-red-700 break-words">{errors.root.message}</p>}
         <div className="flex flex-wrap justify-end gap-2">

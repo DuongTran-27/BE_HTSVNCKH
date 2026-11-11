@@ -12,7 +12,7 @@ import { useCooldown } from '../lib/useCooldown.js';
 import { DebouncedInput } from './ListFilters.jsx';
 import { FormField } from './FormField.jsx';
 import { SimilarityPanel } from './SimilarityPanel.jsx';
-import { FormError, Options, btnGhost, btnPrimary } from './ui.jsx';
+import { FormError, Options, btnGhost, btnPrimary, dialogOverlay, dialogPanel } from './ui.jsx';
 
 const HINT = {
   ADVISOR_CHANGE: 'Giảng viên mới phải đồng ý, sau đó cán bộ khoa duyệt. Trong lúc chờ, giảng viên hiện tại vẫn làm việc bình thường. Giảng viên cũ mất mọi quyền khi yêu cầu được duyệt, trừ khi cán bộ khoa cấp quyền chỉ đọc.',
@@ -73,9 +73,9 @@ export function ChangeRequestForm({ topic, kind, onClose }) {
   });
 
   return (
-    <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+    <div className={`${dialogOverlay} items-start`}>
       <form role="dialog" aria-modal="true" aria-label={CHANGE_TYPE_LABEL[kind]} noValidate onSubmit={handleSubmit((v) => create.mutate(v))}
-        className="w-full max-w-lg space-y-3 rounded-lg bg-white p-4 shadow-lg">
+        className={`${dialogPanel} max-w-lg`}>
         <h2 className="text-lg font-semibold">{CHANGE_TYPE_LABEL[kind]}</h2>
         <p className="text-sm text-slate-700">{HINT[kind]}</p>
         {kind === 'ADVISOR_CHANGE' && <LecturerSelect topic={topic} register={register} error={errors.newLecturerId?.message} />}

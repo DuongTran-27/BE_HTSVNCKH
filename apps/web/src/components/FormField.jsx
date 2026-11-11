@@ -1,9 +1,11 @@
 import { cloneElement, useId } from 'react';
+import { Label } from '@/components/ui/label';
 
-// Ô nhập ≥ 16 px (iOS không tự phóng to), vùng chạm ≥ 44 px (UI §8)
-export const inputClass = 'block w-full min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base shadow-sm transition '
-  + 'placeholder:text-slate-400 hover:border-slate-400/60 focus:border-blue-600 focus:outline-none focus:ring-3 focus:ring-blue-600/20 '
-  + 'disabled:bg-slate-100 aria-invalid:border-red-600 aria-invalid:ring-red-600/20';
+// Class của Input shadcn/ui (dùng chung cho input/textarea/select gốc để giữ register() của RHF); ô ≥ 16 px, cao ≥ 44 px (UI §8)
+export const inputClass = 'block w-full min-h-11 rounded-md border border-input bg-background px-3 py-2 text-base shadow-xs '
+  + 'transition-[color,box-shadow] outline-none placeholder:text-muted-foreground hover:border-slate-400 '
+  + 'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 '
+  + 'aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20';
 
 /**
  * Nhãn trên ô + ô (children, một phần tử) + lỗi ngay dưới ô (NFR07).
@@ -17,14 +19,14 @@ export function FormField({ label, error, hint, children, className = '' }) {
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-800">{label}</label>
+      <Label htmlFor={id} className="mb-1.5">{label}</Label>
       {cloneElement(children, {
         id,
         className: children.props.className ?? inputClass,
         'aria-invalid': error ? true : undefined,
         'aria-describedby': describedBy,
       })}
-      {hint && <p id={hintId} className="mt-1 text-sm text-slate-600">{hint}</p>}
+      {hint && <p id={hintId} className="mt-1 text-sm text-muted-foreground">{hint}</p>}
       {error && <p id={errorId} className="mt-1 text-sm text-red-700 break-words">{error}</p>}
     </div>
   );

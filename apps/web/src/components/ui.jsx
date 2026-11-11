@@ -1,15 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ChevronLeft, ChevronRight, Inbox, KeyRound, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
+import { Badge as UiBadge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-export const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold '
-  // Phản hồi khi nhấn: co 3% trong 150ms (skill review-animations); prefers-reduced-motion tắt ở index.css
-  + 'transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] '
-  + 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:pointer-events-none disabled:opacity-50';
-export const btnPrimary = `${btn} bg-vlu-red text-white hover:bg-vlu-red-dark`;
-export const btnGhost = `${btn} border border-blue-700/30 bg-white text-blue-800 hover:border-blue-700 hover:bg-blue-50`;
-export const btnDanger = `${btn} border-2 border-red-700 bg-white text-red-700 hover:bg-red-50`;
-export const card = 'rounded-lg border border-slate-300 bg-white p-4 sm:p-5';
-export const tableFrame = 'overflow-x-auto rounded-lg border border-slate-300 bg-white';
+// Nút dựa trên buttonVariants của shadcn/ui; vùng chạm ≥ 44 px (UI §8), co 3% khi nhấn (skill review-animations)
+const press = 'min-h-11 px-4 font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.97]';
+export const btn = cn(buttonVariants({ variant: 'outline' }), press);
+export const btnPrimary = cn(buttonVariants(), press);
+export const btnGhost = cn(buttonVariants({ variant: 'outline' }), press, 'border-blue-700/30 text-blue-800 hover:border-blue-700');
+export const btnDanger = cn(buttonVariants({ variant: 'outline' }), press, 'border-destructive text-destructive hover:bg-red-50 hover:text-destructive');
+// Cùng class với Card của shadcn/ui (bo góc, viền, nền thẻ) nhưng giữ dạng chuỗi để các trang ghép thêm class
+export const card = 'rounded-xl border bg-card p-4 text-card-foreground sm:p-5';
+export const tableFrame = 'overflow-x-auto rounded-xl border bg-card';
+// Lớp phủ và khung hộp thoại theo DialogOverlay/DialogContent của shadcn/ui, cho hộp thoại tự quản focus (ReasonDialog…)
+export const dialogOverlay = 'fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/50 p-4 animate-in fade-in-0';
+export const dialogPanel = 'w-full max-w-md space-y-3 rounded-lg border bg-background p-6 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200';
 /** Chữ tắt cho ô avatar: chữ đầu của 2 từ cuối họ tên ("Nguyễn Thị Minh Anh" → "MA") */
 export const initials = (name = '') => name.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
@@ -19,7 +27,7 @@ export function PageHeader({ title, description, children }) {
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
         <h1 className="break-words text-2xl font-bold sm:text-3xl">{title}</h1>
-        {description && <p className="mt-1 text-sm text-slate-600">{description}</p>}
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       {children && <div className="flex flex-wrap gap-2">{children}</div>}
     </div>
@@ -28,18 +36,21 @@ export function PageHeader({ title, description, children }) {
 
 /** Trạng thái đang tải / lỗi (error.message từ API) / dữ liệu; empty: nội dung khi rỗng (UI §6) */
 export function QueryBox({ query, empty, isEmpty, children }) {
-  if (query.isPending) return <p role="status" className="flex items-center gap-2 py-6 text-slate-600"><Loader2 aria-hidden="true" className="size-4 animate-spin" />Đang tải…</p>;
+  if (query.isPending) return <p role="status" className="flex items-center gap-2 py-6 text-muted-foreground"><Loader2 aria-hidden="true" className="size-4 animate-spin" />Đang tải…</p>;
   if (query.isError) {
     return (
-      <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
-        <p className="flex items-start gap-2 break-words"><AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />{query.error.message}</p>
-        <button type="button" onClick={() => query.refetch()} className={`${btnGhost} mt-2`}>Thử lại</button>
-      </div>
+      <Alert variant="destructive" className="border-red-200 bg-red-50">
+        <AlertCircle aria-hidden="true" />
+        <AlertDescription className="break-words text-red-800">
+          {query.error.message}
+          <button type="button" onClick={() => query.refetch()} className={`${btnGhost} mt-2`}>Thử lại</button>
+        </AlertDescription>
+      </Alert>
     );
   }
   if (empty && isEmpty?.(query.data)) return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-600">
-      <Inbox aria-hidden="true" className="size-8 text-blue-500" />
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card px-4 py-12 text-center text-muted-foreground">
+      <span className="grid size-14 place-items-center rounded-full bg-accent"><Inbox aria-hidden="true" className="size-7 text-blue-700" /></span>
       <p>{empty}</p>
     </div>
   );
@@ -58,7 +69,7 @@ export function Badge({ children, tone = 'slate' }) {
     amber: 'bg-amber-50 text-amber-900 ring-amber-600/25', red: 'bg-red-50 text-red-800 ring-red-600/20',
     blue: 'bg-blue-50 text-blue-800 ring-blue-700/20',
   }[tone];
-  return <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${t}`}>{children}</span>;
+  return <UiBadge variant="outline" className={cn('border-0 ring-1 ring-inset', t)}>{children}</UiBadge>;
 }
 
 /** Con dấu trạng thái ở đầu trang chi tiết đề tài – điểm nhấn duy nhất của giao diện, luôn màu son */
@@ -101,20 +112,22 @@ export function useDialogA11y(onEscape) {
   return ref;
 }
 
+// Dialog của shadcn/ui (Radix): khóa focus, Esc đóng, trả focus về nút đã mở; luôn mở khi được render
 export function ConfirmDialog({ title, message, confirmLabel = 'Xác nhận', danger, busy, error, onConfirm, onCancel }) {
-  const ref = useDialogA11y(onCancel);
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-blue-900/50 p-4">
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md animate-fade-up rounded-lg border border-slate-300 bg-white p-6 shadow-xl">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="mt-2 text-sm text-slate-600">{message}</p>
-        {error && <p role="alert" className="mt-2 text-sm text-red-700 break-words">{error}</p>}
-        <div className="mt-6 flex flex-wrap justify-end gap-2">
+    <Dialog open onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent showCloseButton={false} aria-label={title} className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
+        </DialogHeader>
+        {error && <p role="alert" className="text-sm text-red-700 break-words">{error}</p>}
+        <DialogFooter>
           <button type="button" onClick={onCancel} className={btnGhost}>Hủy</button>
           <button type="button" onClick={onConfirm} disabled={busy} className={danger ? btnDanger : btnPrimary}>{busy ? 'Đang xử lý…' : confirmLabel}</button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -130,7 +143,7 @@ export function TempPasswordBox({ password, onClose }) {
     }
   };
   return (
-    <div role="alertdialog" aria-label="Mật khẩu tạm" className="rounded-xl border border-amber-300 bg-amber-50 p-5">
+    <div role="alertdialog" aria-label="Mật khẩu tạm" className="rounded-xl border border-amber-300 bg-amber-50 p-5 animate-in fade-in-0 slide-in-from-top-1">
       <h2 className="flex items-center gap-2 font-semibold"><KeyRound aria-hidden="true" className="size-4" />Mật khẩu tạm</h2>
       <p className="mt-2 break-all rounded-md border border-amber-200 bg-white p-3 font-mono text-lg tracking-wider" data-testid="temp-password">{password}</p>
       <p className="mt-2 text-sm text-red-800">Mật khẩu chỉ hiện một lần. Người dùng phải đổi mật khẩu ở lần đăng nhập đầu.</p>
@@ -146,7 +159,7 @@ export function Pager({ page, pageSize, total, onPage }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
-      <span className="text-slate-600">Trang {page}/{pages} ({total} mục)</span>
+      <span className="text-muted-foreground">Trang {page}/{pages} ({total} mục)</span>
       <div className="flex gap-2">
         <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} className={btnGhost}><ChevronLeft aria-hidden="true" className="size-4" />Trang trước</button>
         <button type="button" disabled={page >= pages} onClick={() => onPage(page + 1)} className={btnGhost}>Trang sau<ChevronRight aria-hidden="true" className="size-4" /></button>
@@ -164,7 +177,7 @@ export function CheckGroup({ legend, options, value = [], onChange, error }) {
       <div className="flex flex-wrap gap-x-4">
         {options.map((o) => (
           <label key={o.id} className="inline-flex min-h-11 items-center gap-2">
-            <input type="checkbox" checked={value.includes(o.id)} onChange={() => toggle(o.id)} className="size-5 accent-blue-700" />
+            <input type="checkbox" checked={value.includes(o.id)} onChange={() => toggle(o.id)} className="size-5 rounded border-input accent-blue-700" />
             {o.label}
           </label>
         ))}

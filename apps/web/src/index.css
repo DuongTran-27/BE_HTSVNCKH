@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @import "@fontsource/be-vietnam-pro/400.css";
 @import "@fontsource/be-vietnam-pro/500.css";
 @import "@fontsource/be-vietnam-pro/600.css";
@@ -31,6 +32,7 @@
   --color-seal: #d72134;
 
   /* Phẳng: bóng nhỏ/vừa (thẻ, ô nhập ở mọi trang) bị tắt tại đây; chỉ hộp thoại, toast giữ shadow-lg/xl */
+  --shadow-xs: 0 0 #0000;
   --shadow-sm: 0 0 #0000;
   --shadow-md: 0 0 #0000;
 
@@ -54,7 +56,54 @@
   }
 }
 
+/*
+ * Token màu của component shadcn/ui (UI.md U9) ánh xạ vào nhận diện Văn Lang: nút chính đỏ Văn Lang, chữ và vòng focus
+ * navy, nền thẻ trắng, viền slate-300. Không có chế độ tối.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #101129;
+  --card: #ffffff;
+  --card-foreground: #101129;
+  --popover: #ffffff;
+  --popover-foreground: #101129;
+  --primary: #d72134;
+  --primary-foreground: #ffffff;
+  --secondary: #e2e5f4;
+  --secondary-foreground: #1f2251;
+  --muted: #f5f6fc;
+  --muted-foreground: #475569;
+  --accent: #f2f5ff;
+  --accent-foreground: #1f2251;
+  --destructive: #b91c1c;
+  --border: #d2d3dc;
+  --input: #d2d3dc;
+  --ring: #1f2251;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
 @layer base {
+  * { @apply border-border; }
   html { -webkit-font-smoothing: antialiased; }
   body { @apply bg-slate-50 text-blue-900; }
   h1 { @apply tracking-tight text-blue-900; }
