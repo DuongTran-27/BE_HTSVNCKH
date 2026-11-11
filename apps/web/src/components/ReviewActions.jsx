@@ -60,7 +60,7 @@ export function ReviewActions({ topic, submission, backTo }) {
 
   if (submission.decision || actions.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-2 rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm max-sm:sticky max-sm:bottom-0 max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0" role="group" aria-label="Quyết định">
+    <div className="flex flex-wrap gap-2 rounded-xl border bg-card p-3 shadow-sm max-sm:sticky max-sm:bottom-0 max-sm:-mx-4 max-sm:rounded-none max-sm:border-x-0" role="group" aria-label="Quyết định">
       {actions.includes('APPROVE') && <button type="button" className={btnPrimary} onClick={() => open('APPROVE')}>Duyệt</button>}
       {actions.includes('REQUEST_REVISION') && <button type="button" className={btnGhost} onClick={() => open('REQUEST_REVISION')}>{ACTION_LABEL.REQUEST_REVISION}</button>}
       {actions.includes('REJECT') && <button type="button" className={btnDanger} onClick={() => open('REJECT')}>{ACTION_LABEL.REJECT}</button>}

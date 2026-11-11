@@ -90,14 +90,14 @@ export function CatalogPage({ kind }) {
 
   return (
     <section className="space-y-4">
-      <h1 className="text-2xl font-semibold">Danh mục {cfg.noun}</h1>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Danh mục {cfg.noun}</h1>
       <nav aria-label="Loại danh mục" className="flex flex-wrap gap-1">
         {TABS.filter(([, roles]) => roles.includes(user.role)).map(([k]) => (
           <NavLink key={k} to={`/quan-ly/danh-muc/${k}`} className={({ isActive }) => `inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors ${isActive ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-700/15' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>{KINDS[k].title}</NavLink>
         ))}
       </nav>
 
-      <form onSubmit={handleSubmit(onCreate)} noValidate className="grid max-w-3xl gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-5" aria-label={`Thêm ${cfg.noun}`}>
+      <form onSubmit={handleSubmit(onCreate)} noValidate className="grid max-w-3xl gap-3 rounded-xl border bg-card p-4 shadow-sm sm:grid-cols-2 sm:p-5" aria-label={`Thêm ${cfg.noun}`}>
         {cfg.parent && (
           <FormField label={cfg.parent.label} error={errors[cfg.parent.name]?.message}>
             <select {...register(cfg.parent.name)}><Options placeholder={`Chọn ${cfg.parent.label.toLowerCase()}`} options={opt(parents.data ?? [], 'id', (p) => parentName[p.id])} /></select>
@@ -127,7 +127,7 @@ export function CatalogPage({ kind }) {
 
       <QueryBox query={list} empty={`Chưa có ${cfg.noun} nào.`} isEmpty={(items) => items.length === 0}>
         {(items) => (
-          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
+          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border bg-card shadow-sm">
             {items.map((item) => {
               const inactive = item.isActive === false;
               const isEditing = editing?.id === item.id;

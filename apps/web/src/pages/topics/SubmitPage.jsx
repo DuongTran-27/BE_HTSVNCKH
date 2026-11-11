@@ -83,7 +83,7 @@ function Submit({ topic: t }) {
     <div className="max-w-2xl space-y-4">
       <header>
         <p className="text-sm text-slate-700">{t.code}</p>
-        <h1 className="text-2xl font-semibold">{label}</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{label}</h1>
       </header>
 
       <div>

@@ -55,9 +55,9 @@ export function ChangePasswordPage() {
 
   return (
     <main className="mx-auto max-w-md py-4 sm:py-8">
-      <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5 sm:p-8">
+      <div className="rounded-xl border bg-card p-4 shadow-sm sm:p-8">
       <span className="grid size-11 place-items-center rounded-xl bg-blue-50 text-blue-700"><KeyRound aria-hidden="true" className="size-5" /></span>
-      <h1 className="mt-4 text-2xl font-semibold">Đổi mật khẩu</h1>
+      <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Đổi mật khẩu</h1>
       {user.mustChangePassword && (
         <p role="status" className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">Bạn cần đổi mật khẩu trước khi tiếp tục</p>
       )}

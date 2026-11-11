@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { ArrowLeft } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +11,7 @@ import { useAuth } from '../../lib/auth.js';
 import { fmtDateTime } from '../../lib/format.js';
 import { toast } from '../../lib/toast.js';
 import { FormField } from '../../components/FormField.jsx';
-import { ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
+import { Badge, ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary, initials } from '../../components/ui.jsx';
 
 // R8 – UI §4.8, API §5.3–5.4. GV và cán bộ chỉ xem (permissions đều false).
 export function GroupPage() {
@@ -38,7 +40,7 @@ function InviteForm({ topic }) {
     onSettled: () => refresh(qc, topic.id),
   });
   return (
-    <form noValidate onSubmit={handleSubmit((v) => invite.mutate(v))} className="max-w-sm space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+    <form noValidate onSubmit={handleSubmit((v) => invite.mutate(v))} className="max-w-sm space-y-3 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
       <FormField label="Mã sinh viên" error={errors.inviteeCode?.message}><input type="text" {...register('inviteeCode')} /></FormField>
       <button type="submit" disabled={invite.isPending} className={btnPrimary}>{invite.isPending ? 'Đang xử lý…' : 'Mời thành viên'}</button>
     </form>
@@ -71,14 +73,19 @@ function Group({ topic: t }) {
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-sm text-slate-700">{t.code}</p>
-        <h1 className="text-2xl font-semibold">Nhóm ({t.members.length}{max ? `/${max}` : ''})</h1>
-        <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline-offset-4 hover:underline">Về chi tiết đề tài</Link>
+        <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-blue-900"><ArrowLeft aria-hidden="true" className="size-4" />Về chi tiết đề tài</Link>
+        <p className="text-sm text-muted-foreground tabular-nums">{t.code}</p>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Nhóm ({t.members.length}{max ? `/${max}` : ''})</h1>
       </header>
       <ul className="space-y-2">
         {t.members.map((m) => (
-          <li key={m.userId} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm break-words">
-            {m.code} – {m.fullName} · {m.role === 'LEADER' ? 'Trưởng nhóm' : 'Thành viên'} · tham gia {fmtDateTime(m.joinedAt)}
+          <li key={m.userId} className="flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm">
+            <Avatar aria-hidden="true" className="size-10"><AvatarFallback className="bg-blue-100 text-sm font-semibold text-blue-800">{initials(m.fullName)}</AvatarFallback></Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="break-words font-medium">{m.code} – {m.fullName}</p>
+              <p className="text-xs text-muted-foreground">tham gia {fmtDateTime(m.joinedAt)}</p>
+            </div>
+            <Badge tone={m.role === 'LEADER' ? 'blue' : 'slate'}>{m.role === 'LEADER' ? 'Trưởng nhóm' : 'Thành viên'}</Badge>
           </li>
         ))}
       </ul>
@@ -101,7 +108,7 @@ function Group({ topic: t }) {
       {t.permissions?.invite && <InviteForm topic={t} />}
 
       {t.permissions?.transferLeader && others.length > 0 && (
-        <div className="max-w-sm space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+        <div className="max-w-sm space-y-3 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
           <FormField label="Đổi trưởng nhóm sang">
             <select value={newLeader} onChange={(e) => setNewLeader(e.target.value)}>
               <Options placeholder="Chọn thành viên" options={others.map((m) => ({ value: m.userId, label: `${m.code} – ${m.fullName}` }))} />

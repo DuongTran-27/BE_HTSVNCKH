@@ -9,7 +9,7 @@ function Notice({ title, icon: Icon, hint }) {
   return (
     <section className="flex flex-col items-center py-16 text-center">
       <span className="grid size-16 place-items-center rounded-full bg-slate-100 text-slate-500"><Icon aria-hidden="true" className="size-8" /></span>
-      <h1 className="mt-4 text-2xl font-semibold">{title}</h1>
+      <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
       <p className="mt-2 max-w-md text-sm text-slate-600">{hint}</p>
       <Link to={homePath(user?.role)} className={`${btnPrimary} mt-6`}>
         Về trang chủ

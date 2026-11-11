@@ -165,7 +165,7 @@ function UserDetail({ user: target }) {
       </form>
 
       {isAdmin && target.role === 'STAFF' && (
-        <div className="max-w-xl space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+        <div className="max-w-xl space-y-2 rounded-xl border bg-card p-4 shadow-sm">
           <h2 className="font-semibold">Phạm vi khoa</h2>
           <p className="text-sm text-amber-900">Lưu sẽ thay toàn bộ phạm vi.</p>
           <CheckGroup legend="Khoa phụ trách" value={scopes} onChange={setScopes} options={(allFaculties.data ?? []).map((f) => ({ id: f.id, label: f.name }))} />

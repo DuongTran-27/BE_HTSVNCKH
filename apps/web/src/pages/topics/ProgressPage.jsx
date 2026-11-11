@@ -51,7 +51,7 @@ function ProgressItem({ topic: t, p }) {
   // Chỉ chính tác giả sửa được và chỉ khi chưa bị khóa (FR10); backend kiểm lại
   const canEdit = t.permissions?.addProgress && p.author?.id === user.id && !p.lockedAt;
   return (
-    <li className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+    <li className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-lg font-bold">{p.percent}%</span>
         <Badge tone="amber">Tự khai</Badge>
@@ -91,7 +91,7 @@ function ProgressForm({ topic, p, onDone }) {
     if (err?.status === 429) cd.start(err.retryAfter); // khóa nút đến hết Retry-After
   };
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm" aria-label={p ? 'Sửa tiến độ' : 'Cập nhật tiến độ'}>
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border bg-card p-5 shadow-sm" aria-label={p ? 'Sửa tiến độ' : 'Cập nhật tiến độ'}>
       <FormField label="Việc đã làm" error={errors.done?.message}><textarea rows={3} {...register('done')} /></FormField>
       <FormField label="Khó khăn" error={errors.issues?.message}><textarea rows={2} {...register('issues')} /></FormField>
       <FormField label="Kế hoạch tới" error={errors.nextPlan?.message}><textarea rows={2} {...register('nextPlan')} /></FormField>

@@ -81,7 +81,7 @@ function ResultForm({ topic, expectedVersion }) {
     toast('Đã lưu kết quả cuối', { type: 'success' });
   });
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm" aria-label="Nhập kết quả cuối">
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border bg-card p-5 shadow-sm" aria-label="Nhập kết quả cuối">
       <p className="font-medium">{expectedVersion ? 'Nhập lại kết quả (tạo phiên bản mới)' : 'Nhập kết quả cuối'}</p>
       <FormField label="Kết quả" error={errors.result?.message}>
         <select {...register('result')}><Options placeholder="Chọn kết quả" options={Object.values(FINAL_RESULT).map((v) => ({ value: v, label: FINAL_RESULT_LABEL[v] }))} /></select>
@@ -117,7 +117,7 @@ function CorrectionForm({ topic, current, onClose }) {
     if (err?.status === 429) setError('root', { message: err.message });
   };
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm" aria-label="Sửa kết quả">
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border bg-card p-5 shadow-sm" aria-label="Sửa kết quả">
       <p className="font-medium">Sửa kết quả (tạo phiên bản {current.version + 1}, phiên bản cũ vẫn được lưu)</p>
       <FormField label="Kết quả" error={errors.result?.message}>
         <select {...register('result')}><Options options={Object.values(FINAL_RESULT).map((v) => ({ value: v, label: FINAL_RESULT_LABEL[v] }))} /></select>

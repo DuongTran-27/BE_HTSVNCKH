@@ -26,7 +26,7 @@ export function ChangeRequestsPage() {
   const query = useQuery({ queryKey: ['change-requests', 'all', params], queryFn: () => api(`/change-requests${qs(params)}`) });
   return (
     <section className="space-y-3">
-      <h1 className="text-2xl font-semibold">Yêu cầu thay đổi</h1>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Yêu cầu thay đổi</h1>
       <div className="flex flex-wrap gap-2">
         <Select label="Trạng thái" value={status} onChange={(v) => u.set('status', v === 'PENDING' ? '' : v)} labels={{ ...REQUEST_STATUS_LABEL, ALL: 'Tất cả' }} />
         <Select label="Loại yêu cầu" value={type} onChange={(v) => u.set('type', v)} labels={CHANGE_TYPE_LABEL} placeholder="Mọi loại" />

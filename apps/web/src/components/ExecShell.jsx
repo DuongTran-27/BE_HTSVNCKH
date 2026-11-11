@@ -2,7 +2,7 @@ import { Link, NavLink, useParams } from 'react-router';
 import { TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { useTopic } from '../lib/queries.js';
 import { EXEC_STATUSES } from '../lib/execution.js';
-import { QueryBox, btnGhost } from './ui.jsx';
+import { Badge, QueryBox, STATUS_TONE, btnGhost, card } from './ui.jsx';
 
 /** Tải đề tài theo :id; 403/404 hiện tại chỗ (UI §4.6), lỗi khác qua QueryBox */
 export function TopicQuery({ children }) {
@@ -46,10 +46,17 @@ export function ExecShell({ title, children }) {
       <TopicQuery>
         {(t) => (
           <div className="space-y-4">
-            <header className="space-y-2">
-              <p className="break-words text-sm text-slate-700">{t.code} · {TOPIC_STATUS_LABEL[t.status] ?? t.status}</p>
-              <h1 className="break-words text-2xl font-semibold">{title}</h1>
-              <ExecTabs topic={t} />
+            <header className={`${card} space-y-3`}>
+              <p className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground tabular-nums">{t.code}</span>
+                <span className="sr-only"> · </span>
+                <Badge tone={STATUS_TONE[t.status]}>{TOPIC_STATUS_LABEL[t.status] ?? t.status}</Badge>
+              </p>
+              <div>
+                <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+                {t.title && <p className="mt-1 break-words text-sm text-muted-foreground">{t.title}</p>}
+              </div>
+              <div className="border-t pt-3"><ExecTabs topic={t} /></div>
             </header>
             {children(t)}
           </div>

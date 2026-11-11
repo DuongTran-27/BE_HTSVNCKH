@@ -69,7 +69,7 @@ export function TopicListPage() {
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">{TITLE[user?.role] ?? 'Đề tài'}</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{TITLE[user?.role] ?? 'Đề tài'}</h1>
         {isStudent && <Link to="/de-tai/moi" className={btnPrimary}>Tạo đề tài</Link>}
       </div>
       {isStudent && pending > 0 && (

@@ -29,7 +29,7 @@ export function ReviewPage() {
                 <div className="space-y-4">
                   <header className={card}>
                     <p className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-medium text-slate-700">{t.code}</p>
-                    <h1 className="mt-2 text-2xl font-semibold">Xét duyệt – lần gửi {s.seq}</h1>
+                    <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Xét duyệt – lần gửi {s.seq}</h1>
                     <p className="mt-1 flex items-start gap-1.5 text-sm text-slate-600"><Clock aria-hidden="true" className="mt-0.5 size-4 shrink-0" /><span>
                       Gửi lúc {fmtDateTime(s.createdAt)} bởi {s.createdBy?.fullName} · Hạn xét duyệt {fmtDateTime(t.round.reviewDeadline)}
                       {list.data && ` · Tổng ${list.data.length} lần gửi`}

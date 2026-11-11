@@ -43,7 +43,7 @@ const Score = ({ label, value }) => (
 function Match({ m }) {
   if (m.hidden) {
     return (
-      <li className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+      <li className="rounded-xl border bg-card p-4 shadow-sm">
         <p className="break-words">{m.note}</p>
         <Score label="Điểm tên" value={m.titleScore} /><Score label="Điểm nội dung" value={m.contentScore} />
         <Badge tone={LEVEL_TONE[m.level]}>{SIMILARITY_LEVEL_LABEL[m.level]}</Badge>
@@ -51,8 +51,8 @@ function Match({ m }) {
     );
   }
   return (
-    <li className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-      <p className="break-words font-medium">{m.code} – {m.title}</p>
+    <li className="rounded-xl border bg-card p-4 shadow-sm">
+      <p className="break-words font-medium">{m.code}{m.title && ` – ${m.title}`}</p>
       <p className="text-sm text-slate-700">{m.academicYear}{m.field ? ` · ${m.field}` : ''}{m.status ? ` · ${m.status}` : ''}</p>
       <Score label="Điểm tên" value={m.titleScore} /><Score label="Điểm nội dung" value={m.contentScore} />
       <Badge tone={LEVEL_TONE[m.level]}>{SIMILARITY_LEVEL_LABEL[m.level]}</Badge>

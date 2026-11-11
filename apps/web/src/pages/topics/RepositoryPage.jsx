@@ -20,7 +20,7 @@ export function RepositoryPage() {
   const yearBad = u.get('academicYear') && !params.academicYear;
   return (
     <section>
-      <h1 className="text-2xl font-semibold">Kho đề tài</h1>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Kho đề tài</h1>
       <div className="mt-4 grid gap-3 rounded-xl border bg-card p-4 shadow-sm sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
         <DebouncedInput label="Tìm kiếm" value={params.q} onCommit={(v) => u.set('q', v)} placeholder="Mã, tên, từ khóa" />
         <div>
@@ -39,7 +39,7 @@ export function RepositoryPage() {
             <>
               <ul className="space-y-2">
                 {d.items.map((t) => (
-                  <li key={t.code} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                  <li key={t.code} className="rounded-xl border bg-card p-4 shadow-sm">
                     <Link to={`/kho/${encodeURIComponent(t.code)}`} className="break-words font-medium text-blue-700 underline-offset-4 hover:underline">{t.code} – {t.title}</Link>
                     <p className="mt-1 break-words text-sm text-slate-800">{t.summaryExcerpt}</p>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-700">
@@ -72,7 +72,7 @@ export function RepositoryDetailPage() {
           {(t) => (
             <div className="space-y-3">
               <Link to="/kho" className="text-blue-700 underline-offset-4 hover:underline">Về kho đề tài</Link>
-              <h1 className="break-words text-2xl font-semibold">{t.code} – {t.title}</h1>
+              <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl">{t.code} – {t.title}</h1>
               <p className="flex flex-wrap items-center gap-2 text-sm text-slate-700">{t.field?.name} · {t.academicYear} <Badge tone="green">{FINAL_RESULT_LABEL[t.result] ?? t.result}</Badge></p>
               <div><h2 className="font-bold">Tóm tắt</h2><p className="whitespace-pre-wrap break-words">{t.summary}</p></div>
             </div>

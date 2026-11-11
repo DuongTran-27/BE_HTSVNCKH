@@ -16,7 +16,7 @@ export function SubmissionPage() {
         {(s) => (
           <div className="space-y-4">
             <header>
-              <h1 className="text-2xl font-semibold">Lần gửi {s.seq}</h1>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Lần gửi {s.seq}</h1>
               <p className="text-sm text-slate-700">{fmtDateTime(s.createdAt)} · {s.createdBy?.fullName}</p>
               {s.seq > 1 && <Link to={`/de-tai/${id}/so-sanh?from=${s.seq - 1}&to=${s.seq}`} className="text-blue-700 underline-offset-4 hover:underline">So sánh với lần trước</Link>}
             </header>

@@ -41,16 +41,16 @@ function MilestoneCard({ topic: t, m }) {
   const toggle = (x) => setMode((v) => (v === x ? null : x));
   const d = m.latestDocument;
   return (
-    <li className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+    <li className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="break-words font-bold">{m.order}. {m.name}</h2>
+        <h2 className="break-words text-base font-semibold">{m.order}. {m.name}</h2>
         <Badge tone={EVAL_TONE[m.evaluation]}>{MILESTONE_EVAL_LABEL[m.evaluation] ?? m.evaluation}</Badge>
         <Badge>{m.required ? 'Bắt buộc' : 'Không bắt buộc'}</Badge>
         {m.isOverdue && <Badge tone="red">Quá hạn</Badge>}
       </div>
-      <p className="whitespace-pre-wrap break-words"><span className="font-medium">Đầu ra yêu cầu:</span> {m.output}</p>
-      <p>Hạn: {fmtDateTime(m.dueAt)}{m.dueChangeCount > 0 && ` · đã đổi hạn ${m.dueChangeCount} lần`}</p>
-      <p>
+      <p className="whitespace-pre-wrap break-words text-sm"><span className="text-muted-foreground">Đầu ra yêu cầu:</span> <span className="font-medium">{m.output}</span></p>
+      <p className="text-sm font-medium tabular-nums">Hạn: {fmtDateTime(m.dueAt)}{m.dueChangeCount > 0 && ` · đã đổi hạn ${m.dueChangeCount} lần`}</p>
+      <p className="text-sm text-muted-foreground">
         Bản nộp mới nhất: {d ? <>phiên bản {d.version} lúc {fmtDateTime(d.uploadedAt)} {d.isLate && <Badge tone="red">Nộp muộn</Badge>}</> : 'chưa nộp'}
         {' · '}<Link to={`/de-tai/${t.id}/tai-lieu`} className="text-blue-700 underline-offset-4 hover:underline">Tài liệu</Link>
       </p>
@@ -106,7 +106,7 @@ function MilestoneForm({ topic, m, onDone }) {
     onDone();
   });
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm" aria-label={m ? 'Sửa mốc' : 'Thêm mốc'}>
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border bg-card p-5 shadow-sm" aria-label={m ? 'Sửa mốc' : 'Thêm mốc'}>
       <FormField label="Tên mốc" error={errors.name?.message}><input type="text" {...register('name')} /></FormField>
       <FormField label="Đầu ra yêu cầu" error={errors.output?.message}><textarea rows={3} {...register('output')} /></FormField>
       {!m && <FormField label="Hạn (giờ Việt Nam)" error={errors.dueAt?.message}><input type="datetime-local" {...register('dueAt')} /></FormField>}
@@ -132,7 +132,7 @@ function DueChangeForm({ topic, m, onDone }) {
     onDone();
   });
   return (
-    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm" aria-label="Đổi hạn mốc">
+    <form noValidate onSubmit={handleSubmit(submit)} className="max-w-xl space-y-4 rounded-xl border bg-card p-5 shadow-sm" aria-label="Đổi hạn mốc">
       <FormField label="Hạn mới (giờ Việt Nam)" error={errors.newDueAt?.message}><input type="datetime-local" {...register('newDueAt')} /></FormField>
       <FormField label="Lý do đổi hạn" error={errors.reason?.message}><textarea rows={3} {...register('reason')} /></FormField>
       <FormError error={errors.root?.message} />

@@ -36,7 +36,7 @@ function TopicRequests({ topic: t }) {
       <header className="space-y-2">
         <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline-offset-4 hover:underline">← Chi tiết đề tài</Link>
         <p className="break-words text-sm text-slate-700">{t.code}</p>
-        <h1 className="break-words text-2xl font-semibold">Yêu cầu thay đổi</h1>
+        <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl">Yêu cầu thay đổi</h1>
         <ExecTabs topic={t} />
       </header>
       <ReadOnlyBanner topic={t} />

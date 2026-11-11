@@ -69,7 +69,7 @@ export function StatsPage() {
     <section>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Thống kê</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Thống kê</h1>
           <p className="mt-1 text-sm text-slate-600">Số đề tài theo {dim.toLowerCase()}; biểu đồ, bảng và file CSV dùng cùng bộ lọc.</p>
         </div>
         <button type="button" className={btnPrimary} disabled={busy} onClick={exportCsv}><Download aria-hidden="true" className="size-4" />{busy ? 'Đang tải…' : 'Xuất CSV'}</button>
@@ -118,7 +118,7 @@ export function StatsPage() {
                   </div>
                   <StatsChart rows={d.rows} type={chart} label={dim} />
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-sm">
+                <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
                   <table className="text-left">
                     <caption className="px-4 pt-4 pb-3 text-left font-semibold sm:px-5">Số đề tài theo {dim.toLowerCase()} (tổng {d.total})</caption>
                     <thead><tr><th scope="col" className="px-4 py-2 sm:px-5">{dim}</th><th scope="col" className="px-4 py-2 text-right">Số đề tài</th><th scope="col" className="px-4 py-2 text-right sm:px-5">Tỉ lệ</th></tr></thead>

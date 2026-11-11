@@ -13,7 +13,7 @@ function Tip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const { label, count } = payload[0].payload;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-lg">
+    <div className="rounded-lg border bg-popover px-3 py-2 text-sm shadow-md">
       <p className="font-medium text-slate-900">{label}</p>
       <p className="text-slate-600">{count} đề tài</p>
     </div>

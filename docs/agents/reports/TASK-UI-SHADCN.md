@@ -82,3 +82,21 @@ npm run lint                      → không lỗi
 npx vitest run (apps/web)         → 236 passed
 npm run build -w @nckh/web        → built
 ```
+
+## Vòng 5 (2026-11-11): làm đẹp nốt các trang còn lại (yêu cầu người dùng)
+- Đổi hàng loạt: 37 khung thẻ kiểu cũ `border-slate-200/80 bg-white` → token `border bg-card` (cùng bóng/bo góc của giao diện mới); 24 tiêu đề trang `text-2xl font-semibold` → `font-bold tracking-tight sm:text-3xl` như PageHeader; tooltip biểu đồ dùng `bg-popover`.
+- `ExecShell` (tab Mốc/Tiến độ/Tài liệu/Yêu cầu): đầu trang thành thẻ – nhãn mã đề tài, nhãn trạng thái màu (giữ " · " sr-only), tên đề tài, thanh tab ngăn bằng đường kẻ.
+- `GroupPage`: link quay lại có mũi tên lên đầu; thành viên có avatar + nhãn vai trò (giữ chuỗi "mã – họ tên" liền một phần tử cho test).
+- `MilestonesPage`: nhãn xám, nội dung đậm (giữ "1. Tên mốc" và "Hạn: …" là chuỗi liền – test tìm nguyên chuỗi).
+- `SimilarityPanel`: thiếu tên đề tài thì chỉ hiện mã (bản ghi kiểm trùng cũ trong DB dev tạo bằng engine cũ chưa lưu `title`).
+- Không đổi logic, nhãn, tên nút. Đã xem ảnh chụp 22 trang (cán bộ, giảng viên, sinh viên).
+
+**Test chập chờn có từ trước (không sửa test, quy tắc 1 – để reviewer quyết):** `tests/guards.test.jsx` "mustChangePassword…" và `tests/change-requests.test.jsx` "chỉ hiện nút…" thỉnh thoảng trượt khi chạy cả bộ web song song (tìm phần tử ngay sau khi route đổi, trang lazy chưa xong). Chạy riêng 8/8 đạt ở cả code cũ và mới; chạy cả bộ xen kẽ: code mới trượt 1/5, code gốc trượt 2/5 → không do vòng này. Đề xuất: dùng `findBy…` thay `getBy…` sau khi chờ route.
+
+Bằng chứng vòng 5:
+```
+npm run lint                  → không lỗi
+npx vitest run (apps/web)     → 236 passed (lần chạy cuối)
+npm test                      → 73 + 972 passed; web: xem ghi chú chập chờn ở trên
+npm run test:e2e -w @nckh/web → 74 passed
+```

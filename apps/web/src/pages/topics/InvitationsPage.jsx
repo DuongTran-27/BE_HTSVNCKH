@@ -39,7 +39,7 @@ export function InvitationsPage() {
   const ask = (inv, kind) => { setError(''); setConfirm({ inv, kind }); };
   return (
     <section>
-      <h1 className="text-2xl font-semibold">Lời mời</h1>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Lời mời</h1>
       <div role="tablist" className="mt-3 flex flex-wrap gap-2">
         {TABS.map((t) => (
           <button key={t} type="button" role="tab" aria-selected={t === status} onClick={() => setSp({ status: t })} className={`${btnGhost} ${t === status ? 'border-blue-700 font-bold' : ''}`}>{REQUEST_STATUS_LABEL[t]}</button>
@@ -51,7 +51,7 @@ export function InvitationsPage() {
             <>
               <ul className="space-y-2">
                 {d.items.map((inv) => (
-                  <li key={inv.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                  <li key={inv.id} className="rounded-xl border bg-card p-4 shadow-sm">
                     <p className="break-words font-medium">{inv.topic.code}{inv.topic.title ? ` – ${inv.topic.title}` : ''}</p>
                     <p className="break-words text-sm text-slate-700">{inv.topic.round?.name} · Trưởng nhóm: {inv.topic.leader.fullName} ({inv.topic.leader.code}) · {inv.topic.memberCount} thành viên · Mời lúc {fmtDateTime(inv.createdAt)}</p>
                     {inv.status === 'PENDING' && (
