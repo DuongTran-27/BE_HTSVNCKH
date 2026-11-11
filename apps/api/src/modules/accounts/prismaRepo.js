@@ -72,12 +72,21 @@ export const createAccountRepo = (prisma) => ({
   },
 
   // Xóa cứng chỉ khi chưa có dữ liệu nghiệp vụ: FK RESTRICT (P2003) -> rollback, 409 (NFR05). AuditLog ghi trước khi xóa.
-  remove: async (id, compute) => {
+  // compute(before, { actorExists, adminsLeft }) kiểm quyền; adminsLeft = số ADMIN còn lại nếu xóa.
+  remove: async (id, actorId, compute) => {
+    const inUse = () => conflict('IN_USE', 'Tài khoản đã có dữ liệu nghiệp vụ nên không thể xóa, hãy khóa tài khoản thay vì xóa');
     try {
       return await prisma.$transaction(async (tx) => {
+        // Khóa mọi dòng ADMIN theo thứ tự id rồi mới tới dòng bị xóa: hai ADMIN xóa nhau chạy tuần tự, không thể còn 0 ADMIN
+        const admins = await tx.$queryRaw`SELECT id FROM "User" WHERE role = 'ADMIN' ORDER BY id FOR UPDATE`;
         await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR UPDATE`;
         const before = await tx.user.findUnique({ where: { id }, include: withScopes });
-        const { buildAudits } = compute(before);
+        const actorExists = !!(await tx.user.findUnique({ where: { id: actorId }, select: { id: true } }));
+        const adminsLeft = admins.length - (before?.role === 'ADMIN' ? 1 : 0);
+        const { buildAudits } = compute(before, { actorExists, adminsLeft });
+        // Tham chiếu không có FK RESTRICT: người thực hiện trong AuditLog (FR15 "ghi ai"); ChangeRequest người đích/người quyết định (SET NULL)
+        if (await tx.auditLog.findFirst({ where: { actorId: id }, select: { id: true } })) throw inUse();
+        if (await tx.changeRequest.findFirst({ where: { OR: [{ targetUserId: id }, { decidedById: id }] }, select: { id: true } })) throw inUse();
         for (const a of buildAudits()) await recordAudit(tx, a);
         await tx.staffScope.deleteMany({ where: { userId: id } });
         await tx.refreshToken.deleteMany({ where: { userId: id } });
@@ -85,9 +94,7 @@ export const createAccountRepo = (prisma) => ({
         await tx.user.delete({ where: { id } });
       });
     } catch (e) {
-      if (e?.code === 'P2003') {
-        throw conflict('IN_USE', 'Tài khoản đã có dữ liệu nghiệp vụ nên không thể xóa, hãy khóa tài khoản thay vì xóa');
-      }
+      if (e?.code === 'P2003') throw inUse();
       throw e;
     }
   },

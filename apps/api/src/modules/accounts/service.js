@@ -1,7 +1,7 @@
 // Tài khoản (FR02, FR25, API_GD2 §3). ADMIN quản mọi tài khoản; STAFF chỉ LECTURER/STUDENT trong phạm vi khoa.
 // Không có endpoint đổi role, không tự đăng ký. Mật khẩu tạm chỉ trả một lần, không vào log/AuditLog.
 import { ROLES } from '@nckh/shared';
-import { badRequest, forbidden, notFound } from '../../lib/errors.js';
+import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { generateTempPassword } from '../../lib/tempPassword.js';
 
 const STAFF_MANAGED = [ROLES.LECTURER, ROLES.STUDENT];
@@ -163,9 +163,11 @@ export const createAccountService = ({ repo, hasher, genPassword = generateTempP
     // Chỉ ADMIN; tài khoản đã tham gia nghiệp vụ không xóa được (409), dùng khóa thay thế
     async remove(actor, id, ip) {
       if (actor.role !== ROLES.ADMIN) throw forbidden();
-      await repo.remove(id, (before) => {
+      await repo.remove(id, actor.id, (before, { actorExists, adminsLeft }) => {
+        if (!actorExists) throw forbidden(); // người thực hiện vừa bị xóa trong lúc chờ khóa
         mustManage(actor, before);
         notSelf(actor, before);
+        if (adminsLeft < 1) throw conflict('LAST_ADMIN', 'Phải còn ít nhất một quản trị viên');
         return {
           buildAudits: () => [audit(actor, ip, 'USER_DELETE', id, { code: before.code, role: before.role, ...profile(before) }, null)],
         };

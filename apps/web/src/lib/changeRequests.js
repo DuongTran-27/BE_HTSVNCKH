@@ -59,5 +59,5 @@ export const mapServerDetails = (err) => {
   if (!err.details || typeof err.details !== 'object') return err;
   const details = {};
   for (const [k, m] of Object.entries(err.details)) details[fieldOf(k.split('.'))] = m;
-  return { ...err, details };
+  return { ...err, message: err.message, details }; // message của Error không enumerable: spread làm mất
 };

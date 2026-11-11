@@ -20,3 +20,18 @@ npx vitest run tests/admin.test.jsx (web)     → Tests 21 passed (21)
 npm run lint                                  → không lỗi
 npm test                                      → 73 + 960 + 234 passed, 0 failed
 ```
+
+## Sửa theo `reviews/TASK-USER-DELETE-bao-mat-v1.md` (CHANGES_REQUESTED)
+- **M1** (AuditLog.actorId không có FK): trong transaction, tài khoản từng là người thực hiện bất kỳ dòng AuditLog nào → 409 IN_USE (chỉ khóa được). Đăng nhập/đổi mật khẩu không ghi AuditLog nên tài khoản chưa thao tác vẫn xóa được.
+- **m1** (ChangeRequest.targetUserId/decidedById là SET NULL, trigger ném lỗi → 500): kiểm tra tường minh, có tham chiếu → 409 IN_USE.
+- **m2** (có thể còn 0 ADMIN): khóa mọi dòng ADMIN theo thứ tự id trước dòng bị xóa; kiểm lại người thực hiện còn tồn tại (bị xóa trong lúc chờ khóa → 403) và số ADMIN còn lại ≥ 1 (`LAST_ADMIN` 409, phòng thủ thêm).
+- **m3**: DELETE dùng chung `writeLimiter` với tạo/reset.
+- Test tấn công của bao-mat `apps/api/tests/security/TASK-USER-DELETE-bao-mat.test.js` giữ nguyên, nay đạt.
+
+Bằng chứng (chạy khi không có tiến trình test khác dùng DB test):
+```
+npx vitest run tests/security/TASK-USER-DELETE-bao-mat.test.js → Tests 3 passed (trước khi sửa: 3 failed)
+npx vitest run tests/T207a-accounts.test.js                    → Tests 29 passed
+npm run lint                                                   → không lỗi
+npm test                                                       → 73 + 966 + 236 passed
+```

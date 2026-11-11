@@ -61,7 +61,7 @@ export const accountsRouter = ({ repo, hasher, guard, genPassword }) => {
   r.patch('/:id', adminOrStaff, validate(userUpdateSchema), async (req, res) => {
     res.json(await svc.update(req.user, req.params.id, req.body, req.ip));
   });
-  r.delete('/:id', requireRole('ADMIN'), async (req, res) => {
+  r.delete('/:id', writeLimiter, requireRole('ADMIN'), async (req, res) => {
     await svc.remove(req.user, req.params.id, req.ip);
     res.status(204).end();
   });
