@@ -66,8 +66,9 @@ describe('Yêu cầu của đề tài: nút tạo theo permissions', () => {
     map['GET /topics/t1'] = { topic: topic({}, { requestTopicChange: true, requestCancel: true }) };
     open('/de-tai/t1/yeu-cau', U('STUDENT'));
     expect(await screen.findByText('Chưa có yêu cầu nào')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Thay đổi hồ sơ' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Đề nghị hủy đề tài' })).toBeTruthy();
+    // Nút theo permissions của đề tài (query riêng) có thể đến sau danh sách – chờ thay vì đọc ngay
+    expect(await screen.findByRole('button', { name: 'Thay đổi hồ sơ' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Đề nghị hủy đề tài' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Thay giảng viên' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Xin rời nhóm' })).toBeNull();
   });

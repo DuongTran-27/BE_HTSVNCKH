@@ -61,8 +61,9 @@ describe('guard', () => {
   it('mustChangePassword: mọi route khác → /doi-mat-khau; menu ẩn, chỉ còn Đăng xuất', async () => {
     const router = await open('/de-tai', U('STUDENT', { mustChangePassword: true }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/doi-mat-khau'));
+    // Chờ layout dựng xong (trang lazy) rồi mới kiểm menu ẩn – tránh chập chờn khi cả bộ chạy song song
+    expect((await screen.findAllByRole('button', { name: 'Đăng xuất' })).length).toBeGreaterThan(0);
     expect(screen.queryByRole('navigation', { name: 'Menu chính' })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Đăng xuất' }).length).toBeGreaterThan(0);
   });
   it('cờ mustChangePassword bật giữa chừng (API trả 403) → layout chuyển /doi-mat-khau', async () => {
     const router = await open('/de-tai', U('STUDENT'));

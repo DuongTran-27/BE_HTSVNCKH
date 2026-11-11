@@ -100,3 +100,12 @@ npx vitest run (apps/web)     → 236 passed (lần chạy cuối)
 npm test                      → 73 + 972 passed; web: xem ghi chú chập chờn ở trên
 npm run test:e2e -w @nckh/web → 74 passed
 ```
+
+## Sửa test chập chờn (người dùng đồng ý 2026-11-11)
+Nguyên nhân chung: `findBy*`/`waitFor` chờ mặc định 1 s; khi cả bộ web chạy song song, trang lazy tải lần đầu có lúc vượt 1 s (trượt ngẫu nhiên ở guards, change-requests, review…).
+- `apps/web/tests/setup.js` + `vite.config.js` `setupFiles`: `configure({ asyncUtilTimeout: 3000 })` – chỉ tăng thời gian chờ, không nới điều kiện kiểm.
+- `tests/guards.test.jsx`, `tests/change-requests.test.jsx`: `getBy*` ngay sau khi route đổi → `findBy*` (chờ cùng phần tử, cùng điều kiện).
+```
+npx vitest run (apps/web) × 8 → 0/8 trượt (trước: 1–2/5 ở cả code cũ)
+npm run lint → không lỗi; npm test → 73 + 972 + 236 passed
+```
