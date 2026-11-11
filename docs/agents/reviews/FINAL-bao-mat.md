@@ -1,18 +1,17 @@
-# Review bảo mật cuối dự án (T708) – v1
-Kết luận: **APPROVED** (BLOCKER 0, MAJOR mã nguồn 0; 4 MINOR không chặn; các mục chỉ kiểm được sau deploy thuộc việc của con người, liệt kê ở mục 4)
+# Review bảo mật cuối dự án – v2 (chạy lại 2026-11-11)
+Kết luận: **APPROVED** (BLOCKER 0, MAJOR 0; 2 MINOR mới không chặn; mục sau deploy ở §6)
 
-Trước bản này chưa có `FINAL-bao-mat.md`. Mục 3 đối chiếu các mục còn mở của những review bảo mật trước.
+Lần trước: v1 T708 ngày 2026-11-08, APPROVED (0 BLOCKER, 0 MAJOR, 4 MINOR – cả 4 đã đóng ở BUG-016, xem §3).
+Phạm vi lần này: toàn dự án, chú trọng thay đổi `4bcd6df..HEAD` (xóa tài khoản, FK AuditLog.actorId, race khóa/xóa ADMIN, P2003 → 409, shadcn/ui, đăng nhập nhanh bản dev, script demo).
 
-## 1. Bằng chứng chạy (2026-11-08, DB test đang chạy)
-- `npm audit --omit=dev`: `found 0 vulnerabilities`.
-- `npx vitest run tests/security` (apps/api): 13 file / 236 ca pass.
-- `npx vitest run tests/T706b.test.js tests/auth.test.js tests/T205-auth-db.test.js tests/T703b.test.js tests/T206-errors.test.js`: 5 file / 70 ca pass.
-- `npx vitest run tests` (apps/web, gồm `middleware.test.js` và `tests/security`): 14 file / 165 ca pass.
-- Probe tạm (đã xóa): chạy app thật với `createLogger` + pino-http, đăng nhập rồi gọi `/api/auth/me` kèm Bearer và cookie. Log không chứa refresh token hay access token. Đạt.
-- Truy vấn DB test: 30/30 bảng `public` có `relrowsecurity = true`.
-- `git ls-files`: chỉ có `.env.example` và `.env.test` (DB test cục bộ `postgres:postgres@localhost`). `.gitignore` chặn `.env` và `.env.*`.
-- `git grep` chuỗi kết nối và `cloudinary://`: chỉ thấy URL localhost/test và giá trị giả trong test.
-- `git log --all -p`: không có host Supabase/Cloudinary thật. Lịch sử chưa từng xóa file `.env`.
+## 1. Bằng chứng chạy (2026-11-11)
+- `npm run db:test:up` → "Kiểm tra DB test: tất cả OK"; `npm run db:test:reset` → "Đã reset DB test (migrate reset)" (áp toàn bộ migration, gồm `20261111000000_audit_actor_fk`, không lỗi).
+- `npx vitest run tests/security/<file>` (apps/api), từng file một: 17 file / 247 ca pass (BUG-001 5, BUG-002 5, setLocked-admin-race 3, T199-input-size 6, T199-rate-limit 2, T205-bao-mat 1, T207a-bao-mat 1, T207a-vong1 4, T207b-multipart 11, T215 20, T215-bao-mat 15, T403-cleanup-guard 1, T703a-bao-mat 154, T703c-bao-mat 14, TASK-LOCK-ADMIN-RACE-bao-mat 1, TASK-USER-DELETE-bao-mat 3, TASK-USER-DELETE-bao-mat-v2 1). Lưu ý: chạy trước khi reset thì 6 file lỗi `relation "topic_code_seq" does not exist` – do DB mới dựng chưa migrate, không phải lỗi mã.
+- Truy vấn DB test: 29/29 bảng ứng dụng trong `public` có `relrowsecurity = true`; `AuditLog_actorId_fkey` có `confdeltype = 'r'` (RESTRICT).
+- `npm run build -w @nckh/web` → "built". `grep -rlE "QT001|Nckh@2026|nckh.example|CB001|GV001|2374801030010|Đăng nhập nhanh" apps/web/dist` → rỗng.
+- `npm audit --omit=dev` → `found 0 vulnerabilities`. `npm audit` → 4 moderate (minimatch qua eslint 10, chỉ dev, ReDoS khi lint glob của chính repo; không vào bundle/server).
+- `git ls-files`: chỉ `.env.example`, `.env.test`; `.gitignore` chặn `.env`, `.env.*`, `*.local.json` (file `demo-people.local.json` không bị track). `git grep` chuỗi kết nối/`cloudinary://`/khóa riêng: chỉ placeholder `<ref>:<mk>` trong `docs/VAN_HANH.md`.
+- `npm run db:test:down` → đã dừng.
 
 ## 2. Rà danh mục
 | Nhóm | Kết quả |
@@ -34,19 +33,27 @@ Trước bản này chưa có `FINAL-bao-mat.md`. Mục 3 đối chiếu các m�
 | RLS Supabase | Đạt. Mọi bảng bật RLS không có policy. Role app/backup dùng `BYPASSRLS` theo VAN_HANH §5. |
 | Phụ thuộc | Đạt. `npm audit --omit=dev` báo 0 lỗ hổng. |
 
+| Xóa tài khoản (mới) | Đạt. `DELETE /api/users/:id`: `writeLimiter` + `requireRole('ADMIN')` + kiểm lại trong service; `r.param('id')` kiểm UUID. Transaction khóa mọi dòng ADMIN theo thứ tự id rồi dòng đích (`FOR UPDATE`), kiểm người thực hiện còn hoạt động, không tự xóa, còn ≥1 ADMIN hoạt động; có AuditLog/ChangeRequest thì 409 `IN_USE`; FK RESTRICT (P2003) cũng ra 409. AuditLog `USER_DELETE` ghi trước khi xóa (FR15). |
+| Race khóa ADMIN (mới) | Đạt. `setLocked` với đích là ADMIN dùng `guardAdmins` (khóa các dòng ADMIN theo thứ tự), chặn khóa chéo làm còn 0 ADMIN; có test `setLocked-admin-race` và `TASK-LOCK-ADMIN-RACE-bao-mat`. |
+| errorHandler P2003 (mới) | Đạt. Thông điệp cố định, không lộ tên ràng buộc/bảng. |
+| Migration `audit_actor_fk` | Đạt với DB thật. Kiểm dòng mồ côi trước, có thì `RAISE EXCEPTION` (không tự sửa lịch sử); `ADD CONSTRAINT` khóa bảng ngắn, AuditLog nhỏ. Lưu ý vận hành: chạy `prisma migrate deploy` qua `migrate.yml` như các migration khác. |
+| Đăng nhập nhanh (mới) | Đạt. `LoginPage.jsx:21-23,91` bọc trong `import.meta.env.DEV`; bản build không chứa mã/mật khẩu mẫu (đã grep dist). |
+| Script demo (mới) | Đạt. `demo-people.js:40` và `demo-stats.js:92` từ chối khi `NODE_ENV=production`, rồi `assertSeedAllowedDb` đòi cờ `nckh.seed_allowed` ở mức database (phiên không tự đặt được). Hai lớp chặn độc lập. |
+| Dep UI mới | Đạt. radix-ui, cva, clsx, tailwind-merge, tw-animate-css: 0 lỗ hổng ở `--omit=dev`; không có `dangerouslySetInnerHTML`/`innerHTML`/`eval` trong `apps/web/src`. |
+
 ## 3. Mục còn mở từ các review trước
-Mọi review `*bao-mat*` đều kết thúc APPROVED; không còn BLOCKER/MAJOR mã nguồn. Đã kiểm lại các MINOR được giao sửa:
-- Đã đóng: T601 m2 (kiểm lại khoa của GV mới, `advisorChange.js`), T609 m3 (lọc đề tài đã kết thúc), T609 m4 (tách limiter cron), T706b MINOR 1 (helmet trước chốt), T215 #1/#2.
-- Còn mở, chấp nhận (không khai thác được): T609 m1 (trigger `submission_guard` nhận dòng OK mới hơn bất kỳ; chỉ là phòng thủ chiều sâu), T609 m2 / T601 m1 (khác biệt hiển thị cho GV, đúng đặc tả), T601 m4/m5 (cạnh tranh hiếm, không leo quyền), BUG-013 MINOR 1 (lệch thời gian ~2 ms với mật khẩu tạm).
-- **MAJOR T703c mục 3** (đo số hop rồi đặt `trust proxy`) vẫn mở, nhưng là việc sau deploy (mục 4). T706b MINOR 3: mã tạm `LOG_PROXY_HOPS` phải gỡ sau khi đo.
+- Đã đóng (BUG-016, kiểm lại): v1 MINOR 1 (`env.js:8-9` có `.max(900)` / `.max(30)`), MINOR 2 (`app.js:35` logger mặc định `level: 'silent'` + `LOG_REDACT`), MINOR 3 (`ci.yml` 3 checkout `persist-credentials: false`), MINOR 4 (`auth/routes.js:22-24` limiter 300/15 phút/IP cho refresh/logout).
+- Còn mở, chấp nhận như v1: T609 m1, T609 m2 / T601 m1, T601 m4/m5, BUG-013 MINOR 1.
+- MAJOR T703c mục 3 (đo hop, đặt `trust proxy`) và gỡ `LOG_PROXY_HOPS`: vẫn là việc sau deploy (§6).
 
 ## 4. MINOR mới (không chặn)
-1. `ACCESS_TOKEN_TTL_SECONDS` và `REFRESH_TOKEN_TTL_DAYS` (`config/env.js`) không có cận trên, nên cấu hình sai có thể vượt mức 15 phút của FR01. Nên thêm `.max(900)`. Hiện `render.yaml` không đặt biến này, nên dùng mặc định 900.
-2. Test dùng `logger: undefined` tạo logger pino-http mặc định, không redact, nên in cookie test ra stdout của vitest. Không ảnh hưởng production (`server.js` dùng `createLogger`), chỉ làm log CI ồn.
-3. Checkout trong `ci.yml` không đặt `persist-credentials: false`. Token chỉ có `contents: read`, workflow không chạy `pull_request_target`, nên rủi ro thấp.
-4. `/api/auth/refresh` và `/logout` không có limiter. Token là 256 bit ngẫu nhiên, nên không dò được; chỉ là tải DB.
+1. CSP `style-src 'self'` (`apps/web/vercel.json`) chặn thẻ `<style>` mà Radix Dialog chèn lúc chạy (react-remove-scroll-bar qua react-style-singleton, thấy `createElement("style")` trong `dist/assets/index-*.js`). Hệ quả: khi mở hộp thoại (AdvisingActions, CloseActions, MembershipActions, ChangeRequestCard…), Console báo vi phạm CSP và trang nền vẫn cuộn được. Không phải lỗ hổng, nhưng sẽ làm trượt mục sau deploy §6.8 ("Console không có vi phạm CSP"). Không nên nới thành `'unsafe-inline'` cho cả trang; cân nhắc chấp nhận và ghi vào VAN_HANH, hoặc dùng nonce/hash nếu chuyển sang cấu hình có thể chèn nonce. Cần kiểm trên bản preview.
+2. `npm audit` (kể cả dev) báo 4 moderate minimatch qua eslint 10. Chỉ dev, không có bản sửa không phá vỡ; theo dõi khi eslint ra bản vá.
 
-## 5. Chỉ kiểm được sau deploy (việc của con người, không chặn review mã)
+## 5. Ghi chú dữ liệu cá nhân
+AuditLog `USER_DELETE` giữ mã, vai trò, họ tên/email của tài khoản bị xóa (`accounts/service.js` hàm `remove`). Đây là chủ đích để truy vết (FR15), không chứa hash/mật khẩu (`redact()` vẫn áp dụng). Không có thay đổi log mới khác.
+
+## 6. Chỉ kiểm được sau deploy (việc của con người, không chặn review mã)
 Theo `docs/VAN_HANH.md` §6.4 (9 mục). Ghi số đo vào `reports/T706a.md` mục "Kết quả đo thật":
 1. `curl -sI https://<app>/api/health | grep -i '^x-middleware'` phải rỗng. Nếu không rỗng thì xoay `ORIGIN_SECRET`.
 2. Gọi thẳng `*.onrender.com/api/auth/me` phải nhận 404.
