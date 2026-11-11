@@ -52,7 +52,7 @@ function MilestoneCard({ topic: t, m }) {
       <p>Hạn: {fmtDateTime(m.dueAt)}{m.dueChangeCount > 0 && ` · đã đổi hạn ${m.dueChangeCount} lần`}</p>
       <p>
         Bản nộp mới nhất: {d ? <>phiên bản {d.version} lúc {fmtDateTime(d.uploadedAt)} {d.isLate && <Badge tone="red">Nộp muộn</Badge>}</> : 'chưa nộp'}
-        {' · '}<Link to={`/de-tai/${t.id}/tai-lieu`} className="text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Tài liệu</Link>
+        {' · '}<Link to={`/de-tai/${t.id}/tai-lieu`} className="text-blue-700 underline-offset-4 hover:underline">Tài liệu</Link>
       </p>
       {m.reopenCount > 0 && (
         <p className="break-words text-sm" data-testid="reopen-note">

@@ -56,7 +56,7 @@ export function RoundsPage() {
                   <tbody>
                     {d.items.map((r) => (
                       <tr key={r.id}>
-                        <td className="px-3 py-3 break-words"><Link className="font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700" to={`/quan-ly/dot/${r.id}`}>{r.name}</Link></td>
+                        <td className="px-3 py-3 break-words"><Link className="font-medium text-blue-700 underline-offset-4 hover:underline" to={`/quan-ly/dot/${r.id}`}>{r.name}</Link></td>
                         <td className="px-3 py-3">{facName[r.facultyId] ?? ''}</td>
                         <td className="px-3 py-3">{r.academicYear}</td>
                         <td className="px-3 py-3">{fmtDateTime(r.regOpenAt)}</td>

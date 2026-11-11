@@ -124,7 +124,7 @@ function TopicDetail({ topic: t }) {
               ))}
             </ul>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Link to={`/de-tai/${t.id}/nhom`} className="inline-flex min-h-11 items-center text-sm font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Quản lý nhóm</Link>
+              <Link to={`/de-tai/${t.id}/nhom`} className="inline-flex min-h-11 items-center text-sm font-medium text-blue-700 underline-offset-4 hover:underline">Quản lý nhóm</Link>
               <LeaveGroupButton topic={t} />
             </div>
           </div>

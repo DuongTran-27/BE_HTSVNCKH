@@ -35,7 +35,7 @@ function RequestCard({ r, user }) {
       </p>
       {r.reason && <p className="mt-1 break-words text-sm text-slate-700">Lý do: {r.reason}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
-        {!closedForLecturer && <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Xem hồ sơ</Link>}
+        {!closedForLecturer && <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline-offset-4 hover:underline">Xem hồ sơ</Link>}
         {actions.length > 0 && <AdvisingActions topic={t} actions={actions} redirectOnDecline={false} />}
       </div>
     </li>

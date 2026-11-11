@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { ChartColumn, ChartPie, Download, FilterX } from 'lucide-react';
+import { ChartColumn, ChartPie, Download, FileStack, FilterX, Layers, Trophy } from 'lucide-react';
 import { FINAL_RESULT_LABEL, STATS_DIMENSION_LABEL, STATS_GROUP_BY, TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { useAuth } from '../../lib/auth.js';
@@ -17,12 +17,15 @@ const STATUS_NO_DRAFT = Object.fromEntries(Object.entries(TOPIC_STATUS_LABEL).fi
 const CHARTS = { bar: ['Biểu đồ cột', ChartColumn], pie: ['Biểu đồ tròn', ChartPie] };
 const pct = (n, total) => (total ? `${Math.round((n / total) * 1000) / 10}%` : '—');
 
-function Tile({ label, value, note }) {
+function Tile({ label, value, note, icon: Icon, tone }) {
   return (
-    <div className={card}>
-      <p className="text-sm text-slate-600">{label}</p>
-      <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
-      {note && <p className="mt-1 break-words text-sm text-slate-500">{note}</p>}
+    <div className={`${card} flex items-start justify-between gap-4`}>
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="mt-2 text-3xl font-bold tracking-tight text-blue-900 tabular-nums">{value}</p>
+        {note && <p className="mt-1 break-words text-sm text-muted-foreground">{note}</p>}
+      </div>
+      <span aria-hidden="true" className={`grid size-11 shrink-0 place-items-center rounded-xl ${tone}`}><Icon className="size-5" /></span>
     </div>
   );
 }
@@ -97,9 +100,9 @@ export function StatsPage() {
             return (
               <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <Tile label="Tổng số đề tài" value={d.total} />
-                  <Tile label={`Số nhóm theo ${dim.toLowerCase()}`} value={d.rows.length} />
-                  <Tile label="Nhóm nhiều đề tài nhất" value={top.count} note={`${top.label} · ${pct(top.count, d.total)}`} />
+                  <Tile label="Tổng số đề tài" value={d.total} icon={FileStack} tone="bg-blue-50 text-blue-700" />
+                  <Tile label={`Số nhóm theo ${dim.toLowerCase()}`} value={d.rows.length} icon={Layers} tone="bg-amber-50 text-amber-700" />
+                  <Tile label="Nhóm nhiều đề tài nhất" value={top.count} note={`${top.label} · ${pct(top.count, d.total)}`} icon={Trophy} tone="bg-red-50 text-vlu-red" />
                 </div>
                 <div className={card}>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

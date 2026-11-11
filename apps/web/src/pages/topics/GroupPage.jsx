@@ -73,7 +73,7 @@ function Group({ topic: t }) {
       <header>
         <p className="text-sm text-slate-700">{t.code}</p>
         <h1 className="text-2xl font-semibold">Nhóm ({t.members.length}{max ? `/${max}` : ''})</h1>
-        <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Về chi tiết đề tài</Link>
+        <Link to={`/de-tai/${t.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline-offset-4 hover:underline">Về chi tiết đề tài</Link>
       </header>
       <ul className="space-y-2">
         {t.members.map((m) => (

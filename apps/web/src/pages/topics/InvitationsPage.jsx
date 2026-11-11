@@ -60,7 +60,7 @@ export function InvitationsPage() {
                         <button type="button" className={btnGhost} onClick={() => ask(inv, 'decline')}>Từ chối</button>
                       </div>
                     )}
-                    {inv.status === 'ACCEPTED' && <Link to={`/de-tai/${inv.topic.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">Xem đề tài</Link>}
+                    {inv.status === 'ACCEPTED' && <Link to={`/de-tai/${inv.topic.id}`} className="inline-flex min-h-11 items-center text-blue-700 underline-offset-4 hover:underline">Xem đề tài</Link>}
                   </li>
                 ))}
               </ul>

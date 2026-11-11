@@ -6,7 +6,8 @@ import { useAuth } from '../../lib/auth.js';
 import { qs } from '../../lib/format.js';
 import { useCatalog, useScopedFaculties } from '../../lib/queries.js';
 import { FilterX, Upload, UserPlus } from 'lucide-react';
-import { Badge, Options, PageHeader, Pager, QueryBox, btnGhost, btnPrimary, opt, tableFrame } from '../../components/ui.jsx';
+import { Badge, Options, PageHeader, Pager, QueryBox, btnGhost, btnPrimary, card, initials, opt, tableFrame } from '../../components/ui.jsx';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { inputClass } from '../../components/FormField.jsx';
 
 const FILTERS = ['role', 'facultyId', 'classId', 'isLocked', 'q'];
@@ -41,7 +42,7 @@ export function UsersPage() {
         <Link to="/quan-ly/tai-khoan/nhap-csv" className={btnGhost}><Upload aria-hidden="true" className="size-4" />Nhập CSV</Link>
         <Link to="/quan-ly/tai-khoan/moi" className={btnPrimary}><UserPlus aria-hidden="true" className="size-4" />Tạo tài khoản</Link>
       </PageHeader>
-      <form className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5" onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc tài khoản">
+      <form className={`${card} grid gap-3 sm:grid-cols-2 lg:grid-cols-5`} onSubmit={(e) => e.preventDefault()} aria-label="Bộ lọc tài khoản">
         <select aria-label="Vai trò" className={inputClass} value={params.role} onChange={(e) => set('role', e.target.value)}>
           <Options placeholder="Mọi vai trò" options={roles.map((r) => ({ value: r, label: ROLE_LABEL[r] }))} />
         </select>
@@ -63,22 +64,33 @@ export function UsersPage() {
           {(d) => (
             <>
               <div className={tableFrame}>
-                <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
+                <table className="w-full min-w-[44rem] border-collapse text-left text-sm">
                   <thead><tr>
-                    {['Mã', 'Họ tên', 'Email', 'Vai trò', 'Khoa', 'Lớp', 'Trạng thái'].map((h) => <th key={h} scope="col" className="px-3 py-2.5">{h}</th>)}
+                    {['Người dùng', 'Mã', 'Vai trò', 'Lớp', 'Trạng thái'].map((h) => <th key={h} scope="col" className="px-4 first:pl-5">{h}</th>)}
                   </tr></thead>
                   <tbody>
                     {d.items.map((u) => (
                       <tr key={u.id}>
-                        <td className="px-3 py-3"><Link className="font-mono font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700" to={`/quan-ly/tai-khoan/${u.id}`}>{u.code}</Link></td>
-                        <td className="px-3 py-3 break-words font-medium text-slate-900">{u.fullName}</td>
-                        <td className="px-3 py-3 break-all text-slate-600">{u.email}</td>
-                        <td className="px-3 py-3">{ROLE_LABEL[u.role]}</td>
-                        <td className="px-3 py-3">{facName[u.facultyId] ?? ''}</td>
-                        <td className="px-3 py-3">{clsCode[u.classId] ?? ''}</td>
-                        <td className="px-3 py-3 space-x-1">
-                          {u.isLocked ? <Badge tone="red">Đã khóa</Badge> : <Badge tone="green">Hoạt động</Badge>}
-                          {u.mustChangePassword && <Badge tone="amber">Chờ đổi mật khẩu</Badge>}
+                        <td className="py-3 pl-5 pr-4">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <Avatar aria-hidden="true" className="size-9"><AvatarFallback className="bg-blue-100 text-xs font-semibold text-blue-800">{initials(u.fullName)}</AvatarFallback></Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-blue-900">{u.fullName}</p>
+                              <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap"><Link className="font-medium text-blue-700 tabular-nums hover:underline underline-offset-4" to={`/quan-ly/tai-khoan/${u.id}`}>{u.code}</Link></td>
+                        <td className="px-4 py-3">
+                          <p className="whitespace-nowrap">{ROLE_LABEL[u.role]}</p>
+                          {facName[u.facultyId] && <p className="text-xs text-muted-foreground">{facName[u.facultyId]}</p>}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{clsCode[u.classId] ?? '—'}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {u.isLocked ? <Badge tone="red">Đã khóa</Badge> : <Badge tone="green">Hoạt động</Badge>}
+                            {u.mustChangePassword && <Badge tone="amber">Chờ đổi mật khẩu</Badge>}
+                          </div>
                         </td>
                       </tr>
                     ))}

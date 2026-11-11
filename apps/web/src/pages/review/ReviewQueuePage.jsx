@@ -54,7 +54,7 @@ export function ReviewQueuePage() {
                   return (
                     <li key={t.id} className={`relative rounded-xl border bg-white p-4 pr-10 shadow-sm transition-shadow hover:shadow-md ${late ? 'border-red-200 border-l-4 border-l-red-600' : 'border-slate-300'}`}>
                       <ChevronRight aria-hidden="true" className="absolute top-1/2 right-3 size-5 -translate-y-1/2 text-slate-300" />
-                      <Link to={`/xet-duyet/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title}</Link>
+                      <Link to={`/xet-duyet/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-700 underline-offset-4 hover:underline">{t.code} – {t.title}</Link>
                       <p className="mt-1 text-sm text-slate-700">{t.round.name} · Trưởng nhóm: {t.leader?.fullName} · {t.memberCount} thành viên · GVHD: {t.advisor?.fullName ?? 'Chưa có'}</p>
                       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                         <span className="inline-flex items-center gap-1.5 text-slate-600"><Send aria-hidden="true" className="size-3.5" />Gửi lúc {fmtDateTime(t.latestSubmission?.createdAt)} (lần {t.latestSubmission?.seq})</span>

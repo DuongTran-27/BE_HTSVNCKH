@@ -45,7 +45,7 @@ export function TopicListPage() {
   const pending = invitations.data?.total ?? 0;
   const yearBad = u.get('academicYear') && !params.academicYear;
   const filters = (
-    <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="mt-4 grid gap-3 rounded-xl border bg-card p-4 shadow-sm sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
       <DebouncedInput label="Tìm kiếm" value={params.q} onCommit={(v) => u.set('q', v)} placeholder="Mã, tên, từ khóa" />
       <FilterSelect label="Đợt" value={params.roundId} onChange={(v) => u.set('roundId', v)} placeholder="Mọi đợt"
         options={(rounds.data ?? []).map((r) => ({ value: r.id, label: `${r.name} (${r.academicYear})` }))} />
@@ -89,10 +89,10 @@ export function TopicListPage() {
         <QueryBox query={query} empty={u.any ? 'Không có đề tài nào khớp bộ lọc.' : 'Chưa có đề tài nào.'} isEmpty={(d) => d.items.length === 0}>
           {(d) => (
             <>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {d.items.map((t) => (
-                  <li key={t.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-                    <Link to={`/de-tai/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title}</Link>
+                  <li key={t.id} className="rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
+                    <Link to={`/de-tai/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words text-base font-semibold text-blue-900 underline-offset-4 hover:text-blue-700 hover:underline"><span className="mr-1.5 font-medium text-muted-foreground tabular-nums">{t.code}</span><span className="sr-only">– </span>{t.title}</Link>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
                       <Badge tone={STATUS_TONE[t.status]}>{TOPIC_STATUS_LABEL[t.status]}</Badge>
                       {t.round?.registrationOpen === false && STUCK.includes(t.status) && <Badge tone="amber">Đã đóng đăng ký</Badge>}

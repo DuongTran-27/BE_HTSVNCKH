@@ -13,8 +13,8 @@ export const btnPrimary = cn(buttonVariants(), press);
 export const btnGhost = cn(buttonVariants({ variant: 'outline' }), press, 'border-blue-700/30 text-blue-800 hover:border-blue-700');
 export const btnDanger = cn(buttonVariants({ variant: 'outline' }), press, 'border-destructive text-destructive hover:bg-red-50 hover:text-destructive');
 // Cùng class với Card của shadcn/ui (bo góc, viền, nền thẻ) nhưng giữ dạng chuỗi để các trang ghép thêm class
-export const card = 'rounded-xl border bg-card p-4 text-card-foreground sm:p-5';
-export const tableFrame = 'overflow-x-auto rounded-xl border bg-card';
+export const card = 'rounded-xl border bg-card p-4 text-card-foreground shadow-sm sm:p-6';
+export const tableFrame = 'overflow-x-auto rounded-xl border bg-card shadow-sm';
 // Lớp phủ và khung hộp thoại theo DialogOverlay/DialogContent của shadcn/ui, cho hộp thoại tự quản focus (ReasonDialog…)
 export const dialogOverlay = 'fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/50 p-4 animate-in fade-in-0';
 export const dialogPanel = 'w-full max-w-md space-y-3 rounded-lg border bg-background p-6 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200';
@@ -65,11 +65,15 @@ export const STATUS_TONE = {
 
 export function Badge({ children, tone = 'slate' }) {
   const t = {
-    slate: 'bg-slate-100 text-slate-700 ring-slate-500/20', green: 'bg-green-50 text-green-800 ring-green-600/20',
-    amber: 'bg-amber-50 text-amber-900 ring-amber-600/25', red: 'bg-red-50 text-red-800 ring-red-600/20',
-    blue: 'bg-blue-50 text-blue-800 ring-blue-700/20',
+    slate: ['bg-slate-100 text-slate-700', 'bg-slate-400'], green: ['bg-emerald-50 text-emerald-800', 'bg-emerald-500'],
+    amber: ['bg-amber-50 text-amber-900', 'bg-amber-500'], red: ['bg-red-50 text-red-800', 'bg-red-500'],
+    blue: ['bg-blue-50 text-blue-800', 'bg-blue-500'],
   }[tone];
-  return <UiBadge variant="outline" className={cn('border-0 ring-1 ring-inset', t)}>{children}</UiBadge>;
+  return (
+    <UiBadge variant="outline" className={cn('gap-1.5 border-0 py-1 pl-2 pr-2.5', t[0])}>
+      <span aria-hidden="true" className={cn('size-1.5 rounded-full', t[1])} />{children}
+    </UiBadge>
+  );
 }
 
 /** Con dấu trạng thái ở đầu trang chi tiết đề tài – điểm nhấn duy nhất của giao diện, luôn màu son */

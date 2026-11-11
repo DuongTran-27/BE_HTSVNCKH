@@ -27,7 +27,7 @@ export function StuckTopics({ roundId }) {
             <ul className="space-y-2">
               {d.items.map((t) => (
                 <li key={t.id} className="rounded-md border border-slate-300 bg-white p-2 text-sm">
-                  <Link to={`/de-tai/${t.id}`} className="break-words font-medium text-blue-700 underline decoration-blue-700/30 underline-offset-4 hover:decoration-blue-700">{t.code} – {t.title}</Link>
+                  <Link to={`/de-tai/${t.id}`} className="break-words font-medium text-blue-700 underline-offset-4 hover:underline">{t.code} – {t.title}</Link>
                   <p className="mt-1 flex flex-wrap items-center gap-2">
                     <Badge tone="amber">{TOPIC_STATUS_LABEL[t.status]}</Badge>
                     <span>{t.round?.name}{t.round?.regCloseAt ? ` · đóng đăng ký ${fmtDateTime(t.round.regCloseAt)}` : ''}</span>

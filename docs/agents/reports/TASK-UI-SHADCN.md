@@ -32,3 +32,18 @@ npm run test:e2e -w @nckh/web → 54 passed, 4 failed
 `npm run test:e2e -w @nckh/web` → **58 passed**.
 
 Đã xem bằng ảnh chụp Playwright: đăng nhập, thống kê, danh sách và chi tiết tài khoản, hộp xác nhận.
+
+## Vòng 2 (2026-11-11): người dùng thấy "vẫn xấu" → chọn hướng "Dashboard hiện đại"
+Vòng 1 chỉ thay ruột component nên nhìn gần như cũ. Vòng 2 đổi phong cách (người dùng chọn qua câu hỏi, thay điều kiện 2 của KTS; ghi ở UI.md U9):
+- Theme: bật lại bóng (`--shadow-xs/sm/md` mềm), bo góc rộng (md .5, lg .625, xl .875rem), nền trang #f6f7fb, viền nhạt hơn; đầu bảng kiểu Table shadcn (nền muted, chữ nhỏ in hoa xám), dòng đổi nền khi rê.
+- `Layout`: thanh bên sáng, logo khối navy, mục đang mở nền nhạt + vạch đỏ Văn Lang, nút "Thu gọn menu" (chỉ icon, nhớ bằng localStorage, có try/catch); di động giữ menu cuộn ngang (E2E mobile không đổi).
+- `Badge` có chấm màu; `card`/`tableFrame` có bóng; danh sách tài khoản: cột "Người dùng" (avatar + tên + email), khoa đưa xuống dưới vai trò, không ngắt chữ giữa email; ô số liệu thống kê có icon; thẻ đề tài có mã xám + tên đậm, bóng khi rê (giữ " – " cho trình đọc màn hình); bộ lọc danh sách đề tài/kho nằm trong thẻ; liên kết bỏ gạch chân thường trực (gạch khi rê); trang đăng nhập: form trong thẻ, nền trái có hai vầng sáng (đỏ/xanh, `-z-10`).
+
+Bằng chứng vòng 2:
+```
+npm run lint                  → không lỗi
+npm test                      → 73 + 962 + 234 passed
+npm run build -w @nckh/web    → built; tổng gzip 377 900 B (+1,5 KB so với vòng 1; +27,3 KB so với trước shadcn)
+npm run test:e2e -w @nckh/web → 58 passed
+```
+Đã xem ảnh chụp Playwright: đăng nhập, thống kê, tài khoản, hộp xác nhận, danh sách + chi tiết đề tài, bản di động 390 px.
