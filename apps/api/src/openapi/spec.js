@@ -34,6 +34,7 @@ export const ROUTES = [
   ['GET', '/users/:id', AS],
   ['POST', '/users', AS, { body: S.userCreateSchema }],
   ['PATCH', '/users/:id', AS, { body: S.userUpdateSchema }],
+  ['DELETE', '/users/:id', 'A'],
   ['POST', '/users/:id/lock', AS],
   ['POST', '/users/:id/unlock', AS],
   ['POST', '/users/:id/reset-password', AS],

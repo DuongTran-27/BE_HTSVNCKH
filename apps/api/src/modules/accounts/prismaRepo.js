@@ -71,6 +71,27 @@ export const createAccountRepo = (prisma) => ({
     }
   },
 
+  // Xóa cứng chỉ khi chưa có dữ liệu nghiệp vụ: FK RESTRICT (P2003) -> rollback, 409 (NFR05). AuditLog ghi trước khi xóa.
+  remove: async (id, compute) => {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR UPDATE`;
+        const before = await tx.user.findUnique({ where: { id }, include: withScopes });
+        const { buildAudits } = compute(before);
+        for (const a of buildAudits()) await recordAudit(tx, a);
+        await tx.staffScope.deleteMany({ where: { userId: id } });
+        await tx.refreshToken.deleteMany({ where: { userId: id } });
+        await tx.notification.deleteMany({ where: { userId: id } });
+        await tx.user.delete({ where: { id } });
+      });
+    } catch (e) {
+      if (e?.code === 'P2003') {
+        throw conflict('IN_USE', 'Tài khoản đã có dữ liệu nghiệp vụ nên không thể xóa, hãy khóa tài khoản thay vì xóa');
+      }
+      throw e;
+    }
+  },
+
   // Khóa dòng user, đọc bản mới nhất; compute(before) kiểm tra và trả { data, scopeIds?, revokeTokens?, buildAudits(after) }.
   updateLocked: (id, compute) =>
     prisma.$transaction(async (tx) => {

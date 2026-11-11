@@ -373,6 +373,49 @@ describe('phạm vi khoa cán bộ (PUT staff-scopes)', () => {
   });
 });
 
+describe('xóa (DELETE)', () => {
+  const del = (who, url) => request(app).delete(url).set(as(who));
+
+  it('ADMIN xóa tài khoản chưa có nghiệp vụ: 204, xóa phạm vi/token/thông báo, AuditLog USER_DELETE còn lại', async () => {
+    const c = await post('admin', '/api/users', { code: 'CBDEL', email: 'cbdel@t.vn', fullName: 'Cán bộ xóa', role: 'STAFF', facultyId: F1.id, staffFacultyIds: [F1.id] });
+    const id = c.body.user.id;
+    await newToken(id, 'cbdel');
+    await prisma.notification.create({ data: { userId: id, type: 'X', title: 't', dedupeKey: 'k' } });
+    const r = await del('admin', `/api/users/${id}`);
+    expect(r.status).toBe(204);
+    expect(await dbUser(id)).toBeNull();
+    expect(await prisma.staffScope.count({ where: { userId: id } })).toBe(0);
+    expect(await prisma.refreshToken.count({ where: { userId: id } })).toBe(0);
+    expect(await prisma.notification.count({ where: { userId: id } })).toBe(0);
+    const a = (await audits(id)).find((x) => x.action === 'USER_DELETE');
+    expect(a).toMatchObject({ actorId: U.admin.id, after: null });
+    expect(a.before).toMatchObject({ code: 'CBDEL', role: 'STAFF', email: 'cbdel@t.vn' });
+  });
+
+  it('không xóa chính mình; CÁN BỘ/GV/SV 403; id không có 404; không đổi gì', async () => {
+    expect((await del('admin', `/api/users/${U.admin.id}`)).status).toBe(403);
+    expect((await del('staff1', `/api/users/${U.stud.id}`)).status).toBe(403);
+    expect((await del('lect', `/api/users/${U.stud.id}`)).status).toBe(403);
+    expect((await del('admin', '/api/users/khong-co')).status).toBe(404);
+    expect(await dbUser(U.admin.id)).not.toBeNull();
+    expect(await dbUser(U.stud.id)).not.toBeNull();
+  });
+
+  it('tài khoản đã tham gia đề tài: 409 IN_USE, rollback cả AuditLog (NFR05)', async () => {
+    const c = await post('admin', '/api/users', studentBody({ code: 'SVDEL', email: 'svdel@t.vn' }));
+    const id = c.body.user.id;
+    const round = await prisma.round.create({
+      data: { facultyId: F1.id, name: 'Đợt xóa', academicYear: '2026-2027', regOpenAt: new Date(), regCloseAt: new Date(Date.now() + 1e9), reviewDeadline: new Date(Date.now() + 2e9), endAt: new Date(Date.now() + 3e9), config: {} },
+    });
+    await prisma.topic.create({ data: { code: 'T207-DEL', roundId: round.id, facultyId: F1.id, members: { create: { userId: id, role: 'LEADER' } } } });
+    const r = await del('admin', `/api/users/${id}`);
+    expect(r.status).toBe(409);
+    expect(r.body.error.code).toBe('IN_USE');
+    expect(await dbUser(id)).not.toBeNull();
+    expect((await audits(id)).map((x) => x.action)).not.toContain('USER_DELETE');
+  });
+});
+
 describe('rate limit tạo / reset (30 / 15 phút / người dùng, dùng chung)', () => {
   it('29 lần reset + 1 lần tạo vẫn qua; lần thứ 31 (tạo hoặc reset) → 429 RATE_LIMITED', async () => {
     const target = await prisma.user.create({

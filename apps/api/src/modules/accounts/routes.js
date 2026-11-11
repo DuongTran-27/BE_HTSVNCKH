@@ -61,6 +61,10 @@ export const accountsRouter = ({ repo, hasher, guard, genPassword }) => {
   r.patch('/:id', adminOrStaff, validate(userUpdateSchema), async (req, res) => {
     res.json(await svc.update(req.user, req.params.id, req.body, req.ip));
   });
+  r.delete('/:id', requireRole('ADMIN'), async (req, res) => {
+    await svc.remove(req.user, req.params.id, req.ip);
+    res.status(204).end();
+  });
   r.post('/:id/lock', adminOrStaff, async (req, res) => res.json(await svc.setLocked(req.user, req.params.id, true, req.ip)));
   r.post('/:id/unlock', adminOrStaff, async (req, res) => res.json(await svc.setLocked(req.user, req.params.id, false, req.ip)));
   r.post('/:id/reset-password', writeLimiter, adminOrStaff, async (req, res) => {

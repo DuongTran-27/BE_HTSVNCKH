@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ROLE_LABEL, userUpdateSchema } from '@nckh/shared';
 import { api } from '../../lib/api.js';
@@ -11,7 +11,7 @@ import { applyServerErrors } from '../../lib/forms.js';
 import { useCatalog, useScopedFaculties } from '../../lib/queries.js';
 import { toast } from '../../lib/toast.js';
 import { FormField } from '../../components/FormField.jsx';
-import { KeyRound, Lock, LockOpen } from 'lucide-react';
+import { KeyRound, Lock, LockOpen, Trash2 } from 'lucide-react';
 import { Badge, CheckGroup, ConfirmDialog, Options, PageHeader, QueryBox, TempPasswordBox, btnGhost, btnPrimary, card, initials, opt } from '../../components/ui.jsx';
 
 const FIELDS = ['email', 'fullName', 'classId', 'facultyId'];
@@ -29,6 +29,7 @@ const CONFIRM = {
   lock: ['Khóa tài khoản', 'Khóa sẽ đăng xuất mọi phiên đăng nhập của người này. Tiếp tục?', 'Khóa'],
   unlock: ['Mở khóa tài khoản', 'Cho phép người này đăng nhập lại?', 'Mở khóa'],
   reset: ['Đặt lại mật khẩu', 'Tạo mật khẩu tạm mới, mật khẩu cũ mất hiệu lực và mọi phiên bị đăng xuất. Tiếp tục?', 'Đặt lại'],
+  delete: ['Xóa tài khoản', 'Xóa vĩnh viễn tài khoản này. Tài khoản đã tham gia đề tài hoặc xử lý hồ sơ không xóa được, hãy khóa thay. Tiếp tục?', 'Xóa'],
 };
 
 // R20 – API_GD2 §3.2
@@ -49,7 +50,8 @@ export function UserDetailPage() {
 function UserDetail({ user: target }) {
   const { user: me } = useAuth();
   const qc = useQueryClient();
-  const [confirm, setConfirm] = useState(null); // 'lock' | 'unlock' | 'reset'
+  const navigate = useNavigate();
+  const [confirm, setConfirm] = useState(null); // 'lock' | 'unlock' | 'reset' | 'delete'
   const [confirmError, setConfirmError] = useState('');
   const [tempPassword, setTempPassword] = useState(null); // state cục bộ, không vào cache
   const [formError, setFormError] = useState('');
@@ -81,6 +83,7 @@ function UserDetail({ user: target }) {
   const act = useMutation({
     // Mật khẩu tạm đi thẳng vào state cục bộ, mutation trả null để không nằm trong MutationCache (review T304 m1)
     mutationFn: async (kind) => {
+      if (kind === 'delete') return api(`/users/${target.id}`, { method: 'DELETE' });
       const res = await api(`/users/${target.id}/${kind === 'reset' ? 'reset-password' : kind}`, { method: 'POST' });
       if (kind !== 'reset') return res;
       setTempPassword(res.temporaryPassword);
@@ -88,7 +91,12 @@ function UserDetail({ user: target }) {
     },
     onSuccess: (res, kind) => {
       setConfirm(null);
-      if (kind !== 'reset') { refresh(res.user); toast(kind === 'lock' ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản', { type: 'success' }); }
+      if (kind === 'delete') {
+        qc.removeQueries({ queryKey: ['users', 'detail', target.id] });
+        qc.invalidateQueries({ queryKey: ['users'] });
+        toast('Đã xóa tài khoản', { type: 'success' });
+        navigate('/quan-ly/tai-khoan', { replace: true });
+      } else if (kind !== 'reset') { refresh(res.user); toast(kind === 'lock' ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản', { type: 'success' }); }
     },
     onError: (err) => !err.sessionExpired && setConfirmError(err.message),
   });
@@ -125,6 +133,7 @@ function UserDetail({ user: target }) {
             {target.isLocked ? <LockOpen aria-hidden="true" className="size-4" /> : <Lock aria-hidden="true" className="size-4" />}{target.isLocked ? 'Mở khóa' : 'Khóa'}
           </button>
           <button type="button" className={btnGhost} onClick={() => ask('reset')}><KeyRound aria-hidden="true" className="size-4" />Đặt lại mật khẩu</button>
+          {isAdmin && <button type="button" className={`${btnGhost} text-red-700`} onClick={() => ask('delete')}><Trash2 aria-hidden="true" className="size-4" />Xóa</button>}
         </div>
       )}
       </div>

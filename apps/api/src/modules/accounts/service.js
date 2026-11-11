@@ -160,6 +160,18 @@ export const createAccountService = ({ repo, hasher, genPassword = generateTempP
       return { temporaryPassword };
     },
 
+    // Chỉ ADMIN; tài khoản đã tham gia nghiệp vụ không xóa được (409), dùng khóa thay thế
+    async remove(actor, id, ip) {
+      if (actor.role !== ROLES.ADMIN) throw forbidden();
+      await repo.remove(id, (before) => {
+        mustManage(actor, before);
+        notSelf(actor, before);
+        return {
+          buildAudits: () => [audit(actor, ip, 'USER_DELETE', id, { code: before.code, role: before.role, ...profile(before) }, null)],
+        };
+      });
+    },
+
     async setStaffScopes(actor, id, facultyIds, ip) {
       if (actor.role !== ROLES.ADMIN) throw forbidden();
       const ids = [...new Set(facultyIds)];

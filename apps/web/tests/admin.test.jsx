@@ -167,6 +167,23 @@ describe('Chi tiết tài khoản (R20)', () => {
     await u.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Đặt lại' }));
     expect((await screen.findByTestId('temp-password')).textContent).toBe('Reset-Pass-99');
   });
+  it('xóa: chỉ ADMIN thấy nút; xác nhận → DELETE rồi về danh sách; 409 hiện lỗi trong hộp xác nhận', async () => {
+    routesMap['GET /users/u2'] = { user: target() };
+    routesMap['GET /users'] = { items: [], page: 1, pageSize: 20, total: 0 };
+    routesMap['DELETE /users/u2'] = apiErr(409, 'IN_USE', 'Tài khoản đã có dữ liệu nghiệp vụ nên không thể xóa, hãy khóa tài khoản thay vì xóa');
+    const { router } = open('/quan-ly/tai-khoan/u2', U('ADMIN'));
+    const u = userEvent.setup();
+    await u.click(await screen.findByRole('button', { name: 'Xóa' }));
+    await u.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Xóa' }));
+    expect(await within(screen.getByRole('dialog')).findByText(/không thể xóa/)).toBeTruthy();
+    routesMap['DELETE /users/u2'] = () => null; // 204
+    await u.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Xóa' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/quan-ly/tai-khoan'));
+    cleanup();
+    open('/quan-ly/tai-khoan/u2', U('STAFF'));
+    await screen.findByText('CB2');
+    expect(screen.queryByRole('button', { name: 'Xóa' })).toBeNull();
+  });
 });
 
 describe('Nhập CSV (R21)', () => {
