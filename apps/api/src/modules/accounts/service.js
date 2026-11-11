@@ -127,9 +127,14 @@ export const createAccountService = ({ repo, hasher, genPassword = generateTempP
     },
 
     async setLocked(actor, id, locked, ip) {
-      const row = await repo.updateLocked(id, (before) => {
+      const row = await repo.updateLocked(id, (before, { admins }) => {
         mustManage(actor, before);
         notSelf(actor, before);
+        if (locked && before.role === ROLES.ADMIN) {
+          // Người thực hiện vừa bị khóa/xóa trong lúc chờ khóa dòng -> 403; phải còn ít nhất một ADMIN hoạt động khác
+          if (!admins.some((a) => a.id === actor.id && !a.isLocked)) throw forbidden();
+          if (!admins.some((a) => a.id !== id && !a.isLocked)) throw conflict('LAST_ADMIN', 'Phải còn ít nhất một quản trị viên đang hoạt động');
+        }
         return {
           data: locked ? { isLocked: true } : { isLocked: false, failedLogins: 0, lockedUntil: null },
           revokeTokens: locked,
@@ -137,7 +142,7 @@ export const createAccountService = ({ repo, hasher, genPassword = generateTempP
             audit(actor, ip, locked ? 'USER_LOCK' : 'USER_UNLOCK', id, { isLocked: before.isLocked }, { isLocked: after.isLocked }),
           ],
         };
-      });
+      }, { guardAdmins: locked && actor.role === ROLES.ADMIN });
       return { user: userView(row) };
     },
 

@@ -99,12 +99,14 @@ export const createAccountRepo = (prisma) => ({
     }
   },
 
-  // Khóa dòng user, đọc bản mới nhất; compute(before) kiểm tra và trả { data, scopeIds?, revokeTokens?, buildAudits(after) }.
-  updateLocked: (id, compute) =>
+  // Khóa dòng user, đọc bản mới nhất; compute(before, { admins }) kiểm tra và trả { data, scopeIds?, revokeTokens?, buildAudits(after) }.
+  // guardAdmins: khóa trước mọi dòng ADMIN theo thứ tự id (admins = [{ id, isLocked }]) để hai ADMIN khóa nhau chạy tuần tự.
+  updateLocked: (id, compute, { guardAdmins = false } = {}) =>
     prisma.$transaction(async (tx) => {
+      const admins = guardAdmins ? await tx.$queryRaw`SELECT id, "isLocked" FROM "User" WHERE role = 'ADMIN' ORDER BY id FOR UPDATE` : null;
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR NO KEY UPDATE`;
       const before = await tx.user.findUnique({ where: { id }, include: withScopes });
-      const { data = {}, scopeIds, revokeTokens, buildAudits } = await compute(before);
+      const { data = {}, scopeIds, revokeTokens, buildAudits } = await compute(before, { admins });
       if (scopeIds) {
         await tx.staffScope.deleteMany({ where: { userId: id } });
         await tx.staffScope.createMany({ data: scopeIds.map((facultyId) => ({ userId: id, facultyId })) });
