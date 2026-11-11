@@ -75,12 +75,12 @@ Kiểm tra đủ định nghĩa hoàn thành mục 4 `QUY_TRINH.md` ("mỗi FR P
 ## 4. Mục chưa có test tự động (tóm tắt cho T708)
 1. E2E: FR09, FR10, FR18, FR19, FR20, FR22, FR23, FR04 (đã có từ T707b: FR24 tải tài liệu `e/m4.spec.js` TC-FR24-E01; hồ sơ cờ G5 + job similarity-recheck `e/gd6.spec.js` TC-FR06-E10). Các FR này vẫn có integration + test component (bảng trên).
 2. FR26 (chạy workflow thật, diễn tập khôi phục), NFR10, "tiếng Việt toàn bộ" (NFR07), Safari (NFR01), Data API anon key (NFR03): sau deploy/thủ công.
-3. Recall ≥ 80% ở REVIEW+ đã được assert (`a/fr06-dataset.test.js` TC-FR06-93, T707b-qa); điểm tên trong V vẫn là mô phỏng JS.
+3. Recall ≥ 80% ở REVIEW+ đã được assert (`a/fr06-dataset.test.js` TC-FR06-93, T707b-qa); với điểm tên pg_trgm thật cũng đã assert (TC-FR06-95).
 4. (Đã xử lý T707b-qa) ID E2E FR14 đổi thành TC-FR14-E03/E04.
 
 ## 5. Ghi chú cho báo cáo khoa học (M5 / FR06)
 Khi trích số liệu `reports/T705.md` (122 cặp; ngưỡng hiện tại Cần xem xét: P 92,9% R 92,9%; Nghi trùng cao: P 100% R 92,9%) phải nêu các hạn chế:
-1. **Điểm tên là trigram cài bằng JS**, mô phỏng `pg_trgm` có bỏ dấu của engine, **không phải `similarity()` thật của PostgreSQL**; chênh lệch nhỏ có thể có. Phép đo không dùng DB. Chưa đo lại trên pg_trgm thật. (MINOR 3 `reviews/T705-reviewer-v1.md`)
+1. **Điểm tên đã đo lại trên pg_trgm thật (2026-11-11, `a/fr06-pgtrgm.test.js` TC-FR06-95):** dùng đúng biểu thức của `prismaRepo.loadCorpus` (`similarity(lower(immutable_unaccent(...)))`) cho cả 122 cặp; 106 cặp có điểm trung gian, chênh |pg − JS| trung bình 0,000 và lớn nhất 0,000 (làm tròn 3 chữ số như engine), 0 cặp đổi mức; P/R giữ nguyên (REVIEW+: P 92,9% R 92,9%; HIGH: P 100% R 92,9%). Hạn chế "điểm tên mô phỏng" trước đây không còn.
 2. **Bộ dữ liệu do một người soạn và gán nhãn**, chưa có người thứ hai chéo kiểm (không tính được độ đồng thuận như Cohen's kappa). Nhãn 1 là "theo cấu tạo" (cặp được tạo chủ đích là biến thể của cùng đề tài), 30 đề tài gốc tự soạn, nên recall **lạc quan** hơn đề tài sinh viên thực tế (thường chỉ trùng ý). Khuyến nghị: bổ sung cặp thật từ kho NCKH cũ của khoa, ≥ 2 cán bộ gán nhãn.
 3. **Kết luận "giữ nguyên ngưỡng" là sơ bộ**: dựa trên bộ nhỏ, một người gán nhãn, điểm tên mô phỏng. Không dùng làm khẳng định ngưỡng tối ưu; ngưỡng nằm trong cấu hình đợt (FR04) nên khoa chỉnh được.
 4. Giới hạn đã biết của TF-IDF: 4 FN (P053–P056, nhóm "khác từ ngữ hoàn toàn") không bắt được; hướng phát triển là embedding (đặc tả mục 3).

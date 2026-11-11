@@ -22,9 +22,10 @@ export const resolve = (ref, id) => {
 };
 
 // Mô phỏng kho thật: so A với B cùng kho nền (các chủ đề gốc còn lại) để IDF gần thực tế.
-export const scorePair = (p) => {
+// titleScore: điểm tên tính sẵn bằng pg_trgm thật (như prismaRepo.loadCorpus); bỏ trống thì engine tính bằng JS.
+export const scorePair = (p, titleScore) => {
   const a = resolve(p.a, 'A');
-  const b = resolve(p.b, 'B');
+  const b = { ...resolve(p.b, 'B'), ...(titleScore !== undefined && { titleScore }) };
   const skip = new Set([p.a, typeof p.b === 'string' ? p.b : p.b.of]);
   const background = Object.entries(topics).filter(([k]) => !skip.has(k)).map(([k, t]) => ({ ...t, id: k }));
   const r = compare({ candidate: a, corpus: [b, ...background], thresholds, synonyms, topK: 1000 });
@@ -32,7 +33,7 @@ export const scorePair = (p) => {
   return { titleScore: m.titleScore, contentScore: m.contentScore, level: m.level };
 };
 
-export const scoreAll = () => pairs.map((p) => ({ ...p, ...scorePair(p) }));
+export const scoreAll = (titleScores = {}) => pairs.map((p) => ({ ...p, ...scorePair(p, titleScores[p.id]) }));
 
 export const metrics = (rows, predict) => {
   let tp = 0, fp = 0, fn = 0, tn = 0;
