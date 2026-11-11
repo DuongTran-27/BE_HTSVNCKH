@@ -28,4 +28,7 @@ npm run test:e2e -w @nckh/web → 54 passed, 4 failed
 (tổng vẫn khớp từng dòng và CSV); test dùng selector quá rộng. Theo quy tắc 1 không tự sửa test – **đề nghị reviewer quyết** đổi selector thành
 `table tfoot td:first-of-type` (hoặc ô đầu tiên của dòng tổng).
 
+**Cập nhật 2026-11-11:** người dùng đồng ý → đổi 3 chỗ `locator('table tfoot td')` thành `.first()` (ô Tổng số, cột Tỉ lệ đứng sau) trong `e2e/m5.spec.js`.
+`npm run test:e2e -w @nckh/web` → **58 passed**.
+
 Đã xem bằng ảnh chụp Playwright: đăng nhập, thống kê, danh sách và chi tiết tài khoản, hộp xác nhận.

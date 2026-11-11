@@ -22,7 +22,7 @@ test.describe('M4 dashboard và CSV', () => {
       await expect(page.locator('table caption')).toContainText('tổng');
       const rows = await tableRows(page);
       expect(rows.length).toBeGreaterThan(0);
-      const total = Number((await page.locator('table tfoot td').textContent()).trim());
+      const total = Number((await page.locator('table tfoot td').first().textContent()).trim());
       expect(rows.reduce((s, r) => s + Number(r[1]), 0)).toBe(total);
       const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Xuất CSV' }).click()]);
       expect(dl.suggestedFilename()).toMatch(new RegExp('^thong-ke-' + groupBy + '-[0-9]{8}[.]csv$'));
@@ -37,12 +37,12 @@ test.describe('M4 dashboard và CSV', () => {
     const S = data();
     await login(page, S.users.cb.code);
     await page.goto('/thong-ke?groupBy=status');
-    const all = Number((await page.locator('table tfoot td').textContent()).trim());
+    const all = Number((await page.locator('table tfoot td').first().textContent()).trim());
     await page.getByRole('combobox', { name: 'Trạng thái', exact: true }).selectOption({ label: 'Đã đóng' });
     await expect(page).toHaveURL(/status=CLOSED/);
     await expect(page.locator('table tbody tr')).toHaveCount(1);
     await expect(page.locator('table tbody tr').first()).toContainText('Đã đóng');
-    const closed = Number((await page.locator('table tfoot td').textContent()).trim());
+    const closed = Number((await page.locator('table tfoot td').first().textContent()).trim());
     expect(closed).toBeGreaterThan(0);
     expect(closed).toBeLessThan(all);
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Xuất CSV' }).click()]);
