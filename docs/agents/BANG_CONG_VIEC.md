@@ -117,3 +117,17 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 | BUG-014 | Kiểm tra cuối bước 4: FR01, FR02, FR09, FR10 (P1) và FR19, FR20, FR23, FR26 (P2) chưa có test tự động mang mã `TC-FRxx` (chỉ truy vết theo tên file/describe); FR04, FR15, FR17 chỉ có mã ở test seed `T203-qa-seed.test.js`. Gắn mã TC-FRxx cho các test tích hợp sẵn có (đổi nhãn, không đổi assert) hoặc thêm test thiếu; cập nhật `TRUY_VET.md` (`reviews/FINAL-reviewer.md`) | reviewer (T708) | QA | RV | DONE 2026-11-08 |
 | BUG-015 | NFR09: cấu hình coverage chưa có `thresholds` 70% cho `apps/api/src/modules` và `packages/shared` – thêm vào cấu hình Vitest để `npm test -- --coverage` tự đỏ khi dưới ngưỡng (`reviews/FINAL-reviewer.md`) | reviewer (T708) | DO | RV | DONE 2026-11-08 |
 | BUG-016 | 4 MINOR `reviews/FINAL-bao-mat.md` mục 4: (1) cận trên `ACCESS_TOKEN_TTL_SECONDS` ≤ 900 (FR01) và `REFRESH_TOKEN_TTL_DAYS` trong `config/env.js`; (2) test `logger: undefined` in cookie ra log – dùng logger có redact/im lặng trong test; (3) `persist-credentials: false` cho checkout trong `.github/workflows/*.yml`; (4) limiter cho `/api/auth/refresh` và `/logout` | bao-mat (FINAL) | BE | BM | DONE 2026-11-08 |
+
+## Sau hoàn thành – yêu cầu trực tiếp của người dùng (2026-11-09 → 2026-11-11)
+
+| ID | Việc | FR/NFR | Chủ trì | Review | Phụ thuộc | Trạng thái |
+|---|---|---|---|---|---|---|
+| TASK-UI-REDESIGN | Thiết kế lại giao diện (`reports/TASK-UI-REDESIGN.md`) | NFR07 | FE | RV, KTS | – | DONE 2026-11-09 (`reviews/TASK-UI-REDESIGN-reviewer-v1.md`, `…-kien-truc-su-v1.md`) |
+| TASK-UI-MODERN | Phong cách hiện đại (`reports/TASK-UI-MODERN.md`) | NFR07 | FE | RV | TASK-UI-REDESIGN | DONE – bị thay bởi TASK-UI-SHADCN; trạng thái giao diện cuối đã duyệt ở `reviews/TASK-UI-SHADCN-reviewer-v1.md`, `-v2.md` |
+| TASK-UI-SEAL | Nhận diện Văn Lang, đăng nhập nhanh dev, MSSV mẫu (`reports/TASK-UI-SEAL.md`) | NFR07 | FE | RV, KTS | TASK-UI-MODERN | DONE – font duyệt `reviews/TASK-UI-SEAL-font-kien-truc-su-v1.md`; phần giao diện bị thay bởi TASK-UI-SHADCN (đã duyệt) |
+| TASK-USER-DELETE | ADMIN xóa tài khoản chưa phát sinh nghiệp vụ; FK `AuditLog.actorId` | FR02, FR15, FR25, NFR05 | BE | BM | – | DONE 2026-11-11 (`reviews/TASK-USER-DELETE-bao-mat-v3.md` APPROVED) |
+| TASK-DEMO-STATS | Script dữ liệu demo thống kê `npm run demo:stats` (`reports/TASK-DEMO-STATS.md`) | FR14 (demo) | BE | RV | – | REVIEW (duyệt trong kiểm tra cuối) |
+| TASK-UI-SHADCN | Giao diện trên shadcn/ui, bỏ viết tắt, làm đẹp các trang, hết test chập chờn (`reports/TASK-UI-SHADCN.md`) | NFR07 | FE | KTS, RV | – | DONE 2026-11-11 (`reviews/TASK-UI-SHADCN-reviewer-v2.md` APPROVED) |
+| TASK-FR06-PGTRGM | Đo FR06 bằng pg_trgm thật – TC-FR06-95 (`reports/TASK-FR06-PGTRGM.md`) | FR06, M5 | QA | RV | – | REVIEW (duyệt trong kiểm tra cuối) |
+| TASK-E2E-GD6B | E2E FR04, FR09, FR10, FR18–FR20, FR22, FR23; sửa `mapServerDetails` mất thông điệp lỗi (`reports/TASK-E2E-GD6B.md`) | FR04–FR23 | QA | RV | – | REVIEW (duyệt trong kiểm tra cuối) |
+| TASK-LOCK-ADMIN-RACE | Hai ADMIN khóa/xóa nhau; P2003 → 409 (người dùng đồng ý) (`reports/TASK-LOCK-ADMIN-RACE.md`) | FR25, NFR05 | BE | BM | TASK-USER-DELETE | DONE 2026-11-11 (`reviews/TASK-LOCK-ADMIN-RACE-bao-mat-v1.md` APPROVED) |
