@@ -126,8 +126,8 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 | TASK-UI-MODERN | Phong cách hiện đại (`reports/TASK-UI-MODERN.md`) | NFR07 | FE | RV | TASK-UI-REDESIGN | DONE – bị thay bởi TASK-UI-SHADCN; trạng thái giao diện cuối đã duyệt ở `reviews/TASK-UI-SHADCN-reviewer-v1.md`, `-v2.md` |
 | TASK-UI-SEAL | Nhận diện Văn Lang, đăng nhập nhanh dev, MSSV mẫu (`reports/TASK-UI-SEAL.md`) | NFR07 | FE | RV, KTS | TASK-UI-MODERN | DONE – font duyệt `reviews/TASK-UI-SEAL-font-kien-truc-su-v1.md`; phần giao diện bị thay bởi TASK-UI-SHADCN (đã duyệt) |
 | TASK-USER-DELETE | ADMIN xóa tài khoản chưa phát sinh nghiệp vụ; FK `AuditLog.actorId` | FR02, FR15, FR25, NFR05 | BE | BM | – | DONE 2026-11-11 (`reviews/TASK-USER-DELETE-bao-mat-v3.md` APPROVED) |
-| TASK-DEMO-STATS | Script dữ liệu demo thống kê `npm run demo:stats` (`reports/TASK-DEMO-STATS.md`) | FR14 (demo) | BE | RV | – | REVIEW (duyệt trong kiểm tra cuối) |
+| TASK-DEMO-STATS | Script dữ liệu demo thống kê `npm run demo:stats` (`reports/TASK-DEMO-STATS.md`) | FR14 (demo) | BE | RV | – | DONE 2026-11-11 (`reviews/FINAL-reviewer.md` APPROVED) |
 | TASK-UI-SHADCN | Giao diện trên shadcn/ui, bỏ viết tắt, làm đẹp các trang, hết test chập chờn (`reports/TASK-UI-SHADCN.md`) | NFR07 | FE | KTS, RV | – | DONE 2026-11-11 (`reviews/TASK-UI-SHADCN-reviewer-v2.md` APPROVED) |
-| TASK-FR06-PGTRGM | Đo FR06 bằng pg_trgm thật – TC-FR06-95 (`reports/TASK-FR06-PGTRGM.md`) | FR06, M5 | QA | RV | – | REVIEW (duyệt trong kiểm tra cuối) |
-| TASK-E2E-GD6B | E2E FR04, FR09, FR10, FR18–FR20, FR22, FR23; sửa `mapServerDetails` mất thông điệp lỗi (`reports/TASK-E2E-GD6B.md`) | FR04–FR23 | QA | RV | – | REVIEW (duyệt trong kiểm tra cuối) |
+| TASK-FR06-PGTRGM | Đo FR06 bằng pg_trgm thật – TC-FR06-95 (`reports/TASK-FR06-PGTRGM.md`) | FR06, M5 | QA | RV | – | DONE 2026-11-11 (`reviews/FINAL-reviewer.md` APPROVED) |
+| TASK-E2E-GD6B | E2E FR04, FR09, FR10, FR18–FR20, FR22, FR23; sửa `mapServerDetails` mất thông điệp lỗi (`reports/TASK-E2E-GD6B.md`) | FR04–FR23 | QA | RV | – | DONE 2026-11-11 (`reviews/FINAL-reviewer.md` APPROVED) |
 | TASK-LOCK-ADMIN-RACE | Hai ADMIN khóa/xóa nhau; P2003 → 409 (người dùng đồng ý) (`reports/TASK-LOCK-ADMIN-RACE.md`) | FR25, NFR05 | BE | BM | TASK-USER-DELETE | DONE 2026-11-11 (`reviews/TASK-LOCK-ADMIN-RACE-bao-mat-v1.md` APPROVED) |
