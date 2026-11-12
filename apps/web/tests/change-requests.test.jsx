@@ -102,6 +102,22 @@ describe('Tạo yêu cầu', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
+  it('Esc đóng form chưa gõ và trả focus về nút mở; đã gõ thì Esc không đóng', async () => {
+    map['GET /topics/t1'] = { topic: topic({}, { requestCancel: true }) };
+    open('/de-tai/t1/yeu-cau', U('STUDENT'));
+    const opener = await screen.findByRole('button', { name: 'Đề nghị hủy đề tài' });
+    opener.focus();
+    fireEvent.click(opener);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+    fireEvent.click(opener);
+    type(within(dialog()).getByLabelText('Lý do'), 'Nhóm không còn');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(dialog()).toBeTruthy();
+    expect(sent('POST', '/topics/t1/change-requests')).toHaveLength(0);
+  });
+
   it('thay GV: danh sách không có GVHD hiện tại; gửi newLecturerId; 409 PENDING hiện ở form', async () => {
     map['GET /topics/t1'] = { topic: topic({}, { requestAdvisorChange: true }) };
     map['GET /lecturers'] = { items: [

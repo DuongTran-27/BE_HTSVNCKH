@@ -12,7 +12,7 @@ import { useCooldown } from '../lib/useCooldown.js';
 import { DebouncedInput } from './ListFilters.jsx';
 import { FormField } from './FormField.jsx';
 import { SimilarityPanel } from './SimilarityPanel.jsx';
-import { FormError, Options, btnGhost, btnPrimary, keepOpenOnOutside, useReturnFocus } from './ui.jsx';
+import { FormError, Options, btnGhost, btnPrimary, keepOpenOnEscIf, keepOpenOnOutside, useReturnFocus } from './ui.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 const HINT = {
@@ -51,7 +51,7 @@ export function ChangeRequestForm({ topic, kind, onClose }) {
   const fields = useCatalog('fields', {}, { enabled: kind === 'TOPIC_CHANGE' });
   const [check, setCheck] = useState(null); // SimilarityCheckView từ details của lỗi FR06
   const [needJustification, setNeedJustification] = useState(false);
-  const { register, handleSubmit, setError, formState: { errors } } = useForm({
+  const { register, handleSubmit, setError, formState: { errors, isDirty } } = useForm({
     resolver: makeResolver(kind, topic),
     defaultValues: {
       reason: '', newLecturerId: '', title: topic.title ?? '', summary: topic.summary ?? '', objectives: topic.objectives ?? '',
@@ -76,8 +76,7 @@ export function ChangeRequestForm({ topic, kind, onClose }) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent showCloseButton={false} aria-label={CHANGE_TYPE_LABEL[kind]} {...keepOpenOnOutside} {...returnFocus}
-        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+      <DialogContent showCloseButton={false} {...keepOpenOnOutside} {...keepOpenOnEscIf(isDirty)} {...returnFocus} className="sm:max-w-lg">
       <form noValidate onSubmit={handleSubmit((v) => create.mutate(v))} className="space-y-3">
         <DialogTitle>{CHANGE_TYPE_LABEL[kind]}</DialogTitle>
         <DialogDescription className="text-slate-700">{HINT[kind]}</DialogDescription>

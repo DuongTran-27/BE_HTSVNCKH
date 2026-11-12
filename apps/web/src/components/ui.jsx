@@ -15,8 +15,10 @@ export const btnDanger = cn(buttonVariants({ variant: 'outline' }), press, 'bord
 // Cùng class với Card của shadcn/ui (bo góc, viền, nền thẻ) nhưng giữ dạng chuỗi để các trang ghép thêm class
 export const card = 'rounded-xl border bg-card p-4 text-card-foreground shadow-sm sm:p-6';
 export const tableFrame = 'overflow-x-auto rounded-xl border bg-card shadow-sm';
-// Hộp thoại có ô nhập: bấm ra ngoài không đóng, tránh mất nội dung đang gõ
+// Hộp thoại có ô nhập hoặc lựa chọn bắt buộc: bấm ra ngoài không đóng
 export const keepOpenOnOutside = { onInteractOutside: (e) => e.preventDefault() };
+// Esc không đóng khi form đã gõ dở (đóng bằng nút Hủy), tránh mất nội dung
+export const keepOpenOnEscIf = (dirty) => ({ onEscapeKeyDown: (e) => { if (dirty) e.preventDefault(); } });
 /**
  * Props cho DialogContent: đóng thì trả focus về phần tử đang focus lúc mở.
  * Không có DialogTrigger nên mặc định của Radix (focus trigger) để focus rơi về body.
@@ -97,7 +99,7 @@ export function ConfirmDialog({ title, message, confirmLabel = 'Xác nhận', da
   const returnFocus = useReturnFocus();
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent showCloseButton={false} aria-label={title} {...returnFocus} className="sm:max-w-md">
+      <DialogContent showCloseButton={false} {...returnFocus} className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{message}</DialogDescription>

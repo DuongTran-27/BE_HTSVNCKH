@@ -58,11 +58,11 @@ function KeywordsInput({ value, max, onChange, error }) {
 }
 
 // Không có Esc: phải chọn một trong hai để không mất/ghi đè dữ liệu ngoài ý muốn
-function ConflictDialog({ onTakeNew, onKeepMine }) {
+export function ConflictDialog({ onTakeNew, onKeepMine }) {
   const returnFocus = useReturnFocus();
   return (
     <Dialog open>
-      <DialogContent showCloseButton={false} aria-label="Hồ sơ vừa được cập nhật" onEscapeKeyDown={(e) => e.preventDefault()} {...keepOpenOnOutside} {...returnFocus} className="sm:max-w-md">
+      <DialogContent showCloseButton={false} onEscapeKeyDown={(e) => e.preventDefault()} {...keepOpenOnOutside} {...returnFocus} className="sm:max-w-md">
         <DialogTitle>Hồ sơ vừa được thành viên khác cập nhật</DialogTitle>
         <DialogDescription>Chọn tải bản mới (bỏ thay đổi của bạn) hoặc giữ nội dung của bạn rồi lưu lại để ghi đè.</DialogDescription>
         <DialogFooter>
