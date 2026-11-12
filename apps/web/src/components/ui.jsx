@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { AlertCircle, ChevronLeft, ChevronRight, Inbox, KeyRound, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
@@ -15,9 +15,16 @@ export const btnDanger = cn(buttonVariants({ variant: 'outline' }), press, 'bord
 // Cùng class với Card của shadcn/ui (bo góc, viền, nền thẻ) nhưng giữ dạng chuỗi để các trang ghép thêm class
 export const card = 'rounded-xl border bg-card p-4 text-card-foreground shadow-sm sm:p-6';
 export const tableFrame = 'overflow-x-auto rounded-xl border bg-card shadow-sm';
-// Lớp phủ và khung hộp thoại theo DialogOverlay/DialogContent của shadcn/ui, cho hộp thoại tự quản focus (ReasonDialog…)
-export const dialogOverlay = 'fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/50 p-4 animate-in fade-in-0';
-export const dialogPanel = 'w-full max-w-md space-y-3 rounded-lg border bg-background p-6 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200';
+// Hộp thoại có ô nhập: bấm ra ngoài không đóng, tránh mất nội dung đang gõ
+export const keepOpenOnOutside = { onInteractOutside: (e) => e.preventDefault() };
+/**
+ * Props cho DialogContent: đóng thì trả focus về phần tử đang focus lúc mở.
+ * Không có DialogTrigger nên mặc định của Radix (focus trigger) để focus rơi về body.
+ */
+export function useReturnFocus() {
+  const [opener] = useState(() => document.activeElement);
+  return { onCloseAutoFocus: (e) => { e.preventDefault(); if (opener?.isConnected) opener.focus(); } };
+}
 /** Chữ tắt cho ô avatar: chữ đầu của 2 từ cuối họ tên ("Nguyễn Thị Minh Anh" → "MA") */
 export const initials = (name = '') => name.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase();
 
@@ -85,42 +92,12 @@ export function Stamp({ children }) {
   );
 }
 
-const FOCUSABLE = 'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
-
-/**
- * Hộp thoại truy cập được: focus vào phần tử đầu tiên khi mở, Tab/Shift+Tab xoay vòng trong hộp,
- * Esc gọi onEscape (bỏ qua nếu không truyền), đóng thì trả focus về nút đã mở. Trả ref gắn vào hộp.
- */
-export function useDialogA11y(onEscape) {
-  const ref = useRef(null);
-  const esc = useRef(onEscape);
-  esc.current = onEscape;
-  useEffect(() => {
-    const box = ref.current;
-    const opener = document.activeElement;
-    box?.querySelector(FOCUSABLE)?.focus();
-    const onKey = (e) => {
-      if (e.key === 'Escape' && esc.current) { e.preventDefault(); esc.current(); return; }
-      if (e.key !== 'Tab' || !box) return;
-      const items = [...box.querySelectorAll(FOCUSABLE)];
-      if (!items.length) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (!box.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
-      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('keydown', onKey); if (opener?.isConnected) opener.focus(); };
-  }, []);
-  return ref;
-}
-
 // Dialog của shadcn/ui (Radix): khóa focus, Esc đóng, trả focus về nút đã mở; luôn mở khi được render
 export function ConfirmDialog({ title, message, confirmLabel = 'Xác nhận', danger, busy, error, onConfirm, onCancel }) {
+  const returnFocus = useReturnFocus();
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent showCloseButton={false} aria-label={title} className="sm:max-w-md">
+      <DialogContent showCloseButton={false} aria-label={title} {...returnFocus} className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{message}</DialogDescription>

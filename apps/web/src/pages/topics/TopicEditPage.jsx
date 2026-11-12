@@ -13,7 +13,8 @@ import { useCooldown } from '../../lib/useCooldown.js';
 import { FormField, inputClass } from '../../components/FormField.jsx';
 import { SimilarityPanel } from '../../components/SimilarityPanel.jsx';
 import { ArrowLeft, CircleAlert, CircleCheck, FileText, Save, ScanSearch, Tags, X } from 'lucide-react';
-import { ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary, card, dialogOverlay, dialogPanel, useDialogA11y } from '../../components/ui.jsx';
+import { ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary, card, keepOpenOnOutside, useReturnFocus } from '../../components/ui.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 
 /** Một mục của form: biểu tượng + tiêu đề + mô tả ngắn, nội dung bên dưới */
 function Section({ icon: Icon, title, description, children }) {
@@ -58,18 +59,18 @@ function KeywordsInput({ value, max, onChange, error }) {
 
 // Không có Esc: phải chọn một trong hai để không mất/ghi đè dữ liệu ngoài ý muốn
 function ConflictDialog({ onTakeNew, onKeepMine }) {
-  const ref = useDialogA11y();
+  const returnFocus = useReturnFocus();
   return (
-    <div className={dialogOverlay}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-label="Hồ sơ vừa được cập nhật" className={dialogPanel}>
-        <h2 className="text-lg font-semibold">Hồ sơ vừa được thành viên khác cập nhật</h2>
-        <p className="text-sm text-muted-foreground">Chọn tải bản mới (bỏ thay đổi của bạn) hoặc giữ nội dung của bạn rồi lưu lại để ghi đè.</p>
-        <div className="flex flex-wrap justify-end gap-2">
+    <Dialog open>
+      <DialogContent showCloseButton={false} aria-label="Hồ sơ vừa được cập nhật" onEscapeKeyDown={(e) => e.preventDefault()} {...keepOpenOnOutside} {...returnFocus} className="sm:max-w-md">
+        <DialogTitle>Hồ sơ vừa được thành viên khác cập nhật</DialogTitle>
+        <DialogDescription>Chọn tải bản mới (bỏ thay đổi của bạn) hoặc giữ nội dung của bạn rồi lưu lại để ghi đè.</DialogDescription>
+        <DialogFooter>
           <button type="button" onClick={onTakeNew} className={btnGhost}>Tải bản mới (bỏ thay đổi của tôi)</button>
           <button type="button" onClick={onKeepMine} className={btnPrimary}>Giữ nội dung của tôi</button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

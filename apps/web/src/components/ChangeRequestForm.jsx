@@ -12,8 +12,8 @@ import { useCooldown } from '../lib/useCooldown.js';
 import { DebouncedInput } from './ListFilters.jsx';
 import { FormField } from './FormField.jsx';
 import { SimilarityPanel } from './SimilarityPanel.jsx';
-import { FormError, Options, btnGhost, btnPrimary, dialogOverlay, dialogPanel } from './ui.jsx';
-import { cn } from '@/lib/utils';
+import { FormError, Options, btnGhost, btnPrimary, keepOpenOnOutside, useReturnFocus } from './ui.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 const HINT = {
   ADVISOR_CHANGE: 'Giảng viên mới phải đồng ý, sau đó cán bộ khoa duyệt. Trong lúc chờ, giảng viên hiện tại vẫn làm việc bình thường. Giảng viên cũ mất mọi quyền khi yêu cầu được duyệt, trừ khi cán bộ khoa cấp quyền chỉ đọc.',
@@ -47,6 +47,7 @@ function LecturerSelect({ topic, register, error }) {
 export function ChangeRequestForm({ topic, kind, onClose }) {
   const qc = useQueryClient();
   const cd = useCooldown();
+  const returnFocus = useReturnFocus();
   const fields = useCatalog('fields', {}, { enabled: kind === 'TOPIC_CHANGE' });
   const [check, setCheck] = useState(null); // SimilarityCheckView từ details của lỗi FR06
   const [needJustification, setNeedJustification] = useState(false);
@@ -74,11 +75,12 @@ export function ChangeRequestForm({ topic, kind, onClose }) {
   });
 
   return (
-    <div className={cn(dialogOverlay, 'items-start')}>
-      <form role="dialog" aria-modal="true" aria-label={CHANGE_TYPE_LABEL[kind]} noValidate onSubmit={handleSubmit((v) => create.mutate(v))}
-        className={`${dialogPanel} max-w-lg`}>
-        <h2 className="text-lg font-semibold">{CHANGE_TYPE_LABEL[kind]}</h2>
-        <p className="text-sm text-slate-700">{HINT[kind]}</p>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent showCloseButton={false} aria-label={CHANGE_TYPE_LABEL[kind]} {...keepOpenOnOutside} {...returnFocus}
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+      <form noValidate onSubmit={handleSubmit((v) => create.mutate(v))} className="space-y-3">
+        <DialogTitle>{CHANGE_TYPE_LABEL[kind]}</DialogTitle>
+        <DialogDescription className="text-slate-700">{HINT[kind]}</DialogDescription>
         {kind === 'ADVISOR_CHANGE' && <LecturerSelect topic={topic} register={register} error={errors.newLecturerId?.message} />}
         {kind === 'TOPIC_CHANGE' && (
           <>
@@ -106,6 +108,7 @@ export function ChangeRequestForm({ topic, kind, onClose }) {
           <button type="submit" disabled={create.isPending || cd.active} className={btnPrimary}>{create.isPending ? 'Đang xử lý…' : 'Gửi yêu cầu'}</button>
         </div>
       </form>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

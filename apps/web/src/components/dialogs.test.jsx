@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { ConfirmDialog } from './ui.jsx';
 import { ReasonDialog } from './ReasonDialog.jsx';
@@ -18,28 +18,32 @@ function Host({ reason }) {
   );
 }
 
+// Phím gửi vào phần tử đang focus như trình duyệt thật (FocusScope của Radix nghe keydown trên hộp, không ở document)
 describe('hộp thoại truy cập được', () => {
-  it('ReasonDialog: focus vào ô lý do, Tab/Shift+Tab xoay vòng, Esc đóng và trả focus', () => {
+  it('ReasonDialog: focus vào ô lý do, Tab/Shift+Tab xoay vòng, Esc đóng và trả focus', async () => {
     render(<Host reason />);
     const opener = screen.getByText('Mở');
     opener.focus();
     fireEvent.click(opener);
     const area = screen.getByLabelText('Lý do');
     expect(document.activeElement).toBe(area);
-    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    fireEvent.keyDown(document.activeElement, { key: 'Tab', shiftKey: true });
     expect(document.activeElement).toBe(screen.getByText('Gửi'));
-    fireEvent.keyDown(document, { key: 'Tab' });
+    fireEvent.keyDown(document.activeElement, { key: 'Tab' });
     expect(document.activeElement).toBe(area);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(document.activeElement).toBe(opener);
+    await waitFor(() => expect(document.activeElement).toBe(opener));
   });
 
-  it('ConfirmDialog: focus vào Hủy, Esc đóng', () => {
+  it('ConfirmDialog: focus vào Hủy, Esc đóng và trả focus', async () => {
     render(<Host />);
-    fireEvent.click(screen.getByText('Mở'));
+    const opener = screen.getByText('Mở');
+    opener.focus();
+    fireEvent.click(opener);
     expect(document.activeElement).toBe(screen.getByText('Hủy'));
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(opener));
   });
 });
