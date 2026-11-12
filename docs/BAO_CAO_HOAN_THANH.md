@@ -56,7 +56,6 @@ Agent không deploy, không tạo tài khoản dịch vụ, không đọc `.env`
 6. Trả lời `docs/agents/CAU_HOI.md` #10–#12 (G33, G37/G41, G44) – hệ thống đang chạy theo phương án đề xuất ghi trong đó.
 
 ## 6. Hạn chế đã biết
-- Job E2E trong CI chưa chạy thật trên GitHub (chỉ chạy cục bộ; cần push).
 - Số đo NFR01–NFR04, NFR10 trên hạ tầng thật chỉ có sau deploy (§6.4).
 - Limiter `/api/auth/refresh` 300 lần/15 phút/IP – nếu cả trường đi chung một IP NAT (> ~250 phiên đồng thời) thì nâng mức này sau khi đo thật. API không khởi động nếu `ACCESS_TOKEN_TTL_SECONDS` > 900 hoặc `REFRESH_TOKEN_TTL_DAYS` > 30.
 - `npm audit`: 4 lỗ hổng mức moderate ở `minimatch` qua `eslint` (chỉ dùng khi phát triển); `npm audit --omit=dev` = 0. Theo dõi bản vá eslint.
