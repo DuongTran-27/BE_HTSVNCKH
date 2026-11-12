@@ -131,4 +131,4 @@ Giai đoạn 1 (nền tảng: auth, state machine, similarity engine, CSV, schem
 | TASK-FR06-PGTRGM | Đo FR06 bằng pg_trgm thật – TC-FR06-95 (`reports/TASK-FR06-PGTRGM.md`) | FR06, M5 | QA | RV | – | DONE 2026-11-11 (`reviews/FINAL-reviewer.md` APPROVED) |
 | TASK-E2E-GD6B | E2E FR04, FR09, FR10, FR18–FR20, FR22, FR23; sửa `mapServerDetails` mất thông điệp lỗi (`reports/TASK-E2E-GD6B.md`) | FR04–FR23 | QA | RV | – | DONE 2026-11-11 (`reviews/FINAL-reviewer.md` APPROVED) |
 | TASK-LOCK-ADMIN-RACE | Hai ADMIN khóa/xóa nhau; P2003 → 409 (người dùng đồng ý) (`reports/TASK-LOCK-ADMIN-RACE.md`) | FR25, NFR05 | BE | BM | TASK-USER-DELETE | DONE 2026-11-11 (`reviews/TASK-LOCK-ADMIN-RACE-bao-mat-v1.md` APPROVED) |
-| TASK-DIALOG-RADIX | ReasonDialog, ConflictDialog, ChangeRequestForm sang Dialog Radix; trả focus khi đóng cho mọi hộp thoại (`reports/TASK-DIALOG-RADIX.md`) | NFR07 | FE | RV | TASK-UI-SHADCN | REVIEW 2026-11-12 (E2E chưa chạy) |
+| TASK-DIALOG-RADIX | ReasonDialog, ConflictDialog, ChangeRequestForm sang Dialog Radix; trả focus khi đóng cho mọi hộp thoại (`reports/TASK-DIALOG-RADIX.md`) | NFR07 | FE | RV | TASK-UI-SHADCN | REVIEW 2026-11-12 (E2E 74/74) |

@@ -19,5 +19,6 @@ Yêu cầu trực tiếp của người dùng (2026-11-12). Trả nợ kỹ thu�
 npx vitest run (apps/web)      → Test Files 29 passed (29), Tests 236 passed (236)
 npm run lint                   → eslint . --max-warnings 0, không lỗi
 npm run build -w @nckh/web     → ✓ built
+npm run db:test:up             → embedded-postgres 16.14, K1–K7 OK
+npm run test:e2e -w @nckh/web  → 74 passed (4.8m) (desktop + mobile; gd6/gd6b/m1/m4/roles mở các hộp thoại này)
 ```
-Chưa chạy: E2E Playwright (Docker Desktop tắt, không có DB test). Các spec `gd6*.spec.js`, `m1`, `m4`, `roles` có mở các hộp thoại này – cần chạy lại khi bật Docker.
