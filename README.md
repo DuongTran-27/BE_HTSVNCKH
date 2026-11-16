@@ -27,10 +27,10 @@ Tạo `apps/api/.env` (không commit) với `DATABASE_URL` và `DIRECT_URL` = `p
 ```bash
 cd apps/api && npx prisma migrate deploy && npx prisma db seed && cd ../..
 npm run demo:people -w @nckh/api   # tùy chọn: thay một số tài khoản mẫu bằng danh sách thật trong apps/api/prisma/demo-people.local.json (gitignore, không commit)
-npm run dev:api           # http://localhost:4000/api/health (tự nạp apps/api/.env)
-npm run dev:web           # http://localhost:5173 (proxy /api → 4000)
-npm run db:dev:down       # dừng DB dev
+npm run dev               # một terminal: bật DB dev + API (http://localhost:4000/api/health) + web (http://localhost:5173); Ctrl+C dừng API và web
+npm run db:dev:down       # dừng DB dev (Ctrl+C không dừng DB)
 ```
+Chạy riêng từng phần: `npm run dev:api` (tự nạp apps/api/.env), `npm run dev:web` (proxy /api → 4000).
 
 ## Database test
 

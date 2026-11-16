@@ -19,7 +19,8 @@
     "db:test:down": "node apps/api/scripts/db-test.js down",
     "db:dev:up": "node apps/api/scripts/db-dev.js up",
     "db:dev:down": "node apps/api/scripts/db-dev.js down",
-    "dev:api": "npm run dev -w @nckh/api",
+    "dev": "npm run db:dev:up && node apps/api/scripts/dev.js",
+    "dev:api":"npm run dev -w @nckh/api",
     "dev:web": "npm run dev -w @nckh/web"
   },
   "devDependencies": {
