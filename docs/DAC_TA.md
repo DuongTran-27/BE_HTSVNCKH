@@ -236,3 +236,66 @@ Thời hạn link tải (5 phút) và số bản sao lưu (7) là tham số hệ
 - [ ] Hạn mức đề tài mỗi giảng viên và số thành viên tối đa mỗi nhóm.
 - [ ] Sinh viên năm mấy được tham gia và có cho nhóm liên lớp hay không.
 - [ ] Giới hạn dung lượng file trên gói Cloudinary đang dùng.
+
+## 9. Bổ sung theo đề cương (2026-11-18)
+
+Phần này bổ sung theo đề cương thực tập của nhóm, theo các quyết định chủ dự án chốt ngày 2026-11-18. **Luồng hiện có giữ nguyên** (SV tạo đề tài → mời GVHD → GV nhận → cán bộ xét duyệt → thực hiện → đóng); các luồng mới chạy song song. Câu "Hội đồng chấm điện tử nằm ngoài phạm vi phiên bản này" ở mục 1 **không còn áp dụng**: hội đồng là luồng tùy chọn theo đợt (FR34–FR37).
+
+**Quy ước ánh xạ với đề cương**
+
+- "Admin / Quản lý Khoa" của đề cương = **cán bộ khoa (STAFF)**. ADMIN vẫn không có quyền nghiệp vụ (FR25).
+- "Hội đồng khoa học" **không** là vai trò mới: thành viên hội đồng là giảng viên (LECTURER); quyền xét theo quan hệ với hội đồng và đề tài được phân công.
+- Kiểm tra trùng lặp giữ đúng FR06 (cảnh báo 3 mức, không chặn ở 30%); áp dụng cả cho đề tài giảng viên công bố.
+- Hợp đồng API: `docs/agents/design/API_GD7.md`. Màn hình: `docs/agents/design/UI.md` mục 12.
+
+| Mã | Chức năng | Mục tiêu | Ưu tiên | Điều kiện đạt chính |
+| --- | --- | --- | --- | --- |
+| FR28 | Đăng nhập Google (SSO) | NT | P2 | Bật khi đủ cấu hình môi trường; thiếu thì nút Google ẩn, API trả 404, đăng nhập mật khẩu không đổi. Chỉ nhận ID token đã xác minh chữ ký, đúng `aud`, `email_verified = true`, `hd` và đuôi email đúng tên miền trường. **Chỉ đăng nhập vào tài khoản đã có** (khớp email, không phân biệt hoa thường); không tự tạo tài khoản (giữ FR02). Tài khoản bị khóa hoặc tạm khóa bị từ chối. Có `state`, `nonce`, PKCE; token không xuất hiện trên URL. Tài khoản quản trị chỉ đăng nhập bằng mật khẩu. Giới hạn tần suất không chặn nhiều sinh viên đăng nhập thành công từ cùng một mạng. |
+| FR29 | Email thông báo | M2 | P2 | Mỗi thông báo trong web (FR13) được gửi kèm email tới địa chỉ của chính người nhận khi SMTP được cấu hình. Thiếu cấu hình hoặc máy chủ mail lỗi: thông báo trong web vẫn ghi, email bỏ qua và ghi log, API không lỗi. Nội dung email chỉ gồm tiêu đề thông báo và liên kết vào hệ thống (không thêm dữ liệu ngoài quyền người nhận). Thử lại tối đa 3 lần; không gửi trùng. |
+| FR30 | Hồ sơ cá nhân | NT | P2 | Mọi vai trò xem hồ sơ của mình; chỉ tự sửa **số điện thoại** (định dạng Việt Nam). Họ tên, mã, email, khoa, lớp, vai trò do cán bộ/quản trị quản lý, không tự sửa. Số điện thoại chỉ chính người đó, cán bộ trong phạm vi và quản trị thấy. Thay đổi ghi lịch sử (FR15). |
+| FR31 | Giảng viên công bố đề tài tuyển sinh viên | M1, M5 | P2 | GV tạo đề tài nháp trong đợt đang mở đăng ký, nhập yêu cầu ứng viên và số SV cần tuyển (1 đến số thành viên tối đa của đợt). Công bố bắt buộc đủ trường như FR05 và **chạy FR06** (nghi trùng cao phải giải trình). Đề tài đang tuyển tính vào hạn mức GV (FR16), kiểm dưới khóa lúc công bố. Ngừng tuyển bắt buộc lý do; thành viên đã nhận (nếu có) được gỡ khỏi đề tài và giải phóng suất đề tài hoạt động. |
+| FR32 | Sinh viên ứng tuyển đề tài | M1 | P2 | SV cùng khoa thấy bảng tin đề tài đang tuyển (mã, tên, tóm tắt, lĩnh vực, GV, yêu cầu, số chỗ còn lại; không thấy danh sách ứng viên). Ứng tuyển kèm lời giới thiệu, chỉ trong thời gian mở đăng ký; mỗi SV một đơn còn hiệu lực mỗi đề tài; rút được đơn chưa xử lý. |
+| FR33 | Duyệt đơn và chốt nhóm | M1 | P2 | Chỉ GVHD của đề tài duyệt hoặc từ chối từng đơn (từ chối bắt buộc lý do). **Không vượt số SV cần tuyển; không vượt số đề tài hoạt động mỗi SV (FR03)** – kiểm trong transaction, hai lần duyệt đồng thời không vượt. Người được duyệt đầu tiên là trưởng nhóm. Chốt nhóm cần đủ số thành viên tối thiểu; các đơn còn chờ bị từ chối tự động. |
+| FR34 | Điểm quá trình và đủ điều kiện bảo vệ | M2 | P2 | GVHD hiện hành nhập điểm quá trình thang 10 (tối đa 2 chữ số thập phân) và nhận xét; **chỉ chuyển Chờ bảo vệ khi điểm ≥ 5,0**, mọi mốc bắt buộc Đạt và đã có báo cáo tổng kết (tài liệu giai đoạn FINAL). Điểm < 5,0: không chuyển, GV nhập kết quả Không đạt và gửi đóng theo FR27. Điểm quá trình chỉ thêm, không sửa. Từ Chờ bảo vệ, SV không nộp/sửa được gì. |
+| FR35 | Thành lập hội đồng và phân bổ đề tài | M2 | P2 | Cán bộ khoa lập hội đồng theo đợt: đúng 1 Chủ tịch, 1 Thư ký, 1–5 Ủy viên, đều là GV của khoa, không trùng người. Chỉ gán đề tài Chờ bảo vệ cùng khoa, cùng đợt; mỗi đề tài tối đa một phân công còn hiệu lực. **Chặn xung đột lợi ích: GVHD hiện hành của đề tài không được là thành viên hội đồng chấm đề tài đó** – kiểm khi gán và khi đổi thành viên. Không đổi thành viên khi hội đồng đã có điểm. Cán bộ trả đề tài Chờ bảo vệ về Đang thực hiện được, bắt buộc lý do. |
+| FR36 | Chấm điểm bảo vệ | M2 | P2 | Chỉ thành viên hội đồng được phân công chấm, khi đề tài Chờ bảo vệ và chưa chốt. Điểm 0–10 (tối đa 2 chữ số thập phân) và nhận xét bắt buộc; sửa được đến khi chốt. Thành viên xem hồ sơ, tài liệu (tải qua FR24, ghi lịch sử), điểm quá trình, nhận xét GVHD; **không ghi gì khác**. Trước khi chốt, ủy viên chỉ thấy điểm của mình; Chủ tịch, Thư ký, cán bộ thấy đủ. |
+| FR37 | Chốt quyết định nghiệm thu | M2, M4 | P2 | Chỉ Chủ tịch hoặc Thư ký chốt, khi **mọi thành viên đã chấm**. Điểm cuối = trung bình cộng điểm bảo vệ (làm tròn 2 chữ số). Đạt khi ≥ 5,0. Kết quả cuối (FR12) sinh tự động theo thang cấu hình của đợt, kèm biên bản nhận xét bắt buộc; đề tài sang Chờ đóng, mọi điểm bị khóa. **Cán bộ xác nhận đóng như FR27.** Hai người chốt cùng lúc: đúng một thành công. |
+| FR38 | Bảng Kanban tiến độ | M2 | P2 | Hiển thị các mốc theo 4 cột suy ra từ dữ liệu: Chưa nộp, Chờ đánh giá (bản nộp mới nhất chưa có nhận xét **kèm đánh giá**), Cần bổ sung, Đạt. GVHD kéo thẻ (hoặc dùng nút bằng bàn phím) từ Chờ đánh giá sang Đạt/Cần bổ sung = nhận xét có đánh giá trên bản nộp mới nhất (FR12); từ Đạt sang Cần bổ sung = mở lại mốc (FR22, có lý do). Không có đường chuyển nào khác. Lỗi mạng thì thẻ về chỗ cũ và báo lỗi. Thao tác được bằng bàn phím. |
+| FR39 | Xuất thống kê Excel | M4 | P2 | Bên cạnh CSV (FR14): file .xlsx gồm sheet "Thống kê" **cùng số với biểu đồ, bảng và CSV** cho cùng bộ lọc, và sheet "Danh sách đề tài" có đúng `total` dòng. Cùng phạm vi quyền như FR14. Ô văn bản luôn ghi kiểu chuỗi, không bao giờ là công thức. |
+
+**Nối vào máy trạng thái (mục 5)**
+
+Thêm 2 trạng thái: **Đang tuyển sinh viên** (`RECRUITING`) và **Chờ bảo vệ** (`WAITING_DEFENSE`); cả hai là "đề tài hoạt động". Thêm 6 lần chuyển, định nghĩa trong `packages/shared/src/transitions.js` như các lần chuyển cũ, chạy trong transaction và ghi `StatusHistory` (FR15):
+
+| Từ | Sang | Người thực hiện | Điều kiện | FR |
+| --- | --- | --- | --- | --- |
+| Nháp | Đang tuyển sinh viên | GVHD của đề tài (GV công bố) | Trong thời gian mở đăng ký; đủ trường bắt buộc; FR06 chạy xong (giải trình nếu nghi trùng cao); chưa vượt hạn mức GV | FR06, FR31 |
+| Đang tuyển sinh viên | Nháp | GVHD | Bắt buộc lý do; thành viên đã nhận bị gỡ, đơn đang chờ bị từ chối tự động | FR31 |
+| Đang tuyển sinh viên | Đã có GVHD | GVHD | Đủ số thành viên tối thiểu; đơn đang chờ bị từ chối tự động | FR33 |
+| Đang thực hiện | Chờ bảo vệ | GVHD hiện hành | Điểm quá trình ≥ 5,0; mọi mốc bắt buộc Đạt; có báo cáo tổng kết | FR34 |
+| Chờ bảo vệ | Đang thực hiện | Cán bộ khoa | Bắt buộc lý do; phân công hội đồng chưa chốt bị hủy | FR35 |
+| Chờ bảo vệ | Chờ đóng | Chủ tịch hoặc Thư ký hội đồng được phân công | Mọi thành viên đã chấm; sinh kết quả cuối từ điểm trung bình | FR37 |
+
+- **Đề tài GV công bố** đi Nháp → Đang tuyển sinh viên → Đã có GVHD, rồi theo đúng luồng cũ: trưởng nhóm gửi xét duyệt (FR05, FR06 chạy lại, snapshot FR17) → cán bộ xét duyệt (FR07). Đề cương ghi "chốt nhóm → chờ Khoa duyệt"; ở đây thêm một bước trưởng nhóm bấm gửi để dùng lại nguyên FR05/FR06/FR17 (Giả định G48 trong API_GD7, câu hỏi `CAU_HOI.md` #14).
+- **Hội đồng** là nhánh thay cho bước "GVHD gửi đóng" của FR27: Chờ bảo vệ → Chờ đóng do hội đồng chốt, kết quả cuối có nguồn "Hội đồng"; từ Chờ đóng, cán bộ xác nhận đóng hoặc trả lại **đúng như FR27** (điều kiện mốc bắt buộc vẫn kiểm lại lúc đóng; kết quả hội đồng được coi là kết quả cuối hợp lệ). Sau khi đóng, sửa kết quả chỉ qua FR23. Kết quả do hội đồng chốt **không bị GVHD nhập đè** (kể cả khi cán bộ trả lại để bổ sung); muốn chấm lại phải đề nghị ra hội đồng lần nữa. Khi `requireDefense` bật, kết quả hội đồng đủ để GVHD gửi đóng.
+- **Bật bắt buộc hội đồng theo đợt**: tham số `requireDefense` (mặc định **tắt**, giữ hành vi hiện tại). Khi bật, GVHD chỉ gửi đóng trực tiếp (FR27) được khi kết quả hiện hành là Không đạt; đề tài khác phải qua hội đồng.
+- **Điểm quá trình và xếp loại hiện có**: điểm quá trình (FR34) là điều kiện ra hội đồng, không tự sinh kết quả. Kết quả cuối vẫn dùng thang Xuất sắc/Tốt/Đạt/Không đạt (mục 8); với nhánh hội đồng, quy đổi từ điểm trung bình theo tham số đợt `defenseGrades` (mặc định ≥ 9,0 Xuất sắc; ≥ 7,0 Tốt; ≥ 5,0 Đạt; < 5,0 Không đạt – câu hỏi `CAU_HOI.md` #13). Nhánh GVHD gửi đóng giữ nguyên: GV chọn mức trực tiếp.
+- FR06: đề tài Đang tuyển sinh viên vào kho so như hồ sơ đang chờ của nhóm khác cùng đợt (ẩn tên với SV); Chờ bảo vệ vào kho như Đang thực hiện.
+
+**Tham số mới (mục 8)**
+
+| Tham số | Mặc định | Dùng ở |
+| --- | --- | --- |
+| Bắt buộc qua hội đồng (`requireDefense`) | Tắt | FR27, FR34 |
+| Quy đổi điểm bảo vệ (`defenseGrades`) | Xuất sắc ≥ 9,0; Tốt ≥ 7,0; Đạt ≥ 5,0 | FR37 |
+| Điểm quá trình tối thiểu ra hội đồng | 5,0 (cố định theo đề cương) | FR34 |
+| Số thành viên hội đồng | 1 Chủ tịch, 1 Thư ký, 1–5 Ủy viên | FR35 |
+
+**Ma trận truy vết bổ sung** (chi tiết test ở `docs/agents/TRUY_VET.md` sau TASK-DC-24)
+
+| Mục tiêu | FR | Integration | E2E |
+| --- | --- | --- | --- |
+| M1 | FR31–FR33 | Hai lần duyệt đơn đồng thời không vượt chỉ tiêu; SV không vượt số đề tài hoạt động; bảng tin không lộ ứng viên | GV công bố → SV ứng tuyển → GV duyệt, chốt nhóm → trưởng nhóm gửi → cán bộ duyệt |
+| M2 | FR34–FR38 | Xung đột lợi ích bị chặn; hai người chốt cùng lúc chỉ một thành công; điểm khóa sau chốt; ủy viên không thấy điểm người khác trước chốt | Đủ điều kiện → lập hội đồng → chấm → chốt → cán bộ đóng; Kanban bằng bàn phím |
+| M4 | FR39 | Sheet thống kê khớp `/api/stats` và CSV; ô chuỗi không là công thức | Tải file Excel |
+| NT | FR28–FR30 | Sai tên miền / chưa xác minh / không có tài khoản / bị khóa đều bị từ chối; email lỗi không làm hỏng API | Nút Google ẩn khi tắt; sửa số điện thoại |

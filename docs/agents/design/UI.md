@@ -540,3 +540,116 @@ Mỗi thành phần, hook, route có **đúng một** task chủ. Không có quy
 
 ## 11. Schema cần thêm ở `packages/shared`
 Không có schema mới. UI dùng lại các schema, hằng và nhãn đã liệt kê ở API §11 (T206, T207a, T207b, T208–T213) và `countWords` có sẵn. Nếu frontend cần hàm định dạng thời gian dùng chung với backend (CSV thống kê GĐ5), đề xuất ở T400.
+
+---
+
+## 12. Bổ sung theo đề cương (2026-11-18) – FR28–FR39
+
+Hợp đồng: `design/API_GD7.md` (gọi tắt **GD7 §x**). Mọi quy ước mục 1–9 giữ nguyên (`availableActions`/`permissions` quyết định nút, 4 trạng thái mỗi màn, lỗi theo mục 7, nhãn từ shared). **Desktop là ưu tiên thiết kế** (người dùng chủ yếu dùng máy tính, mốc `lg` 1024 px trở lên dùng bố cục nhiều cột, bảng đầy đủ); dưới `lg` xếp một cột, dưới `sm` bảng thành thẻ, không cuộn ngang ở 360 px (NFR07, mục 8).
+
+### 12.1 Sitemap bổ sung
+```
+Chung        Hồ sơ cá nhân        /ho-so                         (menu người dùng, mọi vai trò kể cả ADMIN)
+Khách        /dang-nhap           nút "Đăng nhập bằng Google" khi providers.google; /dang-nhap/google (nhận kết quả SSO)
+SV           Đề tài tuyển SV      /tuyen-sinh, /tuyen-sinh/:topicId
+             Đơn ứng tuyển        /don-ung-tuyen
+GV           Đề tài tuyển SV      /tuyen-sinh (xem bảng tin), nút "Công bố đề tài" → /de-tai/moi?nguon=gv
+             Ứng viên             /de-tai/:id/ung-vien          (GVHD đề tài GV công bố)
+             Chấm bảo vệ          /cham-bao-ve, /cham-bao-ve/:assignmentId
+Cán bộ       Hội đồng             /hoi-dong, /hoi-dong/moi, /hoi-dong/:id
+             Tuyển SV (chỉ đọc)   /tuyen-sinh
+Đề tài       Kanban tiến độ       /de-tai/:id/kanban            (tab cạnh "Mốc", ai đọc được mốc đều xem)
+Thống kê     nút "Xuất Excel"     /thong-ke
+```
+
+### 12.2 Bảng route bổ sung
+| # | Route | Vai trò | Màn | Endpoint | Task |
+|---|---|---|---|---|---|
+| R26 | `/tuyen-sinh` | STUDENT, LECTURER, STAFF | Bảng tin đề tài đang tuyển | `GET /api/recruitments` (GD7 §4.2), `GET /api/rounds`, `GET /api/fields` | DC-14 |
+| R27 | `/tuyen-sinh/:topicId` | STUDENT, LECTURER, STAFF | Chi tiết + form ứng tuyển (SV) | `GET /api/recruitments/:topicId`, `POST …/applications`, `POST /api/applications/:id/withdraw` (GD7 §4.3) | DC-14 |
+| R28 | `/don-ung-tuyen` | STUDENT | Đơn của tôi | `GET /api/applications`, `POST /api/applications/:id/withdraw` | DC-14 |
+| R29 | `/de-tai/:id/ung-vien` | LECTURER, STAFF | Danh sách đơn; duyệt/từ chối; chốt nhóm | `GET /api/topics/:id/applications`, `POST /api/applications/:id/accept|decline`, `POST /api/topics/:id/actions` `FINALIZE_GROUP`/`UNPUBLISH_RECRUITMENT` | DC-13 |
+| R5', R7' | `/de-tai/moi?nguon=gv`, `/de-tai/:id/sua` | LECTURER | Tạo/sửa đề tài tuyển (thêm "Yêu cầu ứng viên", "Số SV cần tuyển"); công bố | `POST /api/topics`, `PUT /api/topics/:id`, `POST …/similarity-checks`, `/actions` `PUBLISH_RECRUITMENT` (GD7 §3) | DC-13 |
+| R30 | `/hoi-dong` | STAFF | Danh sách hội đồng | `GET /api/councils` (GD7 §6.5) | DC-15 |
+| R31 | `/hoi-dong/moi` | STAFF | Lập hội đồng | `POST /api/councils`, `GET /api/users?role=LECTURER` | DC-15 |
+| R32 | `/hoi-dong/:id` | STAFF (thành viên HĐ: chỉ đọc) | Thành viên, đề tài được gán, gán thêm, hủy gán | `GET /api/councils/:id`, `PUT …/members`, `PATCH /api/councils/:id`, `POST …/assignments`, `POST /api/council-assignments/:id/cancel`, `GET /api/topics?status=WAITING_DEFENSE&councilAssigned=false` | DC-15 |
+| R33 | `/cham-bao-ve` | LECTURER | Đề tài được phân công chấm | `GET /api/council-assignments` (GD7 §7.2) | DC-16 |
+| R34 | `/cham-bao-ve/:assignmentId` | LECTURER | Xem hồ sơ, chấm, chốt | `GET /api/council-assignments/:id`, `GET /api/topics/:id/documents?stage=FINAL`, `POST /api/documents/:id/download-url`, `GET /api/topics/:id/feedbacks`, `PUT …/my-score`, `POST …/finalize` | DC-16 |
+| R35 | `/ho-so` | Mọi vai trò | Hồ sơ cá nhân | `GET/PATCH /api/me/profile` (GD7 §10.1) | DC-12 |
+| R36 | `/de-tai/:id/kanban` | STUDENT, LECTURER, STAFF | Kanban mốc | `GET /api/topics/:id/milestones`, `POST /api/documents/:id/feedbacks`, `POST /api/milestones/:id/reopen` | DC-17 |
+
+### 12.3 Đăng nhập Google – R1 bổ sung, `/dang-nhap/google` (DC-12)
+- R1 gọi `GET /api/auth/providers` (khóa `['auth-providers']`, `staleTime` vô hạn). `google: true` → nút "Đăng nhập bằng Google" dạng **liên kết** `<a href="/api/auth/google/start?next=…">` (không form, không `window.location` – GD7 §8.2), đặt trên form mật khẩu, ngăn bằng dòng "hoặc". Lỗi/`false` → không hiện nút, form mật khẩu như cũ.
+- `/dang-nhap/google?next=`: gọi `POST /api/auth/refresh` (qua hàm khởi động có sẵn) → thành công thì như đăng nhập (mục 4.1: `mustChangePassword` → `/doi-mat-khau`, không thì `next` hợp lệ theo mục 1.2). Thất bại → `/dang-nhap`.
+- R1 đọc `sso_error` trên URL → hộp lỗi cấp form theo `SSO_ERROR_LABEL`: `DOMAIN_NOT_ALLOWED` "Truy cập bị từ chối. Vui lòng dùng email do trường cấp."; `NO_ACCOUNT` "Tài khoản chưa được cấp trên hệ thống. Vui lòng liên hệ cán bộ khoa."; `ACCOUNT_LOCKED`; `EMAIL_NOT_VERIFIED`; `STATE_MISMATCH` "Phiên đăng nhập Google đã hết hạn, vui lòng thử lại"; `GOOGLE_ERROR`; `CANCELLED` "Bạn đã hủy đăng nhập bằng Google"; `PASSWORD_ONLY` "Tài khoản quản trị chỉ đăng nhập bằng mật khẩu". Mã lạ → "Đăng nhập bằng Google không thành công". Sau khi hiện, xóa `sso_error` khỏi URL (`replace`).
+
+### 12.4 Hồ sơ cá nhân – R35 (DC-12)
+- Thẻ thông tin chỉ đọc: mã, họ tên, email, vai trò, khoa, lớp/ngành; ghi chú "Liên hệ cán bộ khoa nếu thông tin sai".
+- Form một ô `phone` (`profileUpdateSchema`, `type="tel"`, `inputmode="tel"`), nút "Lưu thay đổi", "Xóa số". Thành công: toast "Cập nhật thành công". Lỗi tại ô: "Số điện thoại không hợp lệ". 429 theo mục 7.
+- Chi tiết tài khoản R20 (cán bộ/admin) hiện thêm dòng SĐT chỉ đọc.
+
+### 12.5 Đề tài GV công bố – R5', R7', R29 (DC-13)
+- **R5'**: GV vào từ nút "Công bố đề tài tuyển sinh viên" (R26 và R4). Form như R5. Thành công → R7'.
+- **R7'**: như R7 khi `topic.origin === 'LECTURER'`, thêm 2 ô: "Yêu cầu ứng viên" (`requirements`, textarea) và "Số sinh viên cần tuyển" (`recruitSlots`, 1..`round.effectiveConfig.maxMembers`). Danh sách "Đủ điều kiện công bố" chạy `topicPublishSchema`. Nút "Kiểm tra trước" (`permissions.checkSimilarity`) dùng `SimilarityPanel` có sẵn.
+- **Công bố** (`PUBLISH_RECRUITMENT` trong `availableActions`): mở trang kiểu R10 4 bước (đủ trường → kiểm trùng → giải trình nếu HIGH → "Công bố"), **dùng lại thành phần của R10**, chỉ đổi action và nhãn. Lỗi riêng: `LECTURER_QUOTA_EXCEEDED`, `REGISTRATION_CLOSED`, `JUSTIFICATION_REQUIRED`, `SIMILARITY_NOT_CHECKED` như mục 7.
+- **R6** khi `RECRUITING`: vùng thông báo "Đang tuyển sinh viên – {acceptedCount}/{recruitSlots} chỗ, {applicationCounts.pending} đơn chờ" + nút "Xem ứng viên" → R29 (khi `applicationCounts` khác `null`). Nút "Ngừng tuyển" (`UNPUBLISH_RECRUITMENT`, `ReasonDialog` bắt buộc lý do; khi `acceptedCount > 0` cảnh báo đỏ "{acceptedCount} sinh viên đã nhận sẽ bị gỡ khỏi đề tài"; luôn ghi "Đề tài về Nháp; các đơn đang chờ bị từ chối") và "Chốt nhóm" (`FINALIZE_GROUP`, xác nhận "Đóng ứng tuyển, các đơn còn chờ bị từ chối").
+- **R29** (desktop: bảng; mobile: thẻ): cột mã SV, họ tên, lớp, lời giới thiệu (rút gọn 2 dòng, bấm mở toàn văn), ngày nộp, trạng thái. Tab theo `status`, mặc định Chờ duyệt. Đầu trang: thanh "{acceptedCount}/{recruitSlots} đã nhận" + nút "Chốt nhóm". Nút "Đồng ý" (xác nhận; khi đã đủ chỗ vẫn hiện, kèm gợi ý "Nhóm đã đủ số lượng" – server quyết định), "Từ chối" (`ReasonDialog`). Lỗi riêng: `GROUP_FULL` → hộp lỗi "Nhóm đã đạt số lượng tối đa" + tải lại; `STUDENT_TOPIC_LIMIT`; `APPLICATION_CLOSED` → toast + tải lại; `NOT_RECRUITING`. Rỗng: "Chưa có sinh viên ứng tuyển."
+
+### 12.6 Bảng tin và ứng tuyển – R26, R27, R28 (DC-14)
+- **R26**: lưới thẻ trên desktop (3 cột ≥ `xl`, 2 cột ≥ `lg`, 1 cột dưới `lg`). Thẻ: mã, tên, lĩnh vực, GV, `summaryExcerpt`, "Còn {recruitSlots − acceptedCount} chỗ", đợt + badge "Đã đóng đăng ký" khi `!round.registrationOpen`, trạng thái đơn của tôi (`myApplication.status`, badge "Đang chờ duyệt"/"Đã được nhận"/"Bị từ chối"). Lọc: đợt, lĩnh vực, GV, `q` (URL như mục 1.3). Rỗng: "Hiện chưa có đề tài nào đang tuyển sinh viên."
+- **R27**: trái (desktop 2/3): tóm tắt, mục tiêu, từ khóa, yêu cầu ứng viên; phải (1/3, dính khi cuộn): GV, số chỗ, đợt, khối ứng tuyển. SV chưa có đơn còn hiệu lực → form "Lời giới thiệu" (`applicationCreateSchema`, bộ đếm ký tự) + "Gửi ứng tuyển". Có đơn `PENDING` → **ẩn form**, hiện "Đang chờ duyệt" + "Rút đơn" (xác nhận). GV/cán bộ: chỉ đọc. 404 → "Đề tài không còn tuyển hoặc không tồn tại". Lỗi riêng: `APPLICATION_EXISTS`, `REGISTRATION_CLOSED`, `STUDENT_TOPIC_LIMIT`.
+- **R28**: bảng đơn (đề tài, GV, ngày nộp, trạng thái, lý do từ chối nếu có); đơn `ACCEPTED` có link "Vào đề tài" → R6. Rỗng: "Bạn chưa ứng tuyển đề tài nào." + nút → R26.
+- Menu SV: "Đề tài tuyển sinh viên", "Đơn ứng tuyển". Trang chủ SV giữ `/de-tai`; khi SV chưa có đề tài, trạng thái rỗng R4 thêm nút "Xem đề tài giảng viên đang tuyển" → R26.
+
+### 12.7 Ra hội đồng trên R6 (DC-15)
+- `REQUEST_DEFENSE` (GV): hộp thoại "Đề nghị ra hội đồng" có ô `processScore` (số, bước 0,25 trên điều khiển nhưng nhận tối đa 2 chữ số thập phân), `processComment`, cảnh báo "Sau khi gửi, sinh viên không nộp hoặc sửa tài liệu được nữa". Điểm < 5 nhập vào ô → gợi ý tại chỗ "Không đủ điều kiện ra hội đồng (dưới 5,0). Hãy nhập kết quả Không đạt và gửi đóng" (vẫn cho bấm; server trả `PROCESS_SCORE_TOO_LOW`). Lỗi riêng: `NO_FINAL_REPORT` (link tab Tài liệu), `MILESTONES_NOT_PASSED`, `NO_REQUIRED_MILESTONE`.
+- `REQUEST_CLOSE` khi đợt `requireDefense`: hiện gợi ý "Đợt này bắt buộc bảo vệ trước hội đồng (trừ kết quả Không đạt hoặc kết quả do hội đồng chốt)"; lỗi `DEFENSE_REQUIRED` → hộp lỗi.
+- `RETURN_FROM_DEFENSE` (cán bộ): `ReasonDialog`, nhắc "Phân công hội đồng chưa chốt sẽ bị hủy".
+- Khối **"Bảo vệ trước hội đồng"** trên R6 theo `topic.defense`: `WAITING_ASSIGNMENT` "Chờ khoa phân công hội đồng"; `ASSIGNED` "Hội đồng {code} – {name}", "Chưa có kết quả"; `DECIDED` điểm cuối (lớn), Đạt/Không đạt, bảng điểm từng thành viên (vai trò, họ tên, điểm, nhận xét), biên bản. Khối "Điểm quá trình" theo `topic.processScore`. `councilAccess` → dải "Bạn xem với tư cách thành viên hội đồng – chỉ đọc" + nút "Đến màn chấm" → R34.
+
+### 12.8 Hội đồng – R30, R31, R32 (DC-15)
+- **R30**: bảng mã, tên, đợt, chủ tịch, số thành viên, số đề tài, badge "Đã có điểm" (`locked`). Lọc đợt, `q`. Nút "Lập hội đồng". Rỗng: "Chưa có hội đồng nào trong đợt này."
+- **R31 / sửa thành viên trên R32**: chọn đợt (khi tạo), tên; ba khối "Chủ tịch" (1), "Thư ký" (1), "Ủy viên" (1–5, nút thêm/bớt), mỗi ô là ô chọn GV có tìm kiếm (`GET /api/users?role=LECTURER&q=`). Một GV đã chọn ở ô khác bị làm mờ trong danh sách. Lỗi `members` hiện đầu khối. `COUNCIL_LOCKED` → khối thành viên chỉ đọc + "Hội đồng đã có điểm, không đổi được thành viên". `CONFLICT_OF_INTEREST` → hộp lỗi liệt kê `details.conflicts` ("{lecturerName} là GVHD của đề tài {topicCode}").
+- **R32** desktop 2 cột: trái 1/3 thẻ thông tin + thành viên; phải 2/3 bảng đề tài được gán (mã, tên, GVHD, trạng thái, "Đã chấm {scoredCount}/{memberCount}", điểm cuối, Đạt/Không đạt). Nút "Gán đề tài" → hộp thoại rộng (desktop `max-w-3xl`): bảng chọn nhiều đề tài `WAITING_DEFENSE` chưa gán cùng đợt (có ô tìm), cột GVHD; đề tài có GVHD là thành viên hội đồng **được đánh dấu cảnh báo đỏ ngay trong danh sách** ("Xung đột: GVHD là thành viên hội đồng") và không chọn được (gợi ý; server vẫn kiểm). Gửi → lỗi `CONFLICT_OF_INTEREST`/`TOPIC_ALREADY_ASSIGNED`/`NOT_WAITING_DEFENSE` hiện danh sách mã, không đề tài nào được gán. Mỗi dòng chưa có điểm: "Hủy gán" (`ReasonDialog`); `ASSIGNMENT_HAS_SCORES` → hộp lỗi gợi ý dùng "Trả về đang thực hiện" ở R6.
+- Thành viên hội đồng (LECTURER) mở R32: chỉ đọc, không có nút.
+
+### 12.9 Chấm bảo vệ – R33, R34 (DC-16)
+- **R33**: tab "Chưa chốt" (mặc định) / "Đã chốt"; bảng: mã + tên đề tài, hội đồng, vai trò của tôi (`COUNCIL_ROLE_LABEL`), "Tôi đã chấm"/"Chưa chấm", "Đã chấm {scoredCount}/{memberCount}". Rỗng: "Bạn chưa được phân công chấm đề tài nào."
+- **R34** desktop 2 cột (≥ `lg`): **trái** (hồ sơ, cuộn): tóm tắt đề tài, nhóm, GVHD; "Báo cáo tổng kết" – danh sách tài liệu `stage=FINAL` với nút "Tải về" (FR24, URL ký 5 phút; không nhúng xem trước để không đổi CSP `frame-src`); "Điểm quá trình" + nhận xét GVHD; "Nhận xét của GVHD" (`GET …/feedbacks`, phân trang). **Phải** (dính khi cuộn): khối "Điểm của tôi" (`defenseScoreSchema`: ô điểm 0–10, nhận xét bắt buộc, nút "Lưu điểm"; khi đã có `myScore` thì điền sẵn, nút "Cập nhật điểm"); với `CHAIR`/`SECRETARY`: bảng điểm mọi thành viên + "Điểm trung bình tạm tính" (tính ở client chỉ để hiển thị) + nút "Chốt nghiệm thu" (`FINALIZE` trong `availableActions`). Dưới `lg`: trái trên, phải dưới; nút lưu điểm dính đáy.
+- Chốt: hộp thoại 2 bước – bước 1 nhập "Biên bản/nhận xét chung" (`minutes`), hiện điểm trung bình và kết quả dự kiến ("Đạt – Tốt" theo `gradeFromDefenseScore` của shared, chỉ để xem trước); bước 2 xác nhận "Hành động này sẽ khóa toàn bộ điểm và chuyển đề tài sang Chờ đóng. Bạn có chắc chắn?" (Hủy → đóng hộp, dữ liệu giữ nguyên). Gửi `{ version: topic.version, minutes }`.
+- Sau chốt: màn chỉ đọc, hiện kết quả. Khi đề tài đã đóng, thành viên hội đồng không còn quyền đọc (GD7 G62): R33 tab "Đã chốt" vẫn liệt kê dòng, bấm vào nhận 403 tại chỗ "Đề tài đã đóng – xem kết quả trong Kho đề tài nếu đạt".
+- R6 của GVHD khi kết quả hiện hành nguồn hội đồng: ẩn form nhập kết quả, hiện "Kết quả do hội đồng quyết định"; lỗi `COUNCIL_RESULT_LOCKED` → hộp lỗi. Lỗi riêng: `SCORES_INCOMPLETE` → hộp lỗi liệt kê `details.missing`; `ASSIGNMENT_DECIDED` → toast "Hội đồng đã chốt kết quả" + tải lại; `NOT_WAITING_DEFENSE`, `CONCURRENT_UPDATE` → tải lại; 403 → trang 403 tại chỗ (đã bị bỏ khỏi hội đồng hoặc phân công bị hủy).
+- Menu GV: "Chấm bảo vệ" (hiện với mọi GV; rỗng nếu không có phân công).
+
+### 12.10 Kanban – R36 (DC-17)
+- Bốn cột: Chưa nộp · Chờ đánh giá · Cần bổ sung · Đạt (suy ra theo GD7 §10.2 – "Chờ đánh giá" khi bản nộp mới nhất chưa có nhận xét kèm đánh giá, hàm thuần `kanbanColumn(milestone)` có unit test). Thẻ: tên mốc, hạn (đỏ khi `isOverdue`), badge "Bắt buộc", phiên bản nộp mới nhất + "Nộp muộn" (`latestDocument.isLate`). Bấm thẻ → tab Mốc tại mốc đó.
+- Desktop ≥ `lg`: 4 cột ngang chia đều, không cuộn ngang. Dưới `lg`: 4 khối xếp dọc, mỗi khối có số thẻ, thu gọn được.
+- **Kéo thả (chỉ GVHD hiện hành, `IN_PROGRESS`, tức `permissions.manageMilestones && topic.advisor?.id === user.id`)**: HTML5 DnD (`draggable`, `dragstart/dragover/drop`), chỉ cột đích hợp lệ nhận thả (viền nổi bật); cột khác `dropEffect = 'none'`.
+  - Chờ đánh giá → Đạt / Cần bổ sung: hộp thoại nhận xét bắt buộc → `POST /api/documents/{latestDocument.id}/feedbacks { content, evaluation, milestoneVersion: milestone.version }`.
+  - Đạt → Cần bổ sung: `ReasonDialog` → `POST /api/milestones/:id/reopen { version, reason }`.
+  - Thẻ chỉ chuyển sau khi API thành công (không cập nhật lạc quan trước hộp thoại). Lỗi mạng/lỗi API: thẻ ở nguyên cột cũ, toast "Mạng gián đoạn, cập nhật thất bại" hoặc thông điệp mục 7 (`STALE_DOCUMENT`, `MILESTONE_ALREADY_PASSED`, `CONCURRENT_UPDATE` → tải lại).
+- **Bàn phím và cảm ứng** (bắt buộc, HTML5 DnD không chạy trên cảm ứng): mỗi thẻ GV được thao tác có nút "Chuyển sang…" (menu Radix có sẵn) liệt kê **chỉ** cột đích hợp lệ; chọn → cùng hộp thoại như kéo thả. Vùng `aria-live="polite"` đọc "Đã chuyển {tên mốc} sang {cột}". Thẻ có `aria-describedby` mô tả cột hiện tại. Không có thư viện kéo thả (GD7 §12).
+- SV, cán bộ, thành viên hội đồng: chỉ xem, không có `draggable`, không có nút chuyển.
+
+### 12.11 Xuất Excel – `/thong-ke` (DC-18)
+Nút "Xuất Excel" cạnh "Xuất CSV", gọi `GET /api/stats/export.xlsx` với **cùng chuỗi query** (tải bằng `fetch` + blob như CSV hiện có để gửi Bearer token). Đang tải: nút disabled + "Đang xuất…". `VALIDATION_ERROR` (quá 5.000 đề tài) → toast thông điệp server. 429 theo mục 7.
+
+### 12.12 Thành phần và chủ (bổ sung mục 9.1)
+| Thành phần / route | Chủ |
+|---|---|
+| Nút Google + `/dang-nhap/google` + `SSO_ERROR_LABEL` dùng ở R1; R35; màu `StatusBadge` cho `RECRUITING`, `WAITING_DEFENSE`; `ACTION_LABEL` mới trong `TopicActionBar` | DC-12 |
+| R5', R7', trang công bố (dùng lại thành phần R10), R29, khối "Đang tuyển" trên R6 | DC-13 |
+| R26–R28, mục menu SV | DC-14 |
+| R30–R32, hộp thoại `REQUEST_DEFENSE`/`RETURN_FROM_DEFENSE`, khối "Bảo vệ trước hội đồng" + "Điểm quá trình" trên R6 | DC-15 |
+| R33, R34 | DC-16 |
+| R36 + `kanbanColumn` | DC-17 |
+| Nút Excel | DC-18 |
+
+Khóa query mới: `['auth-providers']`, `['profile']`, `['recruitments', params]`, `['recruitment', topicId]`, `['applications', params]`, `['topic-applications', id, params]`, `['councils', params]`, `['council', id]`, `['assignments', params]`, `['assignment', id]`. Invalidate: duyệt/từ chối/rút đơn → `['applications']`, `['topic-applications', id]`, `['topic', id]`, `['recruitments']`; chốt nhóm/công bố/ngừng tuyển → thêm `['topics']`; gán/hủy gán/đổi thành viên → `['council', id]`, `['councils']`, `['topics']`; chấm → `['assignment', id]`; chốt → `['assignment', id]`, `['assignments']`, `['topic', topicId]`, `['topics']`; Kanban → `['milestones', id]` (khóa có sẵn của tab Mốc), `['topic', id]`.
+
+### 12.13 Giả định
+| # | Giả định | Lý do |
+|---|---|---|
+| U10 | R34 không nhúng xem trước PDF; chỉ "Tải về" qua FR24 | Nhúng cần `frame-src`/`object-src` cho domain Cloudinary trong CSP; tải về đáp ứng UC19 mà không đổi CSP |
+| U11 | Kanban không cập nhật lạc quan | Mọi chuyển cột cần hộp thoại nhận xét/lý do; cập nhật sau khi API thành công thì không cần hoàn tác (UC11 6a vẫn đạt: thẻ ở chỗ cũ khi lỗi) |
+| U12 | Trang công bố đề tài GV dùng lại thành phần R10 | Cùng 4 bước đủ trường → FR06 → giải trình → gửi |
