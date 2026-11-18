@@ -35,6 +35,12 @@ enum TopicStatus {
   CLOSED
 }
 
+// GĐ7 FR31 (API_GD7 §2.1): nguồn đề tài – SV đề xuất / GV công bố
+enum TopicOrigin {
+  STUDENT
+  LECTURER
+}
+
 enum MemberRole {
   LEADER
   MEMBER
@@ -178,6 +184,7 @@ model User {
   changeRequestsDecided  ChangeRequest[]      @relation("ChangeRequestDecidedBy")
   changeRequestsTargeted ChangeRequest[]      @relation("ChangeRequestTarget")
   auditLogs              AuditLog[]           @relation("AuditActor")
+  applications           TopicApplication[]   @relation("ApplicationStudent")
 }
 
 model StaffScope {
@@ -218,6 +225,10 @@ model Topic {
   keywords           String[]
   status             TopicStatus        @default(DRAFT)
   version            Int                @default(0) // khóa lạc quan
+  // GĐ7 FR31 (API_GD7 §2.1, §3): đề tài GV công bố; recruitSlots null khi nháp
+  origin             TopicOrigin        @default(STUDENT)
+  requirements       String             @default("")
+  recruitSlots       Int?
   createdAt          DateTime           @default(now()) @db.Timestamptz(6)
   updatedAt          DateTime           @updatedAt @db.Timestamptz(6)
   round              Round              @relation(fields: [roundId], references: [id])
@@ -237,6 +248,7 @@ model Topic {
   similarityChecks   SimilarityCheck[]
   similarityBypasses SimilarityBypass[]
   changeRequests     ChangeRequest[]
+  applications       TopicApplication[]
 
   @@index([roundId, status])
   @@index([facultyId, status])
@@ -285,6 +297,24 @@ model AdvisorRequest {
 
   @@index([lecturerId, status])
   @@index([topicId, status])
+}
+
+// Đơn ứng tuyển đề tài GV công bố (FR32, FR33 – API_GD7 §2.2). Index application_one_active (chỉ PENDING) ở migration dc_recruitment
+model TopicApplication {
+  id          String        @id @default(cuid())
+  topicId     String
+  studentId   String
+  coverLetter String
+  status      RequestStatus @default(PENDING)
+  reason      String?
+  decidedById String?
+  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  respondedAt DateTime?     @db.Timestamptz(6)
+  topic       Topic         @relation(fields: [topicId], references: [id])
+  student     User          @relation("ApplicationStudent", fields: [studentId], references: [id])
+
+  @@index([topicId, status])
+  @@index([studentId, status])
 }
 
 // Quan hệ hướng dẫn có thời hạn – endAt != null nghĩa là đã thay (FR19)

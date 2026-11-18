@@ -47,6 +47,8 @@ export const relations = (t, user) => {
     formerMemberWindows: me ? [] : (t.formerMembers ?? []).filter((m) => m.userId === user.id).map((m) => ({ joinedAt: m.joinedAt, leftAt: m.leftAt })),
   };
 };
+// GĐ7 §3.2: GV công bố sửa/kiểm tra trước nháp của mình (SV không có quan hệ nào với đề tài này ở DRAFT)
+export const isLecturerDraftOwner = (t, rel) => rel.isCurrentAdvisor && t.origin === 'LECTURER' && t.status === 'DRAFT';
 export const canView = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isRequestedLecturer || rel.isFormerAdvisorReader || rel.isChangeTarget
   || (rel.inStaffScope && t.status !== 'DRAFT');
 // Quyền đọc phần thực hiện + snapshot/lịch sử (API_GD45 §1.1, API_GD2 §8.4, API_GD6 §1.1) – một nơi duy nhất
@@ -83,6 +85,9 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
     return {
       id: t.id, code: t.code, status: t.status, version: t.version,
       title: t.title, summary: t.summary, objectives: t.objectives, keywords: t.keywords,
+      // GĐ7 §3.2
+      origin: t.origin, requirements: t.requirements, recruitSlots: t.recruitSlots ?? null, acceptedCount: t.members.length,
+      applicationCounts: t.origin === 'LECTURER' && (rel.isCurrentAdvisor || rel.inStaffScope) ? { pending: t._count?.applications ?? 0 } : null,
       field: t.field ? { id: t.field.id, name: t.field.name } : null,
       round: {
         id: round.id, name: round.name, academicYear: round.academicYear,
@@ -120,10 +125,10 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
           }))(evaluateClose({ milestones: t.milestones, result: res, advisorId: adv?.lecturerId ?? null }))
         : null,
       permissions: {
-        edit: rel.isMember && EDITABLE.includes(t.status),
+        edit: (rel.isMember && EDITABLE.includes(t.status)) || isLecturerDraftOwner(t, rel),
         invite: rel.isLeader && t.status === 'DRAFT',
         transferLeader: rel.isLeader && !FINISHED.includes(t.status),
-        checkSimilarity: rel.isMember && ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'NEEDS_REVISION'].includes(t.status),
+        checkSimilarity: (rel.isMember && ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'NEEDS_REVISION'].includes(t.status)) || isLecturerDraftOwner(t, rel),
         viewHistory: rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || rel.inStaffScope,
         manageMilestones: (rel.isCurrentAdvisor || rel.inStaffScope) && running,
         addProgress: rel.isMember && running,
@@ -186,22 +191,38 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
       if (round.facultyId !== user.facultyId) throw forbidden();
       if (now() >= round.regCloseAt) throw conflict('REGISTRATION_CLOSED', 'Ngoài thời gian đăng ký của đợt');
       const fieldId = await checkContent(body, effectiveRoundConfig(round.config));
-      const id = await repo.create({ round, userId: user.id, data: content(body, fieldId), joinedAt: now() }, (t) => ({
+      // GĐ7 §3.1: GV tạo nháp nguồn GV (Advising của mình, không TopicMember); không kiểm hạn mức lúc tạo
+      const origin = user.role === 'LECTURER' ? 'LECTURER' : 'STUDENT';
+      const id = await repo.create({ round, userId: user.id, origin, data: content(body, fieldId), joinedAt: now() }, (t) => ({
         actorId: user.id, action: 'TOPIC_CREATE', entityType: 'Topic', entityId: t.id,
-        before: null, after: { code: t.code, roundId: round.id, ...topicSnapshot(t) }, ip,
+        before: null, after: { code: t.code, roundId: round.id, origin, ...topicSnapshot(t) }, ip,
       }));
       return get(user, id);
     },
 
     async update(user, id, body, ip) {
       const t = await load(id);
-      if (!relations(t, user).isMember) throw forbidden();
-      if (!EDITABLE.includes(t.status)) throw conflict('TOPIC_NOT_EDITABLE', 'Chỉ sửa được hồ sơ ở trạng thái Nháp hoặc Cần chỉnh sửa');
-      const fieldId = await checkContent(body, effectiveRoundConfig(t.round.config), t.fieldId);
-      const data = content(body, fieldId);
-      const ok = await repo.update({ id, version: body.version, editableStatuses: EDITABLE, data }, () => ({
+      const rel = relations(t, user);
+      // GĐ7 §3.2: GVHD hiện hành sửa nháp đề tài nguồn GV (chỉ DRAFT); thành viên như cũ
+      const lecturerEdit = !rel.isMember && rel.isCurrentAdvisor && t.origin === 'LECTURER';
+      if (!rel.isMember && !lecturerEdit) throw forbidden();
+      const editable = lecturerEdit ? ['DRAFT'] : EDITABLE;
+      if (!editable.includes(t.status)) throw conflict('TOPIC_NOT_EDITABLE', lecturerEdit ? 'Chỉ sửa được đề tài ở trạng thái Nháp (ngừng tuyển trước khi sửa)' : 'Chỉ sửa được hồ sơ ở trạng thái Nháp hoặc Cần chỉnh sửa');
+      const cfg = effectiveRoundConfig(t.round.config);
+      // requirements/recruitSlots: chỉ GV sửa nháp của mình; bỏ trống = giữ nguyên (thành viên không xóa được yêu cầu GV đã nhập)
+      const recruit = {};
+      for (const k of ['requirements', 'recruitSlots']) {
+        if (body[k] === undefined) continue;
+        if (!lecturerEdit) throw fail({ [k]: 'Chỉ đề tài giảng viên công bố có trường này' });
+        recruit[k] = body[k];
+      }
+      if (recruit.recruitSlots != null && recruit.recruitSlots > cfg.maxMembers) throw fail({ recruitSlots: `Tối đa ${cfg.maxMembers} sinh viên (số thành viên tối đa của đợt)` });
+      const fieldId = await checkContent(body, cfg, t.fieldId);
+      const data = { ...content(body, fieldId), ...recruit };
+      const recruitAudit = (x) => (t.origin === 'LECTURER' ? { recruitSlots: x.recruitSlots ?? null, requirementsLength: x.requirements.length } : {});
+      const ok = await repo.update({ id, version: body.version, editableStatuses: editable, data }, () => ({
         actorId: user.id, action: 'TOPIC_UPDATE', entityType: 'Topic', entityId: id,
-        before: topicSnapshot(t), after: topicSnapshot(data), ip,
+        before: { ...topicSnapshot(t), ...recruitAudit(t) }, after: { ...topicSnapshot(data), ...recruitAudit({ ...t, ...recruit }) }, ip,
       }));
       if (!ok) throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
       return get(user, id);

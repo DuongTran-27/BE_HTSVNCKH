@@ -3,7 +3,7 @@ import { effectiveRoundConfig } from '@nckh/shared';
 import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { contentHash } from '../similarity/engine.js';
 import { runSimilarityCheck, similarityView } from '../similarity/service.js';
-import { relations, canView } from './service.js';
+import { relations, canView, isLecturerDraftOwner } from './service.js';
 
 const CHECKABLE = ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'NEEDS_REVISION'];
 
@@ -25,7 +25,7 @@ export const createSimilarityService = ({ repo }) => {
 
     async check(user, id, ip) {
       const { t, rel } = await load(user, id);
-      if (!rel.isMember) throw forbidden();
+      if (!rel.isMember && !isLecturerDraftOwner(t, rel)) throw forbidden(); // GĐ7 §3.2: GV kiểm tra trước nháp công bố
       if (!CHECKABLE.includes(t.status)) throw conflict('INVALID_TRANSITION', 'Trạng thái hiện tại không cho phép kiểm tra tương tự');
       const cfg = effectiveRoundConfig(t.round.config);
       // Hồ sơ rỗng sẽ cho kết quả "không trùng" giả; "kiểm tra trước" chỉ cần có tên và tóm tắt

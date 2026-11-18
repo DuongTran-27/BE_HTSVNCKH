@@ -36,6 +36,10 @@ export const TOPIC_STATUS_LABEL = Object.freeze({
   CLOSED: 'Đã đóng',
 });
 
+// GĐ7 FR31 (API_GD7 §3, §11): nguồn đề tài, khớp enum TopicOrigin của Prisma
+export const TOPIC_ORIGIN = Object.freeze({ STUDENT: 'STUDENT', LECTURER: 'LECTURER' });
+export const TOPIC_ORIGIN_LABEL = Object.freeze({ STUDENT: 'Sinh viên đề xuất', LECTURER: 'Giảng viên công bố' });
+
 // "Đề tài hoạt động" theo mục 1 của đặc tả
 export const INACTIVE_STATUSES = Object.freeze(['DRAFT', 'REJECTED', 'CANCELLED', 'CLOSED']);
 export const isActiveStatus = (s) => !INACTIVE_STATUSES.includes(s);
@@ -95,6 +99,7 @@ export const NOTIFICATION_TYPES = Object.freeze([
   'MILESTONE_REOPENED', // T606: FR22
   'SIMILARITY_BYPASS_GRANTED', 'SIMILARITY_RECHECKED', // T609: G5 (API_GD6 §9)
   'MEMBER_LEFT', // T603: FR21 rời nhóm
+  'RECRUITMENT_CANCELLED', 'APPLICATION_DECLINED', // DC-05: FR31 ngừng tuyển (API_GD7 §3.4)
 ]);
 
 // GĐ6 (API_GD6 §2): yêu cầu thay đổi (khớp enum ChangeType của Prisma); stage suy ra, không lưu

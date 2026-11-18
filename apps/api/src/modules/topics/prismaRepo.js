@@ -11,6 +11,7 @@ import { REQUIRED_REMOVED_WHERE } from './closeConditions.js';
 import { createNotificationRepo } from '../notifications/prismaRepo.js';
 import { createStatsRepo } from '../stats/prismaRepo.js';
 import { createChangeRequestRepo } from '../changeRequests/prismaRepo.js';
+import { createRecruitmentRepo } from './recruitmentRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const DETAIL_INCLUDE = {
@@ -27,7 +28,8 @@ const DETAIL_INCLUDE = {
   // T405 (API_GD45 §7.4): closeReadiness + currentResult
   milestones: { where: { required: true }, orderBy: { order: 'asc' }, select: { id: true, name: true, evaluation: true } },
   results: { where: { isCurrent: true }, take: 1, select: { version: true, result: true, summary: true, createdById: true, createdAt: true } },
-  _count: { select: { milestones: { where: REQUIRED_REMOVED_WHERE } } },
+  // GĐ7 §3.2: applicationCounts.pending
+  _count: { select: { milestones: { where: REQUIRED_REMOVED_WHERE }, applications: { where: { status: 'PENDING' } } } },
   // GĐ6 (API_GD6 §1.1, §2.5): yêu cầu đang chờ (quan hệ isChangeTarget + pendingChangeRequests)
   changeRequests: { where: { status: 'PENDING' }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], select: { id: true, type: true, targetUserId: true, targetAcceptedAt: true, createdAt: true } },
 };
@@ -52,6 +54,7 @@ export const createTopicRepo = (prisma) => ({
   ...createNotificationRepo(prisma),
   ...createStatsRepo(prisma),
   ...createChangeRequestRepo(prisma),
+  ...createRecruitmentRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, name: true, isActive: true } }),
   findDetail: async (id) => {
@@ -60,11 +63,15 @@ export const createTopicRepo = (prisma) => ({
   },
 
   // Tạo nháp + trưởng nhóm + AuditLog trong một transaction; mã lấy từ sequence (FR05)
-  create: ({ round, userId, data, joinedAt }, buildAudit) =>
+  // GV công bố (API_GD7 §3.1): Advising của GV thay cho trưởng nhóm
+  create: ({ round, userId, origin = 'STUDENT', data, joinedAt }, buildAudit) =>
     prisma.$transaction(async (tx) => {
       const code = await nextTopicCode(tx, round.academicYear);
+      const owner = origin === 'LECTURER'
+        ? { advisings: { create: { lecturerId: userId, startAt: joinedAt } } }
+        : { members: { create: { userId, role: 'LEADER', joinedAt } } };
       const topic = await tx.topic.create({
-        data: { ...data, code, roundId: round.id, facultyId: round.facultyId, status: 'DRAFT', members: { create: { userId, role: 'LEADER', joinedAt } } },
+        data: { ...data, code, origin, roundId: round.id, facultyId: round.facultyId, status: 'DRAFT', ...owner },
       });
       await recordAudit(tx, buildAudit(topic));
       return topic.id;

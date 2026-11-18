@@ -37,6 +37,7 @@ Thêm **6 dòng** vào `TRANSITIONS` (không sửa 14 dòng cũ):
 | `TopicDetail` (`service.js`) | `CLOSING` thêm `WAITING_DEFENSE` cho `closeReadiness`; `permissions.checkSimilarity` thêm `isCurrentAdvisor && origin = LECTURER && DRAFT` |
 | `GET /api/topics`, thống kê | Không lọc thêm; chiều `status` tự có 2 nhãn mới. Stuck filter (FR16.5) không đổi |
 | Web `StatusBadge` | Màu cho 2 trạng thái (TASK-DC-12) |
+| G45 (`rounds/prismaRepo.js`, PATCH đợt) | Thêm `RECRUITING` vào tập đề tài không sửa được hồ sơ (DC-05, m2 review BM DC-01): GV chỉ sửa sau khi ngừng tuyển – gỡ mọi SV đã nhận |
 | Giả định cũ "có Advising ⇔ trạng thái ≥ HAS_ADVISOR" (m12 BM) | Từ nay Advising có ở DRAFT/RECRUITING của đề tài GV công bố. DC-01 grep `advisings`, `endAt: null`, `'advisor'` (trong `notifyTopic`), `isCurrentAdvisor` ở `topics/{service,listService,advisorRepo}.js`, `stats/*`, `changeRequests/advisorChange.js`, `notifications/notify.js`; ghi kết quả rà vào báo cáo. Đã biết: thống kê và `GET /api/topics` loại DRAFT với STAFF như cũ, GV thấy đề tài DRAFT của mình (đúng ý); FR19 không chạy ở DRAFT/RECRUITING (`ADVISOR_CHANGE_STATUSES`); hạn mức GV chỉ tính trạng thái hoạt động nên DRAFT không tính |
 
 ---
@@ -236,6 +237,7 @@ CREATE TRIGGER defense_score_guarded BEFORE INSERT OR UPDATE OR DELETE ON "Defen
 - Quyền thêm: `isCurrentAdvisor && origin = LECTURER && status = DRAFT` (SV không có quan hệ nào với đề tài này ở DRAFT).
 - Body `topicUpdateSchema` + 2 trường chỉ hợp lệ khi `origin = LECTURER` (đề tài SV gửi → 400 tại trường): `requirements` (trim 0..2000), `recruitSlots` (int 1..`maxMembers` của đợt, `null` khi nháp). PUT thay toàn bộ như cũ.
 - `TopicDetail` thêm: `origin`, `requirements`, `recruitSlots`, `acceptedCount` (số thành viên hiện hành), `applicationCounts: { pending } | null` (chỉ GVHD hiện hành và cán bộ trong phạm vi).
+- DC-05: `requirements`/`recruitSlots` bỏ trống trong PUT = **giữ nguyên** (thành viên sửa hồ sơ ở NEEDS_REVISION sau chốt nhóm không xóa yêu cầu GV đã nhập); chỉ GVHD hiện hành sửa nháp nguồn GV được gửi 2 trường này, còn lại 400 tại trường.
 - `permissions.edit` = (cũ) `|| (isCurrentAdvisor && origin = LECTURER && DRAFT)`. `permissions.checkSimilarity` tương tự (nút "Kiểm tra trước", API_GD2 §7.1 mở cho GV này).
 
 ### 3.3 Công bố – `POST /api/topics/:id/actions` `{ action: 'PUBLISH_RECRUITMENT', version, justification? }`
@@ -248,7 +250,7 @@ Thứ tự (giống SUBMIT_FOR_REVIEW, API_GD2 §8.2, **không tạo snapshot**)
 6. 200 `{ "topic": TopicDetail }`. Không gửi thông báo (bảng tin là nơi SV thấy).
 
 ### 3.4 Ngừng tuyển – `{ action: 'UNPUBLISH_RECRUITMENT', version, reason }`
-Lý do bắt buộc (`reasonRequired`, 400 `REASON_REQUIRED`). Được cả khi **đã có thành viên** (M2 BM: tránh đề tài kẹt ở RECRUITING khi có 1..min−1 thành viên mà không ai ứng tuyển thêm – không chốt được, trưởng nhóm không rời được, chiếm hạn mức GV và suất đề tài của SV). Dưới khóa Topic, trong một transaction:
+Lý do bắt buộc (`reasonRequired`, 400 `REASON_REQUIRED`). Nhánh schema để `reason` tùy chọn (≤ 2000) để `checkTransition` trả đúng mã `REASON_REQUIRED` (DC-05). Được cả khi **đã có thành viên** (M2 BM: tránh đề tài kẹt ở RECRUITING khi có 1..min−1 thành viên mà không ai ứng tuyển thêm – không chốt được, trưởng nhóm không rời được, chiếm hạn mức GV và suất đề tài của SV). Dưới khóa Topic, trong một transaction:
 1. Mọi `TopicMember` hiện hành → `leftAt = now` (giải phóng suất đề tài hoạt động của SV, FR03); AuditLog `MEMBER_REMOVE` mỗi người (`after: { leftAt, reason }`). Người bị gỡ giữ quyền đọc phiên bản theo khoảng như FR21 (API_GD6 §5.4).
 2. Đơn `PENDING` → `DECLINED`, `reason = 'Giảng viên ngừng tuyển'`, `decidedById = me`; đơn `ACCEPTED` giữ nguyên (lịch sử).
 3. `applyTransitionTx` → DRAFT (StatusHistory có `reason`), tăng `version`. AuditLog `TOPIC_UNPUBLISH_RECRUITMENT`.

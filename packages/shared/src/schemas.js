@@ -39,7 +39,18 @@ export const topicSubmitSchema = (cfg = C) => z.object({
 
 // API_GD2 §5.1: tạo = nháp + roundId; sửa = nháp + version (PUT thay toàn bộ)
 export const topicCreateSchema = topicDraftSchema.extend({ roundId: z.string().trim().min(1).max(64) });
-export const topicUpdateSchema = topicDraftSchema.extend({ version: z.int().min(0) });
+// GĐ7 §3.2: requirements/recruitSlots chỉ hợp lệ với đề tài GV công bố (service trả 400 tại trường nếu không); bỏ trống = giữ nguyên
+export const REQUIREMENTS_MAX = 2000;
+const recruitSlots = z.int({ error: 'Số sinh viên cần tuyển phải là số nguyên' }).min(1, 'Cần tuyển ít nhất 1 sinh viên').max(20, 'Vượt số thành viên tối đa của đợt');
+export const topicUpdateSchema = topicDraftSchema.extend({
+  version: z.int().min(0),
+  requirements: z.string().trim().max(REQUIREMENTS_MAX, `Yêu cầu ứng viên tối đa ${REQUIREMENTS_MAX} ký tự`).optional(),
+  recruitSlots: recruitSlots.nullable().optional(),
+});
+// GĐ7 §3.3: công bố = đủ trường như gửi xét duyệt + số SV cần tuyển 1..maxMembers của đợt
+export const topicPublishSchema = (cfg = C) => topicSubmitSchema(cfg).extend({
+  recruitSlots: z.int({ error: 'Nhập số sinh viên cần tuyển' }).min(1, 'Cần tuyển ít nhất 1 sinh viên').max(cfg.maxMembers, `Tối đa ${cfg.maxMembers} sinh viên (số thành viên tối đa của đợt)`),
+});
 
 export const loginSchema = z.object({
   identifier: z.string().trim().min(1, 'Nhập mã hoặc email').max(300),
@@ -84,6 +95,10 @@ export const topicActionSchema = z.discriminatedUnion('action', [
   // T405 (API_GD45 §7.1): đóng đề tài; CANCEL không gọi qua /actions – chỉ khi cán bộ duyệt đề nghị hủy (API_GD6 §4)
   ...['REQUEST_CLOSE', 'CONFIRM_CLOSE'].map((a) => z.object({ action: z.literal(a), version })),
   ...['RETURN_TO_ADVISOR', 'CLOSE_EXPIRED'].map((a) => reasonSchema.extend({ action: z.literal(a), version })),
+  // DC-05 (API_GD7 §3.3–3.4): GV công bố / ngừng tuyển
+  z.object({ action: z.literal('PUBLISH_RECRUITMENT'), version, justification: z.string().trim().max(5000, 'Giải trình tối đa 5000 ký tự').optional() }),
+  // Lý do kiểm ở checkTransition (reasonRequired) để trả đúng mã REASON_REQUIRED (§3.4)
+  z.object({ action: z.literal('UNPUBLISH_RECRUITMENT'), version, reason: z.string().trim().max(2000, 'Lý do tối đa 2000 ký tự').optional() }),
 ]);
 // Body rỗng (POST similarity-checks): thiếu body coi như {}, trường thừa bị từ chối
 export const emptyBodySchema = z.preprocess((v) => v ?? {}, z.strictObject({}));
@@ -110,6 +125,14 @@ export const topicListQuerySchema = z.object({
   q: opt(z.string().trim().min(2, 'Từ khóa tìm kiếm tối thiểu 2 ký tự').max(200)),
   stuck: opt(z.enum(['true', 'false'])), // FR16.5: đợt đã đóng đăng ký mà đề tài còn Chờ GVHD / Đã có GVHD
   sort: z.preprocess(emptyToUndef, z.enum(TOPIC_SORTS).default('updatedAt_desc')),
+  ...pageQuery,
+});
+// FR31 bảng tin đề tài đang tuyển (API_GD7 §4.2)
+export const recruitmentListQuerySchema = z.object({
+  roundId: opt(z.string().trim().max(64)),
+  fieldId: opt(z.string().trim().max(64)),
+  lecturerId: opt(z.string().trim().max(64)),
+  q: opt(z.string().trim().max(200)),
   ...pageQuery,
 });
 // FR08: kho chung (API_GD2 §9.2) – chỉ kết quả đạt

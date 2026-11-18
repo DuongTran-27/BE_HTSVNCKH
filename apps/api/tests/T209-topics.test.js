@@ -85,8 +85,15 @@ describe('POST /api/topics', () => {
     expect(new Set(rs.map((r) => r.body.topic.code)).size).toBe(12);
   });
 
-  it.each(['admin', 'staff1', 'lectReq'])('%s -> 403', async (who) => {
+  it.each(['admin', 'staff1'])('%s -> 403', async (who) => {
     expect((await post(who, '/api/topics', body())).status).toBe(403);
+  });
+  // DC-05 (đặc tả đổi – DAC_TA mục 9 FR31, API_GD7 §3.1): GV được tạo nháp đề tài nguồn GV – không thành trưởng nhóm của ai
+  it('lectReq -> 201 đề tài nguồn GV: không TopicMember, GV là GVHD hiện hành', async () => {
+    const r = await post('lectReq', '/api/topics', body());
+    expect(r.status).toBe(201);
+    expect(r.body.topic).toMatchObject({ origin: 'LECTURER', status: 'DRAFT', members: [], advisor: { fullName: expect.any(String) } });
+    expect(await prisma.topicMember.count({ where: { topicId: r.body.topic.id } })).toBe(0);
   });
 
   it('chưa đăng nhập -> 401', async () => {

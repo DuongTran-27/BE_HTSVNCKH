@@ -18,6 +18,7 @@ import { topicsRouter, meRouter } from './modules/topics/routes.js';
 import { advisorRequestsRouter, lecturersRouter } from './modules/topics/advisorRoutes.js';
 import { invitationsRouter } from './modules/topics/invitationRoutes.js';
 import { repositoryRouter } from './modules/topics/repositoryRoutes.js';
+import { recruitmentsRouter } from './modules/topics/recruitmentRoutes.js';
 import { defaultStorageFolder } from './lib/storage.js';
 import { milestonesRouter, progressRouter, documentsRouter } from './modules/execution/routes.js';
 import { notificationsRouter, cronRouter } from './modules/notifications/routes.js';
@@ -86,6 +87,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     app.use('/api/lecturers', lecturersRouter({ repo: topicRepo, guard }));
     app.use('/api/invitations', invitationsRouter({ repo: topicRepo, guard }));
     app.use('/api/repository', repositoryRouter({ repo: topicRepo, guard }));
+    app.use('/api/recruitments', recruitmentsRouter({ repo: topicRepo, guard })); // FR31 bảng tin
     app.use('/api/milestones', milestonesRouter({ repo: topicRepo, guard }));
     app.use('/api/documents', documentsRouter({ repo: topicRepo, guard, storage, folder, logger }));
     app.use('/api/progress', progressRouter({ repo: topicRepo, guard }));

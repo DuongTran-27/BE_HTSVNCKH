@@ -87,6 +87,8 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   CHANGE_WITHDRAWN: 'Yêu cầu thay đổi bị rút',
   ADVISOR_HANDOVER: 'Bàn giao bản nộp chờ nhận xét',
   MEMBER_LEFT: 'Thành viên rời nhóm',
+  RECRUITMENT_CANCELLED: 'Giảng viên ngừng tuyển',
+  APPLICATION_DECLINED: 'Đơn ứng tuyển bị từ chối',
 });
 
 // GĐ6 (API_GD6 §2.7)

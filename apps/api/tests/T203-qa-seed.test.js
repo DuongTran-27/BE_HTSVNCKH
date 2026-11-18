@@ -54,10 +54,17 @@ describe('QA T203 – seed khớp bảng chuyển trạng thái mục 5', () => 
     }
   });
 
+  // DC-05 (đặc tả đổi – DAC_TA mục 9 FR31, API_GD7 §0.1, §3.1): đề tài GV công bố có Advising từ lúc tạo nháp, không qua
+  // AdvisorRequest. Đề tài SV đề xuất giữ nguyên mọi khẳng định cũ.
   it('TC-FR16-20 đề nghị GVHD và quan hệ hướng dẫn khớp trạng thái', () => {
+    expect(topics.filter((t) => t.origin === 'LECTURER').length).toBe(3);
     for (const t of topics) {
       const pending = t.advisorRequests.filter((r) => r.status === 'PENDING');
       const current = t.advisings.filter((a) => !a.endAt);
+      if (t.origin === 'LECTURER') {
+        expect([t.advisorRequests.length, current.length], t.code).toEqual([0, 1]);
+        continue;
+      }
       expect(pending.length, t.code).toBe(t.status === 'WAITING_ADVISOR' ? 1 : 0);
       const advised = !['DRAFT', 'WAITING_ADVISOR'].includes(t.status);
       expect(current.length, t.code).toBe(advised ? 1 : 0);
@@ -81,6 +88,12 @@ describe('QA T203 – seed khớp bảng chuyển trạng thái mục 5', () => 
     const active = {};
     for (const t of topics) {
       const cur = t.members.filter((m) => !m.leftAt);
+      // DC-05 (FR31, FR33): đề tài GV đang tuyển chưa có ai được duyệt → 0 thành viên, ≤ recruitSlots; trưởng nhóm là người được duyệt đầu tiên
+      if (t.origin === 'LECTURER' && t.status === 'RECRUITING') {
+        expect(cur.filter((m) => m.role === 'LEADER').length, t.code).toBe(cur.length ? 1 : 0);
+        expect(cur.length, t.code).toBeLessThanOrEqual(t.recruitSlots);
+        continue;
+      }
       expect(cur.filter((m) => m.role === 'LEADER').length, t.code).toBe(1);
       expect(cur.length).toBeGreaterThanOrEqual(DEFAULT_ROUND_CONFIG.minMembers);
       expect(cur.length).toBeLessThanOrEqual(DEFAULT_ROUND_CONFIG.maxMembers);

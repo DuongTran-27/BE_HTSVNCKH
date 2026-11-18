@@ -1,7 +1,7 @@
-import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, leaveTopicSchema, paginationQuery, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema, similarityBypassCreateSchema } from '@nckh/shared';
+import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, leaveTopicSchema, paginationQuery, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema, similarityBypassCreateSchema, ENABLED_ACTIONS, findTransition } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
-import { notFound } from '../../lib/errors.js';
+import { badRequest, notFound } from '../../lib/errors.js';
 import { businessRouter } from '../../lib/router.js';
 import { createTopicService } from './service.js';
 import { createLimiter } from '../../middlewares/rateLimit.js';
@@ -13,6 +13,7 @@ import { createSnapshotService } from './snapshotService.js';
 import { createListService } from './listService.js';
 import { createSimilarityService } from './similarityService.js';
 import { createSimilarityBypassService } from './similarityBypassService.js';
+import { createRecruitmentService, RECRUIT_ACTIONS } from './recruitmentService.js';
 import { mountTopicMilestoneRoutes, mountTopicProgressRoutes, mountTopicDocumentRoutes, mountTopicFeedbackRoutes } from '../execution/routes.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
@@ -27,6 +28,7 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   const snapshots = createSnapshotService({ repo });
   const similarity = createSimilarityService({ repo });
   const bypass = createSimilarityBypassService({ repo });
+  const recruit = createRecruitmentService({ repo, now, getTopic: svc.get });
   const similarityLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'user' });
   const r = businessRouter(guard);
   const student = requireRole('STUDENT');
@@ -34,7 +36,8 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
     if (!idSchema.safeParse(id).success) throw notFound();
     next();
   });
-  r.post('/', student, validate(topicCreateSchema), async (req, res) => {
+  const studentOrLecturer = requireRole('STUDENT', 'LECTURER'); // GĐ7 §3.1–3.2: GV tạo/sửa/kiểm tra trước nháp đề tài công bố
+  r.post('/', studentOrLecturer, validate(topicCreateSchema), async (req, res) => {
     res.status(201).json(await svc.create(req.user, req.body, req.ip));
   });
   r.get('/', requireRole('STAFF', 'LECTURER', 'STUDENT'), validate(topicListQuerySchema, 'query'), async (req, res) => res.json(await lister.list(req.user, req.validated)));
@@ -49,7 +52,7 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   });
   r.get('/:id/submission-diff', reader, validate(submissionDiffQuerySchema, 'query'), async (req, res) => res.json(await snapshots.diff(req.user, req.params.id, req.validated)));
   r.get('/:id/status-history', reader, async (req, res) => res.json(await snapshots.history(req.user, req.params.id)));
-  r.put('/:id', student, validate(topicUpdateSchema), async (req, res) => {
+  r.put('/:id', studentOrLecturer, validate(topicUpdateSchema), async (req, res) => {
     res.json(await svc.update(req.user, req.params.id, req.body, req.ip));
   });
   r.post('/:id/invitations', student, validate(invitationCreateSchema), async (req, res) => {
@@ -60,13 +63,19 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   });
   r.post('/:id/leave', student, validate(leaveTopicSchema), async (req, res) => res.json(await group.leave(req.user, req.params.id, req.body, req.ip)));
   r.get('/:id/similarity-checks/latest', requireRole('STAFF', 'LECTURER', 'STUDENT'), async (req, res) => res.json(await similarity.latest(req.user, req.params.id)));
-  r.post('/:id/similarity-checks', student, similarityLimiter, validate(emptyBodySchema), async (req, res) => res.json(await similarity.check(req.user, req.params.id, req.ip)));
+  r.post('/:id/similarity-checks', studentOrLecturer, similarityLimiter, validate(emptyBodySchema), async (req, res) => res.json(await similarity.check(req.user, req.params.id, req.ip)));
   // G5 (API_GD6 §9.2): cán bộ cho phép gửi khi FR06 lỗi; phạm vi khoa ở service
   r.post('/:id/similarity-bypasses', requireRole('STAFF'), validate(similarityBypassCreateSchema), async (req, res) => res.status(201).json(await bypass.grant(req.user, req.params.id, req.body, req.ip)));
   // Endpoint chuyển trạng thái chung (§8.1); T210: nhánh FR16, T212a: gửi/xét duyệt; T405: đóng đề tài. Vai trò kiểm bằng TRANSITIONS.
-  r.post('/:id/actions', requireRole('STUDENT', 'LECTURER', 'STAFF'), actionLimiter, validate(topicActionSchema), async (req, res) => {
+  // m1 DC-01: action nội bộ (CANCEL, COUNCIL_FINALIZE) hoặc chưa có endpoint bị chặn tại đây, không chỉ dựa vào nhánh của topicActionSchema
+  const enabledOnly = (req, _res, next) => {
+    const a = req.body?.action;
+    if (findTransition(a) && !ENABLED_ACTIONS.includes(a)) throw badRequest('UNKNOWN_ACTION', 'Thao tác không gọi được trực tiếp');
+    next();
+  };
+  r.post('/:id/actions', requireRole('STUDENT', 'LECTURER', 'STAFF'), actionLimiter, enabledOnly, validate(topicActionSchema), async (req, res) => {
     const a = req.body.action;
-    const svcFor = REVIEW_ACTIONS.includes(a) ? review : CLOSE_ACTIONS.includes(a) ? close : advisor;
+    const svcFor = REVIEW_ACTIONS.includes(a) ? review : CLOSE_ACTIONS.includes(a) ? close : RECRUIT_ACTIONS.includes(a) ? recruit : advisor;
     res.json(await svcFor.act(req.user, req.params.id, req.body, req.ip));
   });
   mountTopicMilestoneRoutes(r, { repo, now });

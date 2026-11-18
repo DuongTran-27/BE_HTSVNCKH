@@ -1,5 +1,5 @@
 // Dữ liệu mẫu CHỈ cho dev/demo (T203): 1 khoa, 3 ngành, lĩnh vực CNTT, 1 đợt, 1 quản trị, 2 cán bộ, 8 GV, 40 SV,
-// 30 đề tài (3 đề tài mỗi trạng thái), từ điển đồng nghĩa.
+// 33 đề tài (3 đề tài mỗi trạng thái; 3 đề tài Đang tuyển do GV công bố – DC-05), từ điển đồng nghĩa.
 // Chạy (trong apps/api): `npx prisma db seed` – chỉ trên DB đã bật cờ nckh.seed_allowed (README). KHÔNG BAO GIỜ trên production:
 // mọi tài khoản (kể cả quản trị QT001) dùng chung mật khẩu công khai SEED_PASSWORD.
 import { fileURLToPath } from 'node:url';
@@ -83,7 +83,14 @@ const TOPICS = [
   ['SEC', 'Phát hiện xâm nhập mạng bằng học sâu', ['phát hiện xâm nhập', 'học sâu', 'an ninh mạng']],
   ['DATA', 'Phân cụm khách hàng cho chuỗi bán lẻ', ['phân cụm', 'khách hàng', 'khai phá dữ liệu']],
   ['IOT', 'Bãi đỗ xe thông minh trong khuôn viên trường', ['bãi đỗ xe', 'cảm biến', 'internet vạn vật']],
+  // Từ LECTURER_FROM: đề tài GV công bố (FR31) – không trưởng nhóm, chưa có SV (DC-06 mới có đơn ứng tuyển được duyệt)
+  ['AI', 'Hệ thống chấm điểm bài tập lập trình tự động', ['chấm điểm tự động', 'lập trình', 'kiểm thử']],
+  ['DATA', 'Phân tích dữ liệu điểm rèn luyện sinh viên', ['điểm rèn luyện', 'khai phá dữ liệu', 'trực quan hóa']],
+  ['WEB', 'Cổng quản lý phòng thí nghiệm và thiết bị của khoa', ['phòng thí nghiệm', 'thiết bị', 'ứng dụng web']],
 ];
+const LECTURER_FROM = 30;
+const REQUIREMENTS =
+  'Sinh viên năm 2 trở lên, đã học Cấu trúc dữ liệu và giải thuật; ưu tiên biết Python hoặc JavaScript.';
 
 const RA = ['REQUEST_ADVISOR'];
 const HA = [...RA, 'ACCEPT_ADVISING'];
@@ -122,6 +129,9 @@ const PATHS = [
   [...WC, 'CONFIRM_CLOSE'],
   [...WC, 'CONFIRM_CLOSE'],
   [...WC, 'RETURN_TO_ADVISOR', 'REQUEST_CLOSE', 'CONFIRM_CLOSE'],
+  ['PUBLISH_RECRUITMENT'],
+  ['PUBLISH_RECRUITMENT'],
+  ['PUBLISH_RECRUITMENT'], // RECRUITING
 ];
 const RESULTS = ['EXCELLENT', 'GOOD', 'PASS'];
 
@@ -300,10 +310,11 @@ export async function seed(prisma, { now = new Date() } = {}) {
         );
       }
 
-      // Tạo đủ 30 đề tài trước để kho so FR06 của mỗi lần gửi chứa được cả đề tài đứng sau trong vòng lặp.
+      // Tạo đủ mọi đề tài trước để kho so FR06 của mỗi lần gửi chứa được cả đề tài đứng sau trong vòng lặp.
       const created = [];
       for (const [i, [fieldCode, title, keywords]] of TOPICS.entries()) {
         const leader = students[i];
+        const byLecturer = i >= LECTURER_FROM;
         const { t0 } = timelines[i];
         const content = {
           title,
@@ -319,9 +330,14 @@ export async function seed(prisma, { now = new Date() } = {}) {
             roundId: round.id,
             facultyId: faculty.id,
             createdAt: t0,
+            ...(byLecturer && { origin: 'LECTURER', requirements: REQUIREMENTS, recruitSlots: 3 }),
           },
         });
-        await tx.topicMember.create({ data: { topicId: topic.id, userId: leader.id, role: 'LEADER', joinedAt: t0 } });
+        // GV công bố (API_GD7 §3.1): Advising của GV từ lúc tạo nháp, không có trưởng nhóm
+        if (byLecturer)
+          await tx.advising.create({ data: { topicId: topic.id, lecturerId: lecturers[i % 8].id, startAt: t0 } });
+        else
+          await tx.topicMember.create({ data: { topicId: topic.id, userId: leader.id, role: 'LEADER', joinedAt: t0 } });
         if (i < 10) {
           const member = students[30 + i];
           await tx.invitation.create({
@@ -360,7 +376,6 @@ export async function seed(prisma, { now = new Date() } = {}) {
             if (action === 'ACCEPT_ADVISING')
               await tx.advising.create({ data: { topicId: topic.id, lecturerId: lecturer.id, startAt: when } });
           } else if (tr.needsSimilarity) {
-            seq += 1;
             // Chạy thuật toán FR06 thật như runSimilarityCheck; điểm tên tính bằng JS thay vì pg_trgm.
             const corpus = created
               .filter((_, j) => j !== i && CORPUS_STATUSES.includes(statusBefore(timelines[j], when)))
@@ -381,16 +396,20 @@ export async function seed(prisma, { now = new Date() } = {}) {
                 createdAt: when,
               },
             });
-            submission = await tx.submission.create({
-              data: {
-                topicId: topic.id,
-                seq,
-                payload: { ...content, documentIds: [] },
-                createdById: actor.id,
-                createdAt: when,
-                similarityCheckId: check.id,
-              },
-            });
+            // Công bố (§3.3) chạy FR06 nhưng không tạo snapshot
+            if (action !== 'PUBLISH_RECRUITMENT') {
+              seq += 1;
+              submission = await tx.submission.create({
+                data: {
+                  topicId: topic.id,
+                  seq,
+                  payload: { ...content, documentIds: [] },
+                  createdById: actor.id,
+                  createdAt: when,
+                  similarityCheckId: check.id,
+                },
+              });
+            }
           } else if (['REQUEST_REVISION', 'REJECT', 'APPROVE'].includes(action)) {
             await tx.reviewDecision.create({
               data: { submissionId: submission.id, action, reason, decidedById: actor.id, decidedAt: when },
