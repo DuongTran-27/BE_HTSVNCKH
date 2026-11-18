@@ -24,13 +24,13 @@ const ICON = {
 
 const linkClass = ({ isActive }) => cn(buttonVariants({ variant: 'ghost' }), 'min-h-11 shrink-0 gap-2.5 px-3 text-muted-foreground hover:text-blue-900',
   isActive && 'bg-accent text-blue-900');
-// Thanh bên sáng: mục đang mở nền xanh nhạt + vạch đỏ Văn Lang bên trái
+// Thanh bên navy Văn Lang (người dùng chọn 2026-11-18): mục đang mở nền trắng mờ + vạch vàng Văn Lang bên trái
 const navClass = (collapsed) => ({ isActive }) => cn(
-  'relative inline-flex min-h-11 shrink-0 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
+  'relative inline-flex min-h-11 shrink-0 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-vlu-gold',
   collapsed && 'lg:justify-center lg:px-0',
   isActive
-    ? 'bg-accent text-blue-900 lg:before:absolute lg:before:inset-y-2 lg:before:left-0 lg:before:w-[3px] lg:before:rounded-full lg:before:bg-vlu-red'
-    : 'text-muted-foreground hover:bg-muted hover:text-blue-900',
+    ? 'bg-white/12 text-white lg:before:absolute lg:before:inset-y-2 lg:before:left-0 lg:before:w-[3px] lg:before:rounded-full lg:before:bg-vlu-gold'
+    : 'text-white/70 hover:bg-white/8 hover:text-white',
 );
 const COLLAPSE_KEY = 'nckh.sidebarCollapsed';
 const readCollapsed = () => {
@@ -52,18 +52,18 @@ export function Layout() {
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   return (
     <div className={cn('min-h-screen lg:grid', collapsed ? 'lg:grid-cols-[4.5rem_1fr]' : 'lg:grid-cols-[16rem_1fr]')}>
-      <aside className="border-b bg-background lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0">
-        <Link to="/" className={cn('flex min-h-11 items-center gap-3 px-4 py-3 lg:h-16', collapsed && 'lg:justify-center lg:px-0')}>
-          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-blue-700 text-white shadow-sm"><FlaskConical aria-hidden="true" className="size-5" /></span>
+      <aside className="bg-blue-700 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+        <Link to="/" className={cn('flex min-h-11 items-center gap-3 px-4 py-3 focus-visible:outline-vlu-gold lg:h-16', collapsed && 'lg:justify-center lg:px-0')}>
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-vlu-red text-white shadow-sm"><FlaskConical aria-hidden="true" className="size-5" /></span>
           <span className={cn('leading-tight', collapsed && 'lg:sr-only')}>
-            <span className="block font-bold text-blue-900">Nghiên cứu khoa học</span>
-            <span className="block text-xs text-muted-foreground">Khoa Công nghệ Thông tin</span>
+            <span className="block font-bold text-white">Nghiên cứu khoa học</span>
+            <span className="block text-xs text-white/60">Khoa Công nghệ Thông tin</span>
           </span>
         </Link>
-        <Separator className="hidden lg:block" />
+        <Separator className="hidden bg-white/10 lg:block" />
         {menu.length > 0 && (
           <nav aria-label="Menu chính" className="flex gap-1 overflow-x-auto px-2 pb-2 lg:flex-1 lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:p-3">
-            {!collapsed && <p aria-hidden="true" className="hidden px-3 pb-1 pt-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase lg:block">Chức năng</p>}
+            {!collapsed && <p aria-hidden="true" className="hidden px-3 pb-1 pt-2 text-xs font-semibold tracking-wide text-white/50 uppercase lg:block">Chức năng</p>}
             {menu.map((m) => {
               const Icon = ICON[m.to] ?? LibraryBig;
               return (
@@ -75,9 +75,9 @@ export function Layout() {
             })}
           </nav>
         )}
-        <div className="hidden border-t p-3 lg:block">
+        <div className="hidden border-t border-white/10 p-3 lg:block">
           <button type="button" onClick={toggle} aria-pressed={collapsed}
-            className={cn(buttonVariants({ variant: 'ghost' }), 'min-h-11 w-full justify-start gap-3 px-3 text-muted-foreground', collapsed && 'justify-center px-0')}>
+            className={cn(buttonVariants({ variant: 'ghost' }), 'min-h-11 w-full justify-start gap-3 px-3 text-white/70 hover:bg-white/8 hover:text-white focus-visible:outline-vlu-gold', collapsed && 'justify-center px-0')}>
             <ToggleIcon aria-hidden="true" className="size-[18px]" /><span className={cn(collapsed && 'sr-only')}>Thu gọn menu</span>
           </button>
         </div>
