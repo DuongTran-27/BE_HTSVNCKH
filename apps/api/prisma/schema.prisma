@@ -148,6 +148,7 @@ model User {
   role                   Role
   facultyId              String?
   classId                String?
+  phone                  String?
   isLocked               Boolean              @default(false)
   mustChangePassword     Boolean              @default(true)
   failedLogins           Int                  @default(0)

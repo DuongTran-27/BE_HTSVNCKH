@@ -62,7 +62,18 @@ export const createAccountService = ({ repo, hasher, genPassword = generateTempP
     return errors;
   };
 
+  const profileView = (p) => ({ ...p, faculty: p.faculty ?? null, class: p.class ?? null });
+
   return {
+    // Hồ sơ của chính mình, mọi vai trò kể cả ADMIN (FR30); không nhận id từ client.
+    async getProfile(actor) {
+      return { profile: profileView(await repo.findProfile(actor.id)) };
+    },
+    async updateProfile(actor, { phone }, ip) {
+      await repo.updatePhone(actor.id, phone, ip);
+      return this.getProfile(actor);
+    },
+
     async list(actor, q) {
       const staff = actor.role === ROLES.STAFF;
       if (staff && q.facultyId && !actor.staffFacultyIds.includes(q.facultyId)) throw forbidden();
@@ -79,7 +90,7 @@ export const createAccountService = ({ repo, hasher, genPassword = generateTempP
     async get(actor, id) {
       const u = await repo.findById(id);
       mustManage(actor, u);
-      return { user: userView(u) };
+      return { user: { ...userView(u), phone: u.phone } }; // phone chỉ ở chi tiết (API_GD7 §10.1)
     },
 
     async create(actor, body, ip) {

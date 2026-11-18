@@ -6,6 +6,23 @@ const likeEscape = (s) => s.replace(/[\\%_]/g, '\\$&');
 
 export const createAccountRepo = (prisma) => ({
   findById: (id) => prisma.user.findUnique({ where: { id }, include: withScopes }),
+  findProfile: (id) =>
+    prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true, code: true, email: true, fullName: true, role: true, phone: true,
+        faculty: { select: { id: true, name: true } },
+        class: { select: { id: true, code: true, major: { select: { name: true } } } },
+      },
+    }),
+  // Khóa dòng, ghi phone và AuditLog PROFILE_UPDATE trong cùng transaction (before đọc sau khóa).
+  updatePhone: (id, phone, ip) =>
+    prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR NO KEY UPDATE`;
+      const before = await tx.user.findUnique({ where: { id }, select: { phone: true } });
+      await tx.user.update({ where: { id }, data: { phone } });
+      await recordAudit(tx, { actorId: id, action: 'PROFILE_UPDATE', entityType: 'User', entityId: id, before: { phone: before.phone }, after: { phone }, ip });
+    }),
   findFaculty: (id) => prisma.faculty.findUnique({ where: { id }, select: { id: true, isActive: true } }),
   findFaculties: (ids) => prisma.faculty.findMany({ where: { id: { in: ids } }, select: { id: true, isActive: true } }),
   findClass: (id) =>

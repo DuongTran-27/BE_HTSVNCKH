@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { userCreateSchema, userUpdateSchema, staffScopesSchema, userListQuerySchema } from './users.js';
+import { userCreateSchema, userUpdateSchema, staffScopesSchema, userListQuerySchema, profileUpdateSchema } from './users.js';
 
 const base = { code: 'SV001', email: ' SV001@St.edu.vn ', fullName: ' Nguyễn Văn A ', role: 'STUDENT', facultyId: 'f1', classId: 'c1' };
 const issues = (v) => userCreateSchema.safeParse(v).error?.issues.map((i) => i.path[0]);
@@ -45,5 +45,22 @@ describe('schema khác', () => {
     expect(userListQuerySchema.parse({ page: '2', isLocked: 'true' })).toMatchObject({ page: 2, pageSize: 20, isLocked: 'true' });
     expect(userListQuerySchema.safeParse({ isLocked: 'yes' }).success).toBe(false);
     expect(userListQuerySchema.safeParse({ q: 'x'.repeat(201) }).success).toBe(false);
+  });
+});
+
+describe('profileUpdateSchema (FR30, API_GD7 §10.1)', () => {
+  const ok = (phone) => profileUpdateSchema.safeParse({ phone });
+  it.each([['0912345678', '0912345678'], [' 091 234-5678 ', '0912345678'], ['+84.912.345.678', '+84912345678'], ['0351234567', '0351234567']])(
+    'chuẩn hóa %s', (input, out) => expect(ok(input).data.phone).toBe(out));
+  it.each([[null], [''], ['  ']])('%j = xóa số', (v) => expect(ok(v).data.phone).toBeNull());
+  it.each([['0212345678'], ['091234567'], ['09123456789'], ['abc'], ['84912345678'], ['0912 345 67a']])('từ chối %s', (v) => {
+    const r = ok(v);
+    expect(r.success).toBe(false);
+    expect(r.error.issues[0].message).toBe('Số điện thoại không hợp lệ');
+  });
+  it('strict: trường lạ, thiếu phone, sai kiểu bị từ chối', () => {
+    expect(profileUpdateSchema.safeParse({ phone: null, role: 'ADMIN' }).success).toBe(false);
+    expect(profileUpdateSchema.safeParse({}).success).toBe(false);
+    expect(ok(912345678).success).toBe(false);
   });
 });

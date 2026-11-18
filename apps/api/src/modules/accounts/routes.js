@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { USER_IMPORT_MAX_BYTES, userCreateSchema, userUpdateSchema, staffScopesSchema, userListQuerySchema, idSchema } from '@nckh/shared';
+import { USER_IMPORT_MAX_BYTES, userCreateSchema, profileUpdateSchema, userUpdateSchema, staffScopesSchema, userListQuerySchema, idSchema } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { createLimiter } from '../../middlewares/rateLimit.js';
@@ -73,5 +73,15 @@ export const accountsRouter = ({ repo, hasher, guard, genPassword }) => {
   r.put('/:id/staff-scopes', requireRole('ADMIN'), validate(staffScopesSchema), async (req, res) => {
     res.json(await svc.setStaffScopes(req.user, req.params.id, req.body.facultyIds, req.ip));
   });
+  return r;
+};
+
+// GET/PATCH /api/me/profile (FR30, API_GD7 §10.1): mọi vai trò, chỉ hồ sơ của chính người gọi. Mount ở /api/me/profile.
+export const profileRouter = ({ repo, guard }) => {
+  const svc = createAccountService({ repo });
+  const r = businessRouter(guard);
+  const limiter = createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'user' });
+  r.get('/', async (req, res) => res.json(await svc.getProfile(req.user)));
+  r.patch('/', limiter, validate(profileUpdateSchema), async (req, res) => res.json(await svc.updateProfile(req.user, req.body, req.ip)));
   return r;
 };

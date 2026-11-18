@@ -74,6 +74,8 @@ export const ROUTES = [
   ['POST', '/change-requests/:id/decline', SLV, { body: S.changeRequestDeclineSchema }],
   ['POST', '/change-requests/:id/withdraw', SLV, { body: S.emptyBodySchema }],
   ['POST', '/change-requests/:id/approve', SLV, { body: S.changeRequestApproveSchema }],
+  ['GET', '/me/profile', 'U'],
+  ['PATCH', '/me/profile', 'U', { body: S.profileUpdateSchema }],
   ['GET', '/me/past-topics', 'V', { query: S.paginationQuery }],
   ['GET', '/advisor-requests', SLV, { query: S.advisorRequestListQuerySchema }],
   ['GET', '/lecturers', SLV, { query: S.lecturerListQuerySchema }],

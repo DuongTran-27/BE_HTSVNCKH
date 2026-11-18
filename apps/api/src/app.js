@@ -12,7 +12,7 @@ import { LOG_REDACT } from './lib/logger.js';
 import { notFound } from './lib/errors.js';
 import { catalogRouters } from './modules/catalog/routes.js';
 import { roundsRouter } from './modules/rounds/routes.js';
-import { accountsRouter } from './modules/accounts/routes.js';
+import { accountsRouter, profileRouter } from './modules/accounts/routes.js';
 import { topicsRouter, meRouter } from './modules/topics/routes.js';
 import { advisorRequestsRouter, lecturersRouter } from './modules/topics/advisorRoutes.js';
 import { invitationsRouter } from './modules/topics/invitationRoutes.js';
@@ -72,6 +72,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     for (const [prefix, router] of Object.entries(catalogRouters({ repo: catalogRepo, guard }))) app.use(`/api/${prefix}`, router);
   }
   if (roundRepo) app.use('/api/rounds', roundsRouter({ repo: roundRepo, guard }));
+  if (accountRepo) app.use('/api/me/profile', profileRouter({ repo: accountRepo, guard })); // trước /api/me của topics
   if (accountRepo) app.use('/api/users', accountsRouter({ repo: accountRepo, hasher, guard, genPassword }));
 
   if (topicRepo) {

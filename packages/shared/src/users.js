@@ -67,3 +67,15 @@ export const userImportRowSchema = z
     if (v.role === ROLES.STUDENT && !v.classCode) add('Sinh viên cần mã lớp');
     if (v.role === ROLES.LECTURER && v.classCode) add('Chỉ sinh viên mới có lớp');
   });
+
+// API_GD7 §10.1 (FR30): số di động VN, chuẩn hóa (bỏ khoảng trắng, dấu chấm, gạch) trước khi so khớp; rỗng/null = xóa.
+export const PHONE_REGEX = /^(0|\+84)(3|5|7|8|9)\d{8}$/;
+export const profileUpdateSchema = z.strictObject({
+  phone: z
+    .string({ error: 'Số điện thoại không hợp lệ' })
+    .max(40, 'Số điện thoại không hợp lệ')
+    .nullable()
+    .transform((v) => (v == null ? '' : v.replace(/[\s.-]/g, '')))
+    .refine((v) => v === '' || PHONE_REGEX.test(v), 'Số điện thoại không hợp lệ')
+    .transform((v) => v || null),
+});
