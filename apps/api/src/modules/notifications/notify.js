@@ -6,6 +6,10 @@ const cut = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 // Mã + tên đề tài – người nhận luôn đã có quyền xem tên này (§8.2)
 export const topicName = (t) => `${t.code} – ${cut(t.title, 150)}`;
 
+// Email FR29 (API_GD7 §9.2): server.js bật khi đủ cấu hình SMTP; khi bật, mỗi thông báo mới là một dòng hộp thư đi PENDING.
+let emailOutbox = false;
+export const setEmailOutbox = (on) => { emailOutbox = !!on; };
+
 /** items: [{ userId, type, title, link, dedupeKey }]. Bỏ người gây ra sự kiện và tài khoản bị khóa. Trả số dòng tạo mới. */
 export async function notify(db, items, actorId = null) {
   const want = items.filter((i) => i.userId && i.userId !== actorId);
@@ -14,7 +18,7 @@ export async function notify(db, items, actorId = null) {
   const active = new Set((await db.user.findMany({ where: { id: { in: ids }, isLocked: false }, select: { id: true } })).map((u) => u.id));
   const data = want
     .filter((i) => active.has(i.userId))
-    .map(({ userId, type, title, link, dedupeKey }) => ({ userId, type, title: cut(title, 300), link, dedupeKey }));
+    .map(({ userId, type, title, link, dedupeKey }) => ({ userId, type, title: cut(title, 300), link, dedupeKey, emailStatus: emailOutbox ? 'PENDING' : null }));
   let created = 0;
   for (let i = 0; i < data.length; i += CHUNK) {
     created += (await db.notification.createMany({ data: data.slice(i, i + CHUNK), skipDuplicates: true })).count;

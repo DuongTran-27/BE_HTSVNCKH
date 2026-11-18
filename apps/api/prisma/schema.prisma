@@ -542,10 +542,16 @@ model Notification {
   dedupeKey String
   readAt    DateTime? @db.Timestamptz(6)
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  // Hộp thư đi FR29 (API_GD7 §9.2): null = không gửi email; PENDING/SENDING/SENT/FAILED/SKIPPED
+  emailStatus    String?
+  emailAttempts  Int       @default(0)
+  emailClaimedAt DateTime? @db.Timestamptz(6)
+  emailedAt      DateTime? @db.Timestamptz(6)
   user      User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, dedupeKey])
   @@index([userId, readAt])
+  @@index([emailStatus, createdAt])
 }
 
 model StatusHistory {

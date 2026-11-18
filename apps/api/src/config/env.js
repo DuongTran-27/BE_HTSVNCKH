@@ -4,6 +4,7 @@ import { z } from 'zod';
 const optional = (t) => z.preprocess((v) => (v === '' ? undefined : v), t.optional());
 const DOMAIN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 export const GOOGLE_ENV_KEYS = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_ALLOWED_DOMAINS', 'PUBLIC_APP_URL'];
+export const SMTP_ENV_KEYS = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'PUBLIC_APP_URL'];
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -25,6 +26,13 @@ const schema = z.object({
     .pipe(z.array(z.string().regex(DOMAIN, 'Tên miền không hợp lệ')).min(1))),
   // URL trang web (Vercel), là gốc của redirect_uri Google và đích chuyển hướng sau SSO
   PUBLIC_APP_URL: optional(z.url({ protocol: /^https?$/ }).refine((v) => !v.endsWith('/'), 'PUBLIC_APP_URL không có dấu / ở cuối')),
+  // Email thông báo (FR29, API_GD7 §9.1): tùy chọn, thiếu một biến thì tắt êm. SMTP_SECURE mặc định true khi cổng 465.
+  SMTP_HOST: optional(z.string().trim().min(1)),
+  SMTP_PORT: optional(z.coerce.number().int().min(1).max(65535)),
+  SMTP_USER: optional(z.string().min(1)),
+  SMTP_PASS: optional(z.string().min(1)),
+  SMTP_FROM: optional(z.string().trim().min(3).refine((v) => !/[\r\n]/.test(v), 'SMTP_FROM không được xuống dòng')),
+  SMTP_SECURE: optional(z.stringbool()),
   LOG_PROXY_HOPS: z.stringbool().default(false), // tạm: log req.ips/x-forwarded-for ở /api/health để đo số hop
 }).refine((e) => e.NODE_ENV !== 'production' || !!e.CLOUDINARY_URL, { message: 'Production cần CLOUDINARY_URL', path: ['CLOUDINARY_URL'] })
   .refine((e) => e.NODE_ENV !== 'production' || !!e.ORIGIN_SECRET, { message: 'Production cần ORIGIN_SECRET', path: ['ORIGIN_SECRET'] })
@@ -32,6 +40,7 @@ const schema = z.object({
 
 // Tên biến Google còn thiếu (rỗng = SSO bật). Chỉ trả tên, không bao giờ trả giá trị.
 export const missingGoogleEnv = (env) => GOOGLE_ENV_KEYS.filter((k) => !env[k]);
+export const missingSmtpEnv = (env) => SMTP_ENV_KEYS.filter((k) => !env[k]);
 
 export const loadEnv = (source = process.env) => {
   const parsed = schema.safeParse(source);
