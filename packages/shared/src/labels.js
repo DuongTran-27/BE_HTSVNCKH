@@ -89,6 +89,10 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   MEMBER_LEFT: 'Thành viên rời nhóm',
   RECRUITMENT_CANCELLED: 'Giảng viên ngừng tuyển',
   APPLICATION_DECLINED: 'Đơn ứng tuyển bị từ chối',
+  APPLICATION_RECEIVED: 'Đơn ứng tuyển mới',
+  APPLICATION_ACCEPTED: 'Đơn ứng tuyển được nhận',
+  APPLICATION_WITHDRAWN: 'Đơn ứng tuyển tự rút',
+  GROUP_FINALIZED: 'Nhóm đã được chốt',
 });
 
 // GĐ6 (API_GD6 §2.7)

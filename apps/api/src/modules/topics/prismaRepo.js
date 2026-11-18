@@ -12,6 +12,7 @@ import { createNotificationRepo } from '../notifications/prismaRepo.js';
 import { createStatsRepo } from '../stats/prismaRepo.js';
 import { createChangeRequestRepo } from '../changeRequests/prismaRepo.js';
 import { createRecruitmentRepo } from './recruitmentRepo.js';
+import { createApplicationRepo } from './applicationRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
 const DETAIL_INCLUDE = {
@@ -55,6 +56,7 @@ export const createTopicRepo = (prisma) => ({
   ...createStatsRepo(prisma),
   ...createChangeRequestRepo(prisma),
   ...createRecruitmentRepo(prisma),
+  ...createApplicationRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, name: true, isActive: true } }),
   findDetail: async (id) => {

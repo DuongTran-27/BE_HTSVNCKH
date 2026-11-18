@@ -88,17 +88,18 @@ describe('QA T203 – seed khớp bảng chuyển trạng thái mục 5', () => 
     const active = {};
     for (const t of topics) {
       const cur = t.members.filter((m) => !m.leftAt);
-      // DC-05 (FR31, FR33): đề tài GV đang tuyển chưa có ai được duyệt → 0 thành viên, ≤ recruitSlots; trưởng nhóm là người được duyệt đầu tiên
+      // m1 BM DC-05: đếm FR03 trước nhánh RECRUITING – đề tài đang tuyển là đề tài hoạt động, thành viên của nó chiếm suất
+      if (isActiveStatus(t.status))
+        for (const m of cur) active[`${m.userId}|${t.roundId}`] = (active[`${m.userId}|${t.roundId}`] ?? 0) + 1;
+      // DC-05 (FR31, FR33): đề tài GV đang tuyển: ≤ min(recruitSlots, max) thành viên; có thành viên thì đúng 1 trưởng nhóm (người được duyệt đầu tiên)
       if (t.origin === 'LECTURER' && t.status === 'RECRUITING') {
         expect(cur.filter((m) => m.role === 'LEADER').length, t.code).toBe(cur.length ? 1 : 0);
-        expect(cur.length, t.code).toBeLessThanOrEqual(t.recruitSlots);
+        expect(cur.length, t.code).toBeLessThanOrEqual(Math.min(t.recruitSlots, DEFAULT_ROUND_CONFIG.maxMembers));
         continue;
       }
       expect(cur.filter((m) => m.role === 'LEADER').length, t.code).toBe(1);
       expect(cur.length).toBeGreaterThanOrEqual(DEFAULT_ROUND_CONFIG.minMembers);
       expect(cur.length).toBeLessThanOrEqual(DEFAULT_ROUND_CONFIG.maxMembers);
-      if (isActiveStatus(t.status))
-        for (const m of cur) active[`${m.userId}|${t.roundId}`] = (active[`${m.userId}|${t.roundId}`] ?? 0) + 1;
     }
     expect(Math.max(...Object.values(active))).toBeLessThanOrEqual(DEFAULT_ROUND_CONFIG.maxActiveTopicsPerStudent);
   });

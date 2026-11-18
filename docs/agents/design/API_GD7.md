@@ -306,6 +306,8 @@ Kiểm sớm (ngoài khóa, cho thông điệp rõ): đề tài RECRUITING cùng
 Ghi trong `withLockTx` (M3 BM): khóa Topic `SELECT … FOR SHARE` (xung đột với khóa ghi của `FINALIZE_GROUP`/`UNPUBLISH_RECRUITMENT`, nhưng nhiều SV ứng tuyển cùng lúc không chặn nhau) → **kiểm lại** `status = RECRUITING` (409 `NOT_RECRUITING`) và cùng khoa sau khóa → tạo đơn (`P2002` → 409 `APPLICATION_EXISTS`). Nhờ vậy không có đơn `PENDING` mồ côi trên đề tài đã chốt/ngừng tuyển. AuditLog `APPLICATION_CREATE` (không ghi `coverLetter` – chỉ độ dài). Thông báo `APPLICATION_RECEIVED` → GVHD.
 201 `{ "application": ApplicationView }`.
 
+DC-06: SV đã là thành viên đề tài → 409 `ALREADY_MEMBER` (mã cũ của lời mời). Chỉ tiêu khi duyệt (§4.4 bước 2) = `min(recruitSlots, maxMembers hiện hành của đợt)` (m2 BM DC-05).
+
 **`POST /api/applications/:id/withdraw`** – chính SV. `updateMany({ where: { id, studentId: me, status: 'PENDING' } })` → `WITHDRAWN`; `count = 0` → 409 `APPLICATION_CLOSED`. AuditLog `APPLICATION_WITHDRAW`. 200 `{ application }`.
 
 ### 4.4 Duyệt đơn – `POST /api/applications/:id/accept`
@@ -604,6 +606,7 @@ Tắt: `emailStatus` null, không gọi transport. Tiêu đề đề tài chứa
 | `NOTIFICATION_TYPES` + nhãn: `APPLICATION_RECEIVED`, `APPLICATION_ACCEPTED`, `APPLICATION_DECLINED`, `GROUP_FINALIZED`, `DEFENSE_REQUESTED`, `DEFENSE_RETURNED`, `COUNCIL_MEMBER_ADDED`, `COUNCIL_MEMBER_REMOVED`, `COUNCIL_ASSIGNED`, `COUNCIL_UNASSIGNED`, `DEFENSE_DECIDED` | §3–§7 | task gắn sự kiện |
 | `SSO_ERROR_LABEL` (mã `sso_error` → thông điệp tiếng Việt: `CANCELLED`, `STATE_MISMATCH`, `GOOGLE_ERROR`, `EMAIL_NOT_VERIFIED`, `DOMAIN_NOT_ALLOWED`, `NO_ACCOUNT`, `PASSWORD_ONLY`, `ACCOUNT_LOCKED`); `ssoCallbackQuerySchema` (chỉ dùng ở API) | §8 | DC-03 |
 | `NOTIFICATION_TYPES` thêm `RECRUITMENT_CANCELLED` (thành viên bị gỡ khi ngừng tuyển) | §3.4 | DC-05 |
+| `NOTIFICATION_TYPES` thêm `APPLICATION_WITHDRAWN` (GVHD đề tài có đơn tự rút theo G51) | §4.4 bước 6 | DC-06 |
 
 Tất cả theo QD_ZOD §5 (`.max()` trước refine, body strict, thông điệp tiếng Việt).
 

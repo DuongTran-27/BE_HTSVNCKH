@@ -6,8 +6,9 @@ import { checkTransition } from './stateMachine.js';
 import { relations, canView } from './service.js';
 import { topicName } from '../notifications/notify.js';
 
-export const RECRUIT_ACTIONS = ['PUBLISH_RECRUITMENT', 'UNPUBLISH_RECRUITMENT'];
+export const RECRUIT_ACTIONS = ['PUBLISH_RECRUITMENT', 'UNPUBLISH_RECRUITMENT', 'FINALIZE_GROUP'];
 export const UNPUBLISH_DECLINE_REASON = 'Giảng viên ngừng tuyển';
+export const FINALIZE_DECLINE_REASON = 'Đề tài đã chốt nhóm';
 const CONCURRENT = () => conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
 const iso = (d) => d.toISOString();
 
@@ -24,7 +25,7 @@ export const assertPublishable = (t) => {
 };
 
 // Phạm vi bảng tin: khoa của người gọi; STAFF: các khoa trong phạm vi. Không có khoa → rỗng (không bao giờ "mọi khoa")
-const scopeOf = (user) => ({ facultyId: { in: user.role === 'STAFF' ? (user.staffFacultyIds ?? []) : user.facultyId ? [user.facultyId] : [] } });
+export const scopeOf = (user) => ({ facultyId: { in: user.role === 'STAFF' ? (user.staffFacultyIds ?? []) : user.facultyId ? [user.facultyId] : [] } });
 
 export const createRecruitmentService = ({ repo, getTopic, now = () => new Date() }) => {
   const publish = async (t, rel, user, body, ip) => {
@@ -86,6 +87,27 @@ export const createRecruitmentService = ({ repo, getTopic, now = () => new Date(
     return getTopic(user, t.id);
   };
 
+  // FINALIZE_GROUP (§4.5): RECRUITING → HAS_ADVISOR; sau đó trưởng nhóm gửi xét duyệt như luồng cũ (G48, CAU_HOI #14)
+  const finalize = async (t, rel, user, body, ip) => {
+    const transition = checkTransition({ topic: t, action: body.action, actor: user, ctx: rel });
+    if (body.version !== t.version) throw CONCURRENT();
+    const cfg = effectiveRoundConfig(t.round.config);
+    const at = now();
+    await repo.applyRecruitment({ topic: { id: t.id, version: body.version }, transition, actor: user }, async (o) => {
+      // Đọc lại dưới khóa Topic: duyệt đơn đồng thời đã tăng version nên không lọt thành viên sau chốt
+      const members = await o.liveMembers(t.id);
+      if (members.length < cfg.minMembers) throw conflict('GROUP_TOO_SMALL', `Nhóm chưa đủ số thành viên tối thiểu (${cfg.minMembers})`);
+      const apps = await o.pendingApplications(t.id);
+      if (apps.length) await o.declineApplications(apps.map((a) => a.id), { reason: FINALIZE_DECLINE_REASON, decidedById: user.id, respondedAt: at });
+      await o.audit({ actorId: user.id, action: 'TOPIC_FINALIZE_GROUP', entityType: 'Topic', entityId: t.id, before: { status: t.status }, after: { status: transition.to, members: members.map((m) => ({ userId: m.userId, role: m.role })), declinedApplications: apps.length }, ip });
+      await o.notify({ topicId: t.id, to: ['members'], actorId: user.id, type: 'GROUP_FINALIZED', key: `GROUP_FINALIZED:${t.id}:${body.version}`, link: `/de-tai/${t.id}`, title: (x) => `Giảng viên đã chốt nhóm đề tài ${topicName(x)}; trưởng nhóm gửi hồ sơ xét duyệt` });
+      for (const a of apps) {
+        await o.notify({ topicId: t.id, userIds: [a.studentId], actorId: user.id, type: 'APPLICATION_DECLINED', key: `APPLICATION_DECLINED:${a.id}`, link: '/tuyen-sinh', title: (x) => `Đơn ứng tuyển đề tài ${topicName(x)} bị từ chối: đề tài đã chốt nhóm` });
+      }
+    });
+    return getTopic(user, t.id);
+  };
+
   const presentItem = (t, user, full) => {
     const n = now();
     const adv = t.advisings[0];
@@ -107,7 +129,8 @@ export const createRecruitmentService = ({ repo, getTopic, now = () => new Date(
       if (!t) throw notFound();
       const rel = relations(t, user);
       if (!canView(t, rel)) throw forbidden(); // trước checkTransition để không lộ trạng thái (API_GD2 §8.1)
-      return body.action === 'PUBLISH_RECRUITMENT' ? publish(t, rel, user, body, ip) : unpublish(t, rel, user, body, ip);
+      const run = { PUBLISH_RECRUITMENT: publish, UNPUBLISH_RECRUITMENT: unpublish, FINALIZE_GROUP: finalize }[body.action];
+      return run(t, rel, user, body, ip);
     },
 
     async list(user, q) {

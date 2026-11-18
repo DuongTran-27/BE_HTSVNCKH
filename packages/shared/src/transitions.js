@@ -30,8 +30,8 @@ export const TRANSITIONS = Object.freeze([
 // COUNCIL_FINALIZE chỉ chạy trong POST /api/council-assignments/:id/finalize (API_GD7 §7.4)
 const INTERNAL_ACTIONS = ['CANCEL', 'COUNCIL_FINALIZE'];
 // shortcut: action GĐ7 chưa có nhánh trong topicActionSchema/handler – TopicDetail không được hiện nút gọi ra 400.
-// Task làm endpoint xóa action của mình khỏi đây: DC-06 (FINALIZE_GROUP), DC-07 (REQUEST/RETURN_FROM_DEFENSE). DC-05 đã bật PUBLISH/UNPUBLISH_RECRUITMENT
-const NOT_YET_IMPLEMENTED = ['FINALIZE_GROUP', 'REQUEST_DEFENSE', 'RETURN_FROM_DEFENSE'];
+// Task làm endpoint xóa action của mình khỏi đây: DC-07 (REQUEST/RETURN_FROM_DEFENSE). DC-05 đã bật PUBLISH/UNPUBLISH_RECRUITMENT, DC-06 FINALIZE_GROUP
+const NOT_YET_IMPLEMENTED = ['REQUEST_DEFENSE', 'RETURN_FROM_DEFENSE'];
 export const ENABLED_ACTIONS = Object.freeze(TRANSITIONS.map((t) => t.action).filter((a) => !INTERNAL_ACTIONS.includes(a) && !NOT_YET_IMPLEMENTED.includes(a)));
 
 export const findTransition = (action) => TRANSITIONS.find((t) => t.action === action) ?? null;

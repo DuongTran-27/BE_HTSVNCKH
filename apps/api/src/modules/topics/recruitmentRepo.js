@@ -8,7 +8,7 @@ const ops = (db) => ({
   // Cùng khóa User GV FOR NO KEY UPDATE như ACCEPT_ADVISING / duyệt thay GV (§3.5 #9)
   lockUsers: (ids) => lockUsers(db, ids),
   countLecturerActive: (lecturerId, roundId) => countLecturerActive(db, lecturerId, roundId),
-  liveMembers: (topicId) => db.topicMember.findMany({ where: { topicId, leftAt: null }, select: { id: true, userId: true }, orderBy: { id: 'asc' } }),
+  liveMembers: (topicId) => db.topicMember.findMany({ where: { topicId, leftAt: null }, select: { id: true, userId: true, role: true }, orderBy: { id: 'asc' } }),
   removeMembers: (ids, leftAt) => db.topicMember.updateMany({ where: { id: { in: ids }, leftAt: null }, data: { leftAt } }),
   pendingApplications: (topicId) => db.topicApplication.findMany({ where: { topicId, status: 'PENDING' }, select: { id: true, studentId: true }, orderBy: { id: 'asc' } }),
   declineApplications: (ids, data) => db.topicApplication.updateMany({ where: { id: { in: ids }, status: 'PENDING' }, data: { status: 'DECLINED', ...data } }),
@@ -20,7 +20,7 @@ const ops = (db) => ({
 const boardSelect = (studentId) => ({
   id: true, code: true, title: true, summary: true, objectives: true, keywords: true, requirements: true, recruitSlots: true, updatedAt: true,
   field: { select: { id: true, name: true } },
-  round: { select: { id: true, name: true, regOpenAt: true, regCloseAt: true } },
+  round: { select: { id: true, name: true, regOpenAt: true, regCloseAt: true, config: true } }, // config: hạn mức ứng tuyển (§4.3), không trả ra ngoài
   advisings: { where: { endAt: null }, take: 1, select: { lecturer: { select: { id: true, fullName: true } } } },
   _count: { select: { members: { where: { leftAt: null } } } },
   ...(studentId && {

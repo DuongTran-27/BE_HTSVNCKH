@@ -99,6 +99,7 @@ export const topicActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('PUBLISH_RECRUITMENT'), version, justification: z.string().trim().max(5000, 'Giải trình tối đa 5000 ký tự').optional() }),
   // Lý do kiểm ở checkTransition (reasonRequired) để trả đúng mã REASON_REQUIRED (§3.4)
   z.object({ action: z.literal('UNPUBLISH_RECRUITMENT'), version, reason: z.string().trim().max(2000, 'Lý do tối đa 2000 ký tự').optional() }),
+  z.object({ action: z.literal('FINALIZE_GROUP'), version }), // DC-06 (§4.5)
 ]);
 // Body rỗng (POST similarity-checks): thiếu body coi như {}, trường thừa bị từ chối
 export const emptyBodySchema = z.preprocess((v) => v ?? {}, z.strictObject({}));
@@ -133,6 +134,16 @@ export const recruitmentListQuerySchema = z.object({
   fieldId: opt(z.string().trim().max(64)),
   lecturerId: opt(z.string().trim().max(64)),
   q: opt(z.string().trim().max(200)),
+  ...pageQuery,
+});
+// FR32, FR33 ứng tuyển và hộp đơn (API_GD7 §4.2–4.3)
+export const applicationCreateSchema = z.strictObject({
+  coverLetter: z.string().trim().min(20, 'Lời giới thiệu tối thiểu 20 ký tự').max(2000, 'Lời giới thiệu tối đa 2000 ký tự'),
+});
+export const applicationListQuerySchema = z.object({
+  status: opt(reqStatus),
+  topicId: opt(z.string().trim().max(64)),
+  roundId: opt(z.string().trim().max(64)),
   ...pageQuery,
 });
 // FR08: kho chung (API_GD2 §9.2) – chỉ kết quả đạt

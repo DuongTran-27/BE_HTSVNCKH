@@ -86,7 +86,7 @@ describe('§3.1–3.2 tạo và sửa nháp GV', () => {
 
     const p = await publish(lec, t, { version: 2 });
     expect(p.status, JSON.stringify(p.body)).toBe(200);
-    expect(p.body.topic).toMatchObject({ status: 'RECRUITING', version: 3, availableActions: ['UNPUBLISH_RECRUITMENT'] });
+    expect(p.body.topic).toMatchObject({ status: 'RECRUITING', version: 3, availableActions: ['UNPUBLISH_RECRUITMENT', 'FINALIZE_GROUP'] }); // DC-06 bật FINALIZE_GROUP (API_GD7 §4.5)
     expect(p.body.topic.permissions.edit).toBe(false);
     expect(p.body.similarityCheck.status).toBe('OK');
     expect(await prisma.statusHistory.findMany({ where: { topicId: t.id }, select: { from: true, to: true, action: true, actorId: true } }))
@@ -369,7 +369,7 @@ describe('MINOR DC-01', () => {
     const lec = await mkUser('LECTURER');
     const staff = await mkUser('STAFF');
     const t = await mkLecTopic(lec, { status: 'RECRUITING' });
-    for (const [who, body] of [[staff, { action: 'CANCEL', reason: REASON }], [lec, { action: 'COUNCIL_FINALIZE' }], [lec, { action: 'FINALIZE_GROUP' }], [lec, { action: 'REQUEST_DEFENSE' }]]) {
+    for (const [who, body] of [[staff, { action: 'CANCEL', reason: REASON }], [lec, { action: 'COUNCIL_FINALIZE' }], [lec, { action: 'REQUEST_DEFENSE' }]]) { // DC-06 bật FINALIZE_GROUP (đặc tả: có endpoint) – ca 400 của nó chuyển sang DC06-applications
       const r = await act(who, t, body);
       expect([r.status, code(r)], body.action).toEqual([400, 'UNKNOWN_ACTION']);
     }

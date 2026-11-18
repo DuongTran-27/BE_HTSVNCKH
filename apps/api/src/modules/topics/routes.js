@@ -1,4 +1,4 @@
-import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, leaveTopicSchema, paginationQuery, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema, similarityBypassCreateSchema, ENABLED_ACTIONS, findTransition } from '@nckh/shared';
+import { topicCreateSchema, topicUpdateSchema, invitationCreateSchema, leaderTransferSchema, leaveTopicSchema, paginationQuery, topicActionSchema, emptyBodySchema, idSchema, submissionSeqSchema, submissionDiffQuerySchema, topicListQuerySchema, similarityBypassCreateSchema, applicationListQuerySchema, ENABLED_ACTIONS, findTransition } from '@nckh/shared';
 import { requireRole } from '../../middlewares/auth.js';
 import { validate } from '../../middlewares/validate.js';
 import { badRequest, notFound } from '../../lib/errors.js';
@@ -14,6 +14,7 @@ import { createListService } from './listService.js';
 import { createSimilarityService } from './similarityService.js';
 import { createSimilarityBypassService } from './similarityBypassService.js';
 import { createRecruitmentService, RECRUIT_ACTIONS } from './recruitmentService.js';
+import { createApplicationService } from './applicationService.js';
 import { mountTopicMilestoneRoutes, mountTopicProgressRoutes, mountTopicDocumentRoutes, mountTopicFeedbackRoutes } from '../execution/routes.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
@@ -51,6 +52,9 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
     res.json(await snapshots.get(req.user, req.params.id, seq.data));
   });
   r.get('/:id/submission-diff', reader, validate(submissionDiffQuerySchema, 'query'), async (req, res) => res.json(await snapshots.diff(req.user, req.params.id, req.validated)));
+  // FR33 ứng viên của đề tài (API_GD7 §4.2): GVHD hiện hành, cán bộ trong phạm vi
+  const applications = createApplicationService({ repo, now });
+  r.get('/:id/applications', reader, validate(applicationListQuerySchema, 'query'), async (req, res) => res.json(await applications.listForTopic(req.user, req.params.id, req.validated)));
   r.get('/:id/status-history', reader, async (req, res) => res.json(await snapshots.history(req.user, req.params.id)));
   r.put('/:id', studentOrLecturer, validate(topicUpdateSchema), async (req, res) => {
     res.json(await svc.update(req.user, req.params.id, req.body, req.ip));

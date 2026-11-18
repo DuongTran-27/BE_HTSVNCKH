@@ -100,6 +100,7 @@ export const NOTIFICATION_TYPES = Object.freeze([
   'SIMILARITY_BYPASS_GRANTED', 'SIMILARITY_RECHECKED', // T609: G5 (API_GD6 §9)
   'MEMBER_LEFT', // T603: FR21 rời nhóm
   'RECRUITMENT_CANCELLED', 'APPLICATION_DECLINED', // DC-05: FR31 ngừng tuyển (API_GD7 §3.4)
+  'APPLICATION_RECEIVED', 'APPLICATION_ACCEPTED', 'APPLICATION_WITHDRAWN', 'GROUP_FINALIZED', // DC-06: FR32, FR33 (API_GD7 §4, G51)
 ]);
 
 // GĐ6 (API_GD6 §2): yêu cầu thay đổi (khớp enum ChangeType của Prisma); stage suy ra, không lưu
