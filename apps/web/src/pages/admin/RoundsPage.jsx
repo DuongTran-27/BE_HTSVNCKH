@@ -56,14 +56,14 @@ export function RoundsPage() {
                   <tbody>
                     {d.items.map((r) => (
                       <tr key={r.id}>
-                        <td className="px-3 py-3 break-words"><Link className="font-medium text-blue-700 underline-offset-4 hover:underline" to={`/quan-ly/dot/${r.id}`}>{r.name}</Link></td>
-                        <td className="px-3 py-3">{facName[r.facultyId] ?? ''}</td>
-                        <td className="px-3 py-3">{r.academicYear}</td>
-                        <td className="px-3 py-3">{fmtDateTime(r.regOpenAt)}</td>
-                        <td className="px-3 py-3">{fmtDateTime(r.regCloseAt)}</td>
-                        <td className="px-3 py-3">{fmtDateTime(r.reviewDeadline)}</td>
-                        <td className="px-3 py-3">{fmtDateTime(r.endAt)}</td>
-                        <td className="px-3 py-3">{r.registrationOpen && <Badge tone="green">Đang mở đăng ký</Badge>}</td>
+                        <td className="px-3 py-2.5 break-words"><Link className="font-medium text-blue-700 underline-offset-4 hover:underline" to={`/quan-ly/dot/${r.id}`}>{r.name}</Link></td>
+                        <td className="px-3 py-2.5">{facName[r.facultyId] ?? ''}</td>
+                        <td className="px-3 py-2.5">{r.academicYear}</td>
+                        <td className="px-3 py-2.5">{fmtDateTime(r.regOpenAt)}</td>
+                        <td className="px-3 py-2.5">{fmtDateTime(r.regCloseAt)}</td>
+                        <td className="px-3 py-2.5">{fmtDateTime(r.reviewDeadline)}</td>
+                        <td className="px-3 py-2.5">{fmtDateTime(r.endAt)}</td>
+                        <td className="px-3 py-2.5">{r.registrationOpen && <Badge tone="green">Đang mở đăng ký</Badge>}</td>
                       </tr>
                     ))}
                   </tbody>

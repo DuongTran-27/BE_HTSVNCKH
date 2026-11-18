@@ -106,7 +106,8 @@ function TopicDetail({ topic: t }) {
           <ResultSection topic={t} />
         </div>
 
-        <aside className="space-y-4">
+        {/* Máy tính: cột phải dính khi cuộn phần tóm tắt dài; quá cao thì tự cuộn trong cột */}
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
           <div className={card}>
             <Block title="Giảng viên hướng dẫn">
               <span className="inline-flex items-center gap-2"><UserRound aria-hidden="true" className="size-4 text-slate-400" />{t.advisor?.fullName ?? 'Chưa có'}</span>

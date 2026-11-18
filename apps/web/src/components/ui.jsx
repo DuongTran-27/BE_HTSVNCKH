@@ -14,7 +14,8 @@ export const btnGhost = cn(buttonVariants({ variant: 'outline' }), press, 'borde
 export const btnDanger = cn(buttonVariants({ variant: 'outline' }), press, 'border-destructive text-destructive hover:bg-red-50 hover:text-destructive');
 // Cùng class với Card của shadcn/ui (bo góc, viền, nền thẻ) nhưng giữ dạng chuỗi để các trang ghép thêm class
 export const card = 'rounded-2xl border bg-card p-4 text-card-foreground shadow-sm sm:p-6';
-export const tableFrame = 'overflow-x-auto rounded-2xl border bg-card shadow-sm';
+// xl: bỏ overflow để đầu bảng dính được theo trang (overflow tạo khung cuộn riêng làm sticky mất tác dụng)
+export const tableFrame = 'overflow-x-auto xl:overflow-visible rounded-2xl border bg-card shadow-sm';
 // Hộp thoại có ô nhập hoặc lựa chọn bắt buộc: bấm ra ngoài không đóng
 export const keepOpenOnOutside = { onInteractOutside: (e) => e.preventDefault() };
 // Esc không đóng khi form đã gõ dở (đóng bằng nút Hủy), tránh mất nội dung

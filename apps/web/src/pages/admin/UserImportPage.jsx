@@ -129,7 +129,7 @@ export function UserImportPage() {
                 <caption className="sr-only">Các dòng lỗi</caption>
                 <thead><tr><th className="px-3 py-2.5">Dòng</th><th className="px-3 py-2.5">Trường</th><th className="px-3 py-2.5">Lỗi</th></tr></thead>
                 <tbody>{report.errors.map((e, i) => (
-                  <tr key={i}><td className="px-3 py-3">{e.row}</td><td className="px-3 py-3">{e.field ?? 'Cả dòng'}</td><td className="px-3 py-3 break-words">{e.message}</td></tr>
+                  <tr key={i}><td className="px-3 py-2.5">{e.row}</td><td className="px-3 py-2.5">{e.field ?? 'Cả dòng'}</td><td className="px-3 py-2.5 break-words">{e.message}</td></tr>
                 ))}</tbody>
               </table></div>
             </>
@@ -141,8 +141,8 @@ export function UserImportPage() {
                 <caption className="sr-only">Các dòng hợp lệ</caption>
                 <thead><tr>{['Dòng', 'Mã', 'Email', 'Họ tên', 'Vai trò', 'Lớp'].map((h) => <th key={h} className="px-3 py-2.5">{h}</th>)}</tr></thead>
                 <tbody>{report.preview.map((r) => (
-                  <tr key={r.row}><td className="px-3 py-3">{r.row}</td><td className="px-3 py-3">{r.code}</td><td className="px-3 py-3 break-all">{r.email}</td>
-                    <td className="px-3 py-3 break-words">{r.fullName}</td><td className="px-3 py-3">{ROLE_LABEL[r.role]}</td><td className="px-3 py-3">{r.classCode}</td></tr>
+                  <tr key={r.row}><td className="px-3 py-2.5">{r.row}</td><td className="px-3 py-2.5">{r.code}</td><td className="px-3 py-2.5 break-all">{r.email}</td>
+                    <td className="px-3 py-2.5 break-words">{r.fullName}</td><td className="px-3 py-2.5">{ROLE_LABEL[r.role]}</td><td className="px-3 py-2.5">{r.classCode}</td></tr>
                 ))}</tbody>
               </table></div>
             </>

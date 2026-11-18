@@ -187,7 +187,8 @@
 
   /* Bảng dữ liệu theo Table của shadcn/ui: đầu bảng nền nhạt chữ xám, dòng đổi nền khi rê chuột */
   table { @apply w-full border-collapse text-sm; }
-  thead th { @apply h-11 border-b bg-muted/70 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-muted-foreground uppercase; }
+  /* Máy tính (xl): đầu bảng dính dưới header khi cuộn; nền đặc để dòng không lộ qua */
+  thead th { @apply h-11 border-b bg-muted text-left xl:sticky xl:top-16 xl:z-10 xl:first:rounded-tl-2xl xl:last:rounded-tr-2xl text-xs font-semibold tracking-wide whitespace-nowrap text-muted-foreground uppercase; }
   tbody tr { @apply border-b transition-colors last:border-b-0 hover:bg-muted/60; }
 
   details > summary { @apply select-none; }

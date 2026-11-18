@@ -1,9 +1,11 @@
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { Link } from 'react-router';
 import { Archive, ClipboardCheck, FileStack, GitPullRequestArrow, Mail, PencilLine, PlayCircle, UserCheck, Users } from 'lucide-react';
 import { api } from '../lib/api.js';
 import { useAuth } from '../lib/auth.js';
-import { PageHeader } from '../components/ui.jsx';
+import { fmtDateTime } from '../lib/format.js';
+import { Badge, PageHeader, QueryBox, STATUS_TONE, card } from '../components/ui.jsx';
 import { cn } from '@/lib/utils';
 
 // Ô số liệu theo vai trò: [nhãn, API danh sách (lấy total, pageSize=1), trang đích, biểu tượng].
@@ -34,6 +36,39 @@ const TILES = {
   ],
 };
 
+// Danh sách đề tài cần để ý (5 dòng) dưới các ô số liệu; ADMIN không có quyền nghiệp vụ nên không có
+const RECENT = {
+  STUDENT: ['Đề tài cập nhật gần đây', '/topics?sort=updatedAt_desc&pageSize=5', (t) => `/de-tai/${t.id}`, '/de-tai'],
+  LECTURER: ['Đề tài hướng dẫn cập nhật gần đây', '/topics?sort=updatedAt_desc&pageSize=5', (t) => `/de-tai/${t.id}`, '/de-tai'],
+  STAFF: ['Hồ sơ chờ xét duyệt lâu nhất', '/topics?status=UNDER_REVIEW&sort=updatedAt_asc&pageSize=5', (t) => `/xet-duyet/${t.id}`, '/xet-duyet'],
+};
+
+function RecentTopics({ spec: [title, url, linkOf, all] }) {
+  const query = useQuery({ queryKey: ['dashboard', url], queryFn: () => api(url) });
+  return (
+    <section className={`${card} mt-6`}>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="font-semibold">{title}</h2>
+        <Link to={all} className="text-sm font-medium text-blue-700 hover:underline">Xem tất cả</Link>
+      </div>
+      <QueryBox query={query} empty="Chưa có đề tài nào." isEmpty={(d) => d.items.length === 0}>
+        {(d) => (
+          <div className="divide-y">
+            {d.items.map((t) => (
+              <Link key={t.id} to={linkOf(t)} className="-mx-2 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-muted">
+                <span className="shrink-0 text-sm whitespace-nowrap text-muted-foreground tabular-nums">{t.code}</span>
+                <span className="min-w-0 flex-1 truncate font-medium">{t.title}</span>
+                <Badge tone={STATUS_TONE[t.status]}>{TOPIC_STATUS_LABEL[t.status]}</Badge>
+                <span className="w-32 shrink-0 text-right text-sm text-muted-foreground">{fmtDateTime(t.updatedAt)}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </QueryBox>
+    </section>
+  );
+}
+
 // /tong-quan – trang tổng quan sau đăng nhập
 export function DashboardPage() {
   const { user } = useAuth();
@@ -61,6 +96,7 @@ export function DashboardPage() {
           );
         })}
       </ul>
+      {RECENT[user?.role] && <RecentTopics spec={RECENT[user.role]} />}
     </section>
   );
 }

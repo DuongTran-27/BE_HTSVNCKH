@@ -31,3 +31,16 @@ Kiểm tra bằng mắt (Playwright MCP, dev server): Tổng quan SV, chế đ�
 ## Chưa làm / rủi ro
 - Chế độ tối mới kiểm bằng mắt ở trang Tổng quan, danh sách và chi tiết đề tài; các trang khác dựa vào việc đảo thang màu, có thể còn chỗ tương phản kém.
 - Fallback Suspense khi tải trang lazy (`routes.jsx`) vẫn là chữ "Đang tải…".
+
+## Đợt 2 – ưu tiên máy tính (người dùng: "dự án này chính là giao diện desktop")
+| # | Nội dung | File |
+|---|---|---|
+| 8 | Tổng quan: danh sách 5 đề tài dưới ô số liệu – SV/GV "cập nhật gần đây" (`sort=updatedAt_desc`), cán bộ "hồ sơ chờ xét duyệt lâu nhất" (`status=UNDER_REVIEW&sort=updatedAt_asc`, dẫn tới `/xet-duyet/:id`); ADMIN không có | `pages/DashboardPage.jsx` |
+| 9 | Bảng: từ xl đầu bảng dính dưới header khi cuộn (khung bảng bỏ overflow ở xl), dòng `py-2.5`; vùng nội dung rộng tối đa 100rem thay vì 80rem | `index.css`, `components/ui.jsx`, `Layout.jsx`, 4 trang có `<td>` |
+| 10 | Chi tiết đề tài: cột phải dính khi cuộn (lg), quá cao thì cuộn trong cột | `pages/topics/TopicDetailPage.jsx` |
+
+Test thêm: `DashboardPage.test.jsx` – STAFF: danh sách dẫn tới `/xet-duyet/t9`, gọi đúng API.
+
+Bằng chứng: `npm run lint` sạch · web `Tests 245 passed (245)` · build ✓ · `test:e2e` `74 passed (4.7m)`.
+Một lần chạy cả bộ web có 6 test khác lỗi (admin, advising, change-requests, execution, gd6-ui-b, review); chạy riêng và chạy lại cả bộ đều đạt → do máy tải nặng (dev server + vitest song song), không do thay đổi này.
+Rủi ro: bảng rộng hơn khung ở màn xl sẽ tràn ra ngoài thay vì cuộn ngang (khung không còn overflow ở xl).
