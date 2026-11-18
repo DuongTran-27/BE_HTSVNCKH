@@ -6,6 +6,7 @@ import { groupOps } from './groupRepo.js';
 import { notifyTopic } from '../notifications/notify.js';
 
 const LIVE = { leftAt: null };
+export const byId = (rows) => rows.sort((a, b) => (a.id < b.id ? -1 : 1)); // thứ tự ổn định cho audit/thông báo
 const appOps = (db) => ({
   // M3 BM: FOR SHARE – nhiều SV ứng tuyển không chặn nhau, nhưng xung đột với khóa ghi của chốt nhóm/ngừng tuyển/duyệt đơn
   lockTopicShare: async (id) => (await db.$queryRaw`SELECT id, status, "facultyId" FROM "Topic" WHERE id = ${id} FOR SHARE`)[0] ?? null,
@@ -22,9 +23,12 @@ const appOps = (db) => ({
   closeApplication: async (id, status, data) => (await db.topicApplication.updateMany({ where: { id, status: 'PENDING' }, data: { status, ...data } })).count === 1,
   addMember: (data) => db.topicMember.create({ data }),
   bumpTopic: (id) => db.topic.update({ where: { id }, data: { version: { increment: 1 } } }),
-  // G51: đơn chờ khác của SV trong cùng đợt
-  otherPending: (studentId, roundId, exceptId) => db.topicApplication.findMany({ where: { studentId, status: 'PENDING', id: { not: exceptId }, topic: { roundId } }, select: { id: true, topicId: true }, orderBy: { id: 'asc' } }),
-  withdrawApplications: (ids, respondedAt) => db.topicApplication.updateMany({ where: { id: { in: ids }, status: 'PENDING' }, data: { status: 'WITHDRAWN', respondedAt } }),
+  // G51: rút đơn chờ khác của SV trong cùng đợt; RETURNING = đúng các dòng thật sự cập nhật (m1 BM DC-06) – đơn SV vừa tự rút không bị ghi lại
+  withdrawOtherPending: async (studentId, roundId, exceptId, respondedAt) => byId(await db.$queryRaw`
+    UPDATE "TopicApplication" a SET status = 'WITHDRAWN', "respondedAt" = ${respondedAt}
+    FROM "Topic" t WHERE t.id = a."topicId" AND t."roundId" = ${roundId}
+      AND a."studentId" = ${studentId} AND a.status = 'PENDING' AND a.id <> ${exceptId}
+    RETURNING a.id, a."topicId"`),
   audit: (entry) => recordAudit(db, entry),
   notify: (args) => notifyTopic(db, args), // FR13, cùng tx
 });

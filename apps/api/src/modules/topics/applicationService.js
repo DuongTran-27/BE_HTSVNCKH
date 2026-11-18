@@ -117,8 +117,7 @@ export const createApplicationService = ({ repo, getTopic, now = () => new Date(
         await o.audit({ actorId: user.id, action: 'MEMBER_JOIN', entityType: 'TopicMember', entityId: m.id, before: null, after: { topicId: pre.topicId, userId: pre.studentId, role, applicationId: id }, ip });
         // 6. G51: SV vừa chạm giới hạn → đơn chờ khác trong đợt tự rút, báo GVHD các đề tài đó
         if (active + 1 >= cfg.maxActiveTopicsPerStudent) {
-          const others = await o.otherPending(pre.studentId, row.roundId, id);
-          if (others.length) await o.withdrawApplications(others.map((x) => x.id), at);
+          const others = await o.withdrawOtherPending(pre.studentId, row.roundId, id, at);
           for (const x of others) {
             await o.audit({ actorId: user.id, action: 'APPLICATION_WITHDRAW', entityType: 'TopicApplication', entityId: x.id, before: { status: 'PENDING' }, after: { status: 'WITHDRAWN', topicId: x.topicId, auto: true, acceptedApplicationId: id }, ip });
             await o.notify({ topicId: x.topicId, to: ['advisor'], actorId: user.id, type: 'APPLICATION_WITHDRAWN', key: `APPLICATION_WITHDRAWN:${x.id}`, link: `/de-tai/${x.topicId}`, title: (t) => `Đơn của ${pre.student.fullName} vào đề tài ${topicName(t)} tự rút: sinh viên đã được nhận vào đề tài khác` });

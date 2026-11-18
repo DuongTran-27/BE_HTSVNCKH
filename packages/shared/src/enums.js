@@ -70,7 +70,12 @@ export const DEFAULT_ROUND_CONFIG = Object.freeze({
   maxFileSizeMB: 10,
   allowedFileTypes: ['pdf', 'docx', 'pptx', 'xlsx'],
   similarity: { titleReview: 0.5, titleHigh: 0.7, contentReview: 0.35, contentHigh: 0.55, minJustificationWords: 50 },
+  // GĐ7 §2.4 (CAU_HOI #13): hội đồng không bắt buộc; quy đổi điểm bảo vệ → kết quả (pass cố định 5)
+  requireDefense: false,
+  defenseGrades: { excellent: 9, good: 7, pass: 5 },
 });
+// FR34: điểm quá trình tối thiểu ra hội đồng (cố định theo đề cương, DAC_TA mục 9)
+export const MIN_PROCESS_SCORE = 5;
 
 // GĐ4 (API_GD45 §1.4, §3)
 export const MILESTONE_MAX_PER_TOPIC = 20;
@@ -101,7 +106,16 @@ export const NOTIFICATION_TYPES = Object.freeze([
   'MEMBER_LEFT', // T603: FR21 rời nhóm
   'RECRUITMENT_CANCELLED', 'APPLICATION_DECLINED', // DC-05: FR31 ngừng tuyển (API_GD7 §3.4)
   'APPLICATION_RECEIVED', 'APPLICATION_ACCEPTED', 'APPLICATION_WITHDRAWN', 'GROUP_FINALIZED', // DC-06: FR32, FR33 (API_GD7 §4, G51)
+  'DEFENSE_REQUESTED', 'DEFENSE_RETURNED', // DC-07: FR34, FR35 (API_GD7 §5.1, §5.4)
 ]);
+
+// GĐ7 §2.1, §11 (DC-07): hội đồng nghiệm thu, nguồn kết quả – khớp enum Prisma
+export const COUNCIL_ROLE = Object.freeze({ CHAIR: 'CHAIR', SECRETARY: 'SECRETARY', MEMBER: 'MEMBER' });
+export const COUNCIL_ROLE_LABEL = Object.freeze({ CHAIR: 'Chủ tịch', SECRETARY: 'Thư ký', MEMBER: 'Ủy viên' });
+export const DEFENSE_DECISION = Object.freeze({ PASSED: 'PASSED', FAILED: 'FAILED' });
+export const DEFENSE_DECISION_LABEL = Object.freeze({ PASSED: 'Đạt', FAILED: 'Không đạt' });
+export const RESULT_SOURCE = Object.freeze({ ADVISOR: 'ADVISOR', COUNCIL: 'COUNCIL', STAFF: 'STAFF' });
+export const RESULT_SOURCE_LABEL = Object.freeze({ ADVISOR: 'Giảng viên hướng dẫn', COUNCIL: 'Hội đồng', STAFF: 'Cán bộ khoa' });
 
 // GĐ6 (API_GD6 §2): yêu cầu thay đổi (khớp enum ChangeType của Prisma); stage suy ra, không lưu
 export const CHANGE_TYPE = Object.freeze({ TOPIC_CHANGE: 'TOPIC_CHANGE', ADVISOR_CHANGE: 'ADVISOR_CHANGE', CANCEL: 'CANCEL', LEAVE_GROUP: 'LEAVE_GROUP' });

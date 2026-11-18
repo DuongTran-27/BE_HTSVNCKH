@@ -8,6 +8,7 @@ export const effectiveRoundConfig = (config) => ({
   ...(config ?? {}),
   allowedFileTypes: [...(config?.allowedFileTypes ?? DEFAULT_ROUND_CONFIG.allowedFileTypes)],
   similarity: { ...DEFAULT_ROUND_CONFIG.similarity, ...(config?.similarity ?? {}) },
+  defenseGrades: { ...DEFAULT_ROUND_CONFIG.defenseGrades, ...(config?.defenseGrades ?? {}) },
 });
 
 export const idSchema = z.string().trim().min(1, 'Vui lòng chọn một mục').max(64, 'Mã không hợp lệ');
@@ -65,6 +66,9 @@ const similarityShape = {
   contentHigh: ratio,
   minJustificationWords: unit(0, 500),
 };
+// GĐ7 §2.4: ngưỡng quy đổi điểm bảo vệ (thang 10)
+const grade = z.number().min(0).max(10);
+const defenseGradesShape = { excellent: grade, good: grade, pass: grade };
 const configShape = {
   minMembers: unit(1, 20),
   maxMembers: unit(1, 20),
@@ -81,6 +85,7 @@ const configShape = {
     .min(1)
     .max(4)
     .refine((a) => new Set(a).size === a.length, 'Loại file không được lặp'),
+  requireDefense: z.boolean(),
 };
 
 const configOrder = (c, ctx) => {
@@ -93,11 +98,15 @@ const configOrder = (c, ctx) => {
   if (c.similarity.contentReview >= c.similarity.contentHigh) {
     bad(['similarity', 'contentReview'], 'Ngưỡng xem xét phải nhỏ hơn ngưỡng cao');
   }
+  const g = c.defenseGrades;
+  if (g.pass !== 5) bad(['defenseGrades', 'pass'], 'Ngưỡng Đạt cố định 5,0 theo đề cương');
+  if (g.good < g.pass) bad(['defenseGrades', 'good'], 'Ngưỡng Tốt không được nhỏ hơn ngưỡng Đạt');
+  if (g.excellent < g.good) bad(['defenseGrades', 'excellent'], 'Ngưỡng Xuất sắc không được nhỏ hơn ngưỡng Tốt');
 };
 
 // Đầy đủ (sau khi gộp mặc định)
 export const roundConfigSchema = z
-  .object({ ...configShape, similarity: z.object(similarityShape) })
+  .object({ ...configShape, similarity: z.object(similarityShape), defenseGrades: z.object(defenseGradesShape) })
   .superRefine(configOrder);
 
 // Phần ghi đè của một đợt: mọi khóa tùy chọn, khóa lạ bị từ chối
@@ -105,7 +114,17 @@ const optional = (shape) => Object.fromEntries(Object.entries(shape).map(([k, v]
 export const roundConfigInputSchema = z.strictObject({
   ...optional(configShape),
   similarity: z.strictObject(optional(similarityShape)).optional(),
+  defenseGrades: z.strictObject(optional(defenseGradesShape)).optional(),
 });
+
+/** GĐ7 §7.4 (FR37): điểm trung bình bảo vệ (số hoặc chuỗi thập phân) → kết quả theo `defenseGrades` của đợt */
+export const gradeFromDefenseScore = (score, grades = DEFAULT_ROUND_CONFIG.defenseGrades) => {
+  const x = Number(score);
+  if (x >= grades.excellent) return 'EXCELLENT';
+  if (x >= grades.good) return 'GOOD';
+  if (x >= grades.pass) return 'PASS';
+  return 'FAIL';
+};
 
 export const ROUND_ORDER_MESSAGE = 'Các mốc phải theo thứ tự: mở đăng ký < đóng đăng ký < hạn xét duyệt < hạn kết thúc';
 

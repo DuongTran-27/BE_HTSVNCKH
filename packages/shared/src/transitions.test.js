@@ -33,10 +33,9 @@ describe('Bảng chuyển trạng thái', () => {
     expect(ENABLED_ACTIONS).not.toContain('CANCEL');
     expect(ENABLED_ACTIONS).not.toContain('COUNCIL_FINALIZE');
     const gd7 = ['PUBLISH_RECRUITMENT', 'UNPUBLISH_RECRUITMENT', 'FINALIZE_GROUP', 'REQUEST_DEFENSE', 'RETURN_FROM_DEFENSE'];
-    // DC-05 bật PUBLISH/UNPUBLISH_RECRUITMENT, DC-06 bật FINALIZE_GROUP (có endpoint); DC-07 đổi dòng này khi bật
-    expect(ENABLED_ACTIONS.filter((a) => gd7.includes(a))).toEqual(['PUBLISH_RECRUITMENT', 'UNPUBLISH_RECRUITMENT', 'FINALIZE_GROUP']);
-    const pending = ['REQUEST_DEFENSE', 'RETURN_FROM_DEFENSE'];
-    expect([...ENABLED_ACTIONS].sort()).toEqual(TRANSITIONS.map((t) => t.action).filter((a) => ![...pending, 'CANCEL', 'COUNCIL_FINALIZE'].includes(a)).sort());
+    // DC-05 bật PUBLISH/UNPUBLISH_RECRUITMENT, DC-06 FINALIZE_GROUP, DC-07 REQUEST/RETURN_FROM_DEFENSE (có endpoint) – đủ GD7 §0
+    expect(ENABLED_ACTIONS.filter((a) => gd7.includes(a))).toEqual(gd7);
+    expect([...ENABLED_ACTIONS].sort()).toEqual(TRANSITIONS.map((t) => t.action).filter((a) => !['CANCEL', 'COUNCIL_FINALIZE'].includes(a)).sort());
   });
   it('2 trạng thái mới: có nhãn, là đề tài hoạt động; RECRUITING thuộc trước duyệt, WAITING_DEFENSE thì không', () => {
     expect(Object.keys(TOPIC_STATUS_LABEL).sort()).toEqual(Object.values(TOPIC_STATUS).sort());

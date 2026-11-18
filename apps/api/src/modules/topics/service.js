@@ -72,6 +72,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
     const sub = t.submissions[0];
     const sim = t.similarityChecks[0];
     const res = t.results[0];
+    const ps = t.processScores?.[0];
     const bypass = activeBypassOf(t.similarityBypasses?.[0], sub); // G5 §9.3
     const running = t.status === 'IN_PROGRESS';
     const actions = availableActions(t.status, user.role).filter((a) => {
@@ -118,7 +119,11 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
       // G5 (API_GD6 §9.3): thành viên, GVHD hiện hành, cán bộ trong phạm vi
       similarityBypass: bypass && canSeeBypassReason(rel) ? presentBypass(bypass) : null,
       availableActions: actions,
-      currentResult: res ? { version: res.version, result: res.result, createdAt: iso(res.createdAt) } : null,
+      currentResult: res ? { version: res.version, result: res.result, source: res.source, createdAt: iso(res.createdAt) } : null,
+      // GĐ7 §5.5: bản mới nhất, chuỗi 2 chữ số thập phân (không lệch số thực); chỉ người đọc được phần thực hiện
+      processScore: ps && canReadExecution(t, rel)
+        ? { score: ps.score.toFixed(2), comment: ps.comment, createdAt: iso(ps.createdAt), lecturer: { fullName: ps.lecturer.fullName } }
+        : null,
       closeReadiness: CLOSING.includes(t.status) && (rel.isCurrentAdvisor || rel.inStaffScope)
         ? (({ requiredMilestonesPassed, hasFinalResult, requiredMilestoneCount, pendingCount }) => ({
             requiredMilestonesPassed, hasFinalResult, requiredMilestoneCount, pendingMilestones: pendingCount, requiredRemovedCount: t._count.milestones,

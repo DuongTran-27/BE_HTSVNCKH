@@ -386,6 +386,12 @@ describe('§4.5 chốt nhóm', () => {
     expect((await finalize('staff1', t)).status).toBe(403);
     expect((await finalize('admin', t)).status).toBe(403);
     expect(code(await finalize(lec, t, 99))).toBe('CONCURRENT_UPDATE');
+    // m2 BM DC-06: body sai của FINALIZE_GROUP (thiếu/sai kiểu version) → 400 VALIDATION_ERROR tại version, không chuyển trạng thái
+    for (const body of [{ action: 'FINALIZE_GROUP' }, { action: 'FINALIZE_GROUP', version: '0' }, { action: 'FINALIZE_GROUP', version: -1 }]) {
+      const bad = await act(lec, t, body);
+      expect([bad.status, code(bad), Object.keys(bad.body.error.details ?? {})], JSON.stringify(body)).toEqual([400, 'VALIDATION_ERROR', ['version']]);
+    }
+    expect((await topicOf(t)).status).toBe('RECRUITING');
     const draft = await mkLecTopic(lec, { status: 'DRAFT' });
     expect(code(await finalize(lec, draft))).toBe('INVALID_TRANSITION');
   });

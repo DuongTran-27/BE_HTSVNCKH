@@ -73,8 +73,7 @@ export const createRecruitmentService = ({ repo, getTopic, now = () => new Date(
       for (const m of members) {
         await o.audit({ actorId: user.id, action: 'MEMBER_REMOVE', entityType: 'TopicMember', entityId: m.id, before: { topicId: t.id, userId: m.userId, leftAt: null }, after: { leftAt: iso(at), reason: body.reason }, ip });
       }
-      const apps = await o.pendingApplications(t.id);
-      if (apps.length) await o.declineApplications(apps.map((a) => a.id), { reason: UNPUBLISH_DECLINE_REASON, decidedById: user.id, respondedAt: at });
+      const apps = await o.declinePendingApplications(t.id, { reason: UNPUBLISH_DECLINE_REASON, decidedById: user.id, respondedAt: at });
       await o.audit({ actorId: user.id, action: 'TOPIC_UNPUBLISH_RECRUITMENT', entityType: 'Topic', entityId: t.id, before: { status: t.status }, after: { status: transition.to, reason: body.reason, removedMembers: members.length, declinedApplications: apps.length }, ip });
       // Người bị gỡ không còn xem được đề tài → liên kết về bảng tin
       if (members.length) {
@@ -97,8 +96,7 @@ export const createRecruitmentService = ({ repo, getTopic, now = () => new Date(
       // Đọc lại dưới khóa Topic: duyệt đơn đồng thời đã tăng version nên không lọt thành viên sau chốt
       const members = await o.liveMembers(t.id);
       if (members.length < cfg.minMembers) throw conflict('GROUP_TOO_SMALL', `Nhóm chưa đủ số thành viên tối thiểu (${cfg.minMembers})`);
-      const apps = await o.pendingApplications(t.id);
-      if (apps.length) await o.declineApplications(apps.map((a) => a.id), { reason: FINALIZE_DECLINE_REASON, decidedById: user.id, respondedAt: at });
+      const apps = await o.declinePendingApplications(t.id, { reason: FINALIZE_DECLINE_REASON, decidedById: user.id, respondedAt: at });
       await o.audit({ actorId: user.id, action: 'TOPIC_FINALIZE_GROUP', entityType: 'Topic', entityId: t.id, before: { status: t.status }, after: { status: transition.to, members: members.map((m) => ({ userId: m.userId, role: m.role })), declinedApplications: apps.length }, ip });
       await o.notify({ topicId: t.id, to: ['members'], actorId: user.id, type: 'GROUP_FINALIZED', key: `GROUP_FINALIZED:${t.id}:${body.version}`, link: `/de-tai/${t.id}`, title: (x) => `Giảng viên đã chốt nhóm đề tài ${topicName(x)}; trưởng nhóm gửi hồ sơ xét duyệt` });
       for (const a of apps) {

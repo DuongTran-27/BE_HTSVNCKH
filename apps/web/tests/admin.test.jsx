@@ -295,7 +295,8 @@ describe('Đợt (R23, R24)', () => {
     open('/quan-ly/dot', U('STAFF'));
     expect(await screen.findByText('Đang mở đăng ký')).toBeTruthy();
   });
-  const DEFAULTS = { minMembers: 1, maxMembers: 5, maxActiveTopicsPerStudent: 1, maxTopicsPerLecturer: 5, advisorReminderDays: 3, dueReminderDays: 3, minSummaryWords: 100, minKeywords: 3, maxKeywords: 5, maxFileSizeMB: 10, allowedFileTypes: ['pdf', 'docx', 'pptx', 'xlsx'], similarity: { titleReview: 0.5, titleHigh: 0.7, contentReview: 0.35, contentHigh: 0.55, minJustificationWords: 50 } };
+  const DEFAULTS = { minMembers: 1, maxMembers: 5, maxActiveTopicsPerStudent: 1, maxTopicsPerLecturer: 5, advisorReminderDays: 3, dueReminderDays: 3, minSummaryWords: 100, minKeywords: 3, maxKeywords: 5, maxFileSizeMB: 10, allowedFileTypes: ['pdf', 'docx', 'pptx', 'xlsx'], similarity: { titleReview: 0.5, titleHigh: 0.7, contentReview: 0.35, contentHigh: 0.55, minJustificationWords: 50 },
+    requireDefense: false, defenseGrades: { excellent: 9, good: 7, pass: 5 } }; // DC-07: cấu hình đợt hội đồng (API_GD7 §2.4) – form gửi nguyên effectiveConfig
   it('tạo đợt: ô điền sẵn mặc định có ghi chú; gửi đủ config và mốc +07:00; lỗi lồng gắn đúng ô', async () => {
     routesMap['POST /rounds'] = apiErr(400, 'VALIDATION_ERROR', 'Dữ liệu không hợp lệ', { 'config.similarity.titleHigh': 'Ngưỡng sai' });
     open('/quan-ly/dot/moi', U('STAFF'));

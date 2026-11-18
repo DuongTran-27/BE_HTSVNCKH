@@ -81,6 +81,11 @@ export const invitationListQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+// GĐ7 §11 (FR34, FR36): điểm thang 10, tối đa 2 chữ số thập phân
+const SCORE_MESSAGE = 'Điểm phải từ 0 đến 10, tối đa 2 chữ số thập phân';
+export const scoreSchema = z.number({ error: SCORE_MESSAGE }).min(0, SCORE_MESSAGE).max(10, SCORE_MESSAGE)
+  .refine((x) => Math.abs(x * 100 - Math.round(x * 100)) < 1e-9, SCORE_MESSAGE);
+
 // API_GD2 §6, §8.1. T210 tạo union với nhánh FR16; T212a thêm nhánh gửi/gửi lại/xét duyệt.
 const version = z.int().min(0);
 export const topicActionSchema = z.discriminatedUnion('action', [
@@ -100,6 +105,9 @@ export const topicActionSchema = z.discriminatedUnion('action', [
   // Lý do kiểm ở checkTransition (reasonRequired) để trả đúng mã REASON_REQUIRED (§3.4)
   z.object({ action: z.literal('UNPUBLISH_RECRUITMENT'), version, reason: z.string().trim().max(2000, 'Lý do tối đa 2000 ký tự').optional() }),
   z.object({ action: z.literal('FINALIZE_GROUP'), version }), // DC-06 (§4.5)
+  // DC-07 (§5.1, §5.4): điểm quá trình + nhận xét; trả về đang thực hiện – lý do kiểm ở checkTransition (REASON_REQUIRED)
+  z.object({ action: z.literal('REQUEST_DEFENSE'), version, processScore: scoreSchema, processComment: z.string().trim().min(20, 'Nhận xét tối thiểu 20 ký tự').max(5000, 'Nhận xét tối đa 5000 ký tự') }),
+  z.object({ action: z.literal('RETURN_FROM_DEFENSE'), version, reason: z.string().trim().max(2000, 'Lý do tối đa 2000 ký tự').optional() }),
 ]);
 // Body rỗng (POST similarity-checks): thiếu body coi như {}, trường thừa bị từ chối
 export const emptyBodySchema = z.preprocess((v) => v ?? {}, z.strictObject({}));

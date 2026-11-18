@@ -1,6 +1,8 @@
 // Đóng đề tài FR27 (API_GD45 §7.3): REQUEST_CLOSE, RETURN_TO_ADVISOR, CONFIRM_CLOSE, CLOSE_EXPIRED.
 // Chuyển trạng thái chỉ qua checkTransition + applyTransition; điều kiện đóng kiểm sớm rồi kiểm lại dưới khóa Topic.
+import { effectiveRoundConfig } from '@nckh/shared';
 import { conflict, forbidden, notFound } from '../../lib/errors.js';
+import { defenseRequired } from './closeConditions.js';
 import { checkTransition } from './stateMachine.js';
 import { relations, canView } from './service.js';
 import { topicName } from '../notifications/notify.js';
@@ -23,7 +25,9 @@ export const createCloseService = ({ repo, getTopic, now = () => new Date() }) =
     const rel = relations(t, user);
     if (!canView(t, rel)) throw forbidden(); // trước checkTransition để không lộ trạng thái (§1.1)
     const roundEnded = now() >= t.round.endAt;
-    const check = (topic, cond, r = rel) => checkTransition({ topic, action: body.action, actor: user, reason: body.reason, ctx: { ...r, ...cond, roundEnded } });
+    const cfg = effectiveRoundConfig(t.round.config);
+    // GĐ7 §5.3: cùng chỗ closeConditions – kiểm sớm và kiểm lại dưới khóa
+    const check = (topic, cond, r = rel) => checkTransition({ topic, action: body.action, actor: user, reason: body.reason, ctx: { ...r, ...cond, roundEnded, defenseRequired: defenseRequired(cfg, cond.currentResult) } });
     // Thứ tự §1.1: quyền/trạng thái/lý do (ctx giả định đạt) → version → điều kiện đóng thật
     checkTransition({ topic: t, action: body.action, actor: user, reason: body.reason, ctx: { ...rel, ...ASSUME_MET } });
     if (body.version !== t.version) throw conflict('CONCURRENT_UPDATE', 'Dữ liệu vừa được người khác cập nhật, vui lòng tải lại');
@@ -40,7 +44,7 @@ export const createCloseService = ({ repo, getTopic, now = () => new Date() }) =
         const cur = await o.currentResult(t.id);
         if (cur) await o.demoteResult(cur.id);
         const version = (await o.maxResultVersion(t.id)) + 1;
-        const row = await o.createResult({ topicId: t.id, version, result: 'FAIL', summary: `Đóng do hết hạn đợt: ${body.reason}`, reason: body.reason, isCurrent: true, createdById: user.id });
+        const row = await o.createResult({ topicId: t.id, version, result: 'FAIL', summary: `Đóng do hết hạn đợt: ${body.reason}`, reason: body.reason, isCurrent: true, source: 'STAFF', createdById: user.id });
         await o.audit({ actorId: user.id, action: 'RESULT_CREATE', entityType: 'ResultVersion', entityId: row.id, before: cur && { result: cur.result, version: cur.version }, after: { result: 'FAIL', version }, ip });
         after = { ...after, result: 'FAIL', resultVersion: version };
       }

@@ -15,6 +15,7 @@ import { createSimilarityService } from './similarityService.js';
 import { createSimilarityBypassService } from './similarityBypassService.js';
 import { createRecruitmentService, RECRUIT_ACTIONS } from './recruitmentService.js';
 import { createApplicationService } from './applicationService.js';
+import { createDefenseService, DEFENSE_ACTIONS } from './defenseService.js';
 import { mountTopicMilestoneRoutes, mountTopicProgressRoutes, mountTopicDocumentRoutes, mountTopicFeedbackRoutes } from '../execution/routes.js';
 
 // Đã đứng sau requireAuth + requirePasswordChanged. ADMIN bị 403 ở requireRole (FR25); quyền theo quan hệ ở service.
@@ -30,6 +31,7 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   const similarity = createSimilarityService({ repo });
   const bypass = createSimilarityBypassService({ repo });
   const recruit = createRecruitmentService({ repo, now, getTopic: svc.get });
+  const defense = createDefenseService({ repo, now, getTopic: svc.get });
   const similarityLimiter = createLimiter({ windowMs: 15 * 60e3, limit: 10, keyBy: 'user' });
   const r = businessRouter(guard);
   const student = requireRole('STUDENT');
@@ -71,7 +73,7 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   // G5 (API_GD6 §9.2): cán bộ cho phép gửi khi FR06 lỗi; phạm vi khoa ở service
   r.post('/:id/similarity-bypasses', requireRole('STAFF'), validate(similarityBypassCreateSchema), async (req, res) => res.status(201).json(await bypass.grant(req.user, req.params.id, req.body, req.ip)));
   // Endpoint chuyển trạng thái chung (§8.1); T210: nhánh FR16, T212a: gửi/xét duyệt; T405: đóng đề tài. Vai trò kiểm bằng TRANSITIONS.
-  // m1 DC-01: action nội bộ (CANCEL, COUNCIL_FINALIZE) hoặc chưa có endpoint bị chặn tại đây, không chỉ dựa vào nhánh của topicActionSchema
+  // m1 DC-01: action nội bộ (CANCEL, COUNCIL_FINALIZE) bị chặn tại đây, không chỉ dựa vào nhánh của topicActionSchema
   const enabledOnly = (req, _res, next) => {
     const a = req.body?.action;
     if (findTransition(a) && !ENABLED_ACTIONS.includes(a)) throw badRequest('UNKNOWN_ACTION', 'Thao tác không gọi được trực tiếp');
@@ -79,7 +81,7 @@ export const topicsRouter = ({ repo, now, guard, logger, storage, folder, mountE
   };
   r.post('/:id/actions', requireRole('STUDENT', 'LECTURER', 'STAFF'), actionLimiter, enabledOnly, validate(topicActionSchema), async (req, res) => {
     const a = req.body.action;
-    const svcFor = REVIEW_ACTIONS.includes(a) ? review : CLOSE_ACTIONS.includes(a) ? close : RECRUIT_ACTIONS.includes(a) ? recruit : advisor;
+    const svcFor = REVIEW_ACTIONS.includes(a) ? review : CLOSE_ACTIONS.includes(a) ? close : RECRUIT_ACTIONS.includes(a) ? recruit : DEFENSE_ACTIONS.includes(a) ? defense : advisor;
     res.json(await svcFor.act(req.user, req.params.id, req.body, req.ip));
   });
   mountTopicMilestoneRoutes(r, { repo, now });

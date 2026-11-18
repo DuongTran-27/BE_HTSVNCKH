@@ -1,5 +1,5 @@
 // Dữ liệu mẫu CHỈ cho dev/demo (T203): 1 khoa, 3 ngành, lĩnh vực CNTT, 1 đợt, 1 quản trị, 2 cán bộ, 8 GV, 40 SV,
-// 33 đề tài (3 đề tài mỗi trạng thái; 3 đề tài Đang tuyển do GV công bố – DC-05), từ điển đồng nghĩa.
+// 36 đề tài (3 đề tài mỗi trạng thái; 3 đề tài Đang tuyển do GV công bố – DC-05; 3 đề tài Chờ bảo vệ – DC-07), từ điển đồng nghĩa.
 // Chạy (trong apps/api): `npx prisma db seed` – chỉ trên DB đã bật cờ nckh.seed_allowed (README). KHÔNG BAO GIỜ trên production:
 // mọi tài khoản (kể cả quản trị QT001) dùng chung mật khẩu công khai SEED_PASSWORD.
 import { fileURLToPath } from 'node:url';
@@ -83,12 +83,16 @@ const TOPICS = [
   ['SEC', 'Phát hiện xâm nhập mạng bằng học sâu', ['phát hiện xâm nhập', 'học sâu', 'an ninh mạng']],
   ['DATA', 'Phân cụm khách hàng cho chuỗi bán lẻ', ['phân cụm', 'khách hàng', 'khai phá dữ liệu']],
   ['IOT', 'Bãi đỗ xe thông minh trong khuôn viên trường', ['bãi đỗ xe', 'cảm biến', 'internet vạn vật']],
+  // DC-07 (FR34): đề tài SV đề xuất đã đủ điều kiện, chờ hội đồng nghiệm thu
+  ['AI', 'Nhận diện cảm xúc khuôn mặt trong lớp học trực tuyến', ['nhận diện', 'cảm xúc', 'học trực tuyến']],
+  ['WEB', 'Hệ thống quản lý câu lạc bộ sinh viên', ['câu lạc bộ', 'quản lý', 'ứng dụng web']],
+  ['SEC', 'Phát hiện email lừa đảo bằng xử lý ngôn ngữ tự nhiên', ['email lừa đảo', 'xử lý ngôn ngữ tự nhiên', 'an toàn thông tin']],
   // Từ LECTURER_FROM: đề tài GV công bố (FR31) – không trưởng nhóm, chưa có SV (DC-06 mới có đơn ứng tuyển được duyệt)
   ['AI', 'Hệ thống chấm điểm bài tập lập trình tự động', ['chấm điểm tự động', 'lập trình', 'kiểm thử']],
   ['DATA', 'Phân tích dữ liệu điểm rèn luyện sinh viên', ['điểm rèn luyện', 'khai phá dữ liệu', 'trực quan hóa']],
   ['WEB', 'Cổng quản lý phòng thí nghiệm và thiết bị của khoa', ['phòng thí nghiệm', 'thiết bị', 'ứng dụng web']],
 ];
-const LECTURER_FROM = 30;
+const LECTURER_FROM = 33;
 const REQUIREMENTS =
   'Sinh viên năm 2 trở lên, đã học Cấu trúc dữ liệu và giải thuật; ưu tiên biết Python hoặc JavaScript.';
 
@@ -97,6 +101,7 @@ const HA = [...RA, 'ACCEPT_ADVISING'];
 const UR = [...HA, 'SUBMIT_FOR_REVIEW'];
 const IP = [...UR, 'APPROVE'];
 const WC = [...IP, 'REQUEST_CLOSE'];
+const WD = [...IP, 'REQUEST_DEFENSE'];
 // Chuỗi action của từng đề tài (theo thứ tự TOPICS); mỗi trạng thái đúng 3 đề tài, có cả các nhánh quay lui.
 const PATHS = [
   [],
@@ -129,6 +134,9 @@ const PATHS = [
   [...WC, 'CONFIRM_CLOSE'],
   [...WC, 'CONFIRM_CLOSE'],
   [...WC, 'RETURN_TO_ADVISOR', 'REQUEST_CLOSE', 'CONFIRM_CLOSE'],
+  WD,
+  WD,
+  [...WD, 'RETURN_FROM_DEFENSE', 'REQUEST_DEFENSE'], // WAITING_DEFENSE
   ['PUBLISH_RECRUITMENT'],
   ['PUBLISH_RECRUITMENT'],
   ['PUBLISH_RECRUITMENT'], // RECRUITING
@@ -141,7 +149,9 @@ const REASONS = {
   REJECT: 'Nội dung chưa phù hợp với định hướng nghiên cứu của khoa',
   CANCEL: 'Nhóm đề nghị hủy vì không đủ điều kiện thực hiện',
   RETURN_TO_ADVISOR: 'Thiếu nhận xét tổng kết chi tiết của giảng viên',
+  RETURN_FROM_DEFENSE: 'Báo cáo tổng kết cần bổ sung phần đánh giá thực nghiệm',
 };
+const PROCESS_SCORES = [7.25, 8.5, 6.75];
 
 const JUSTIFICATION =
   'Đề tài của nhóm có một số từ khóa và phần mô tả phương pháp chung giống các đề tài trong kho vì cùng theo khung ' +
@@ -338,7 +348,8 @@ export async function seed(prisma, { now = new Date() } = {}) {
           await tx.advising.create({ data: { topicId: topic.id, lecturerId: lecturers[i % 8].id, startAt: t0 } });
         else
           await tx.topicMember.create({ data: { topicId: topic.id, userId: leader.id, role: 'LEADER', joinedAt: t0 } });
-        if (i < 10) {
+        // students[30..32] làm trưởng nhóm 3 đề tài Chờ bảo vệ (i = 30..32) nên đề tài 0..2 chỉ có trưởng nhóm
+        if (i >= 3 && i < 10) {
           const member = students[30 + i];
           await tx.invitation.create({
             data: { topicId: topic.id, inviteeId: member.id, status: 'ACCEPTED', createdAt: t0, respondedAt: t0 },
@@ -449,6 +460,35 @@ export async function seed(prisma, { now = new Date() } = {}) {
                 decisionNote: reason,
                 createdAt: when,
                 decidedAt: when,
+              },
+            });
+          } else if (action === 'REQUEST_DEFENSE') {
+            // FR34: mốc bắt buộc Đạt, có báo cáo tổng kết (FINAL, gắn mốc cuối), điểm quá trình ≥ 5 (chỉ thêm)
+            await tx.milestone.updateMany({ where: { topicId: topic.id }, data: { evaluation: 'PASSED' } });
+            if (!(await tx.document.count({ where: { topicId: topic.id, stage: 'FINAL' } }))) {
+              const last = await tx.milestone.findFirst({ where: { topicId: topic.id }, orderBy: { order: 'desc' } });
+              await tx.document.create({
+                data: {
+                  topicId: topic.id,
+                  milestoneId: last.id,
+                  stage: 'FINAL',
+                  kind: 'LINK',
+                  version: 1,
+                  fileName: 'Báo cáo tổng kết và mã nguồn',
+                  externalUrl: 'https://github.com/nckh-demo/bao-cao-tong-ket',
+                  status: 'READY',
+                  uploadedById: leader.id,
+                  uploadedAt: when,
+                },
+              });
+            }
+            await tx.processScore.create({
+              data: {
+                topicId: topic.id,
+                lecturerId: actor.id,
+                score: PROCESS_SCORES[i % 3],
+                comment: 'Nhóm làm việc đều, hoàn thành các mốc đúng hạn; báo cáo tổng kết đầy đủ.',
+                createdAt: when,
               },
             });
           } else if (action === 'REQUEST_CLOSE') {

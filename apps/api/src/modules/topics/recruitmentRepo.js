@@ -3,6 +3,7 @@ import { recordAudit } from '../audit/service.js';
 import { applyTransition } from './stateMachine.js';
 import { lockUsers, countLecturerActive } from './advisorRepo.js';
 import { notifyTopic } from '../notifications/notify.js';
+import { byId } from './applicationRepo.js';
 
 const ops = (db) => ({
   // Cùng khóa User GV FOR NO KEY UPDATE như ACCEPT_ADVISING / duyệt thay GV (§3.5 #9)
@@ -10,8 +11,10 @@ const ops = (db) => ({
   countLecturerActive: (lecturerId, roundId) => countLecturerActive(db, lecturerId, roundId),
   liveMembers: (topicId) => db.topicMember.findMany({ where: { topicId, leftAt: null }, select: { id: true, userId: true, role: true }, orderBy: { id: 'asc' } }),
   removeMembers: (ids, leftAt) => db.topicMember.updateMany({ where: { id: { in: ids }, leftAt: null }, data: { leftAt } }),
-  pendingApplications: (topicId) => db.topicApplication.findMany({ where: { topicId, status: 'PENDING' }, select: { id: true, studentId: true }, orderBy: { id: 'asc' } }),
-  declineApplications: (ids, data) => db.topicApplication.updateMany({ where: { id: { in: ids }, status: 'PENDING' }, data: { status: 'DECLINED', ...data } }),
+  // Từ chối mọi đơn đang chờ; RETURNING = đúng các dòng thật sự cập nhật (m1 BM DC-06) – đơn SV vừa rút không bị báo "từ chối"
+  declinePendingApplications: async (topicId, { reason, decidedById, respondedAt }) => byId(await db.$queryRaw`
+    UPDATE "TopicApplication" SET status = 'DECLINED', reason = ${reason}, "decidedById" = ${decidedById}, "respondedAt" = ${respondedAt}
+    WHERE "topicId" = ${topicId} AND status = 'PENDING' RETURNING id, "studentId"`),
   audit: (entry) => recordAudit(db, entry),
   notify: (args) => notifyTopic(db, args), // FR13, cùng tx
 });

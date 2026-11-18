@@ -13,7 +13,7 @@ export const presentFeedback = (f) => ({
   lecturer: { id: f.lecturer.id, fullName: f.lecturer.fullName }, createdAt: iso(f.createdAt),
 });
 export const presentResult = (r) => ({
-  id: r.id, version: r.version, result: r.result, summary: r.summary, reason: r.reason, isCurrent: r.isCurrent,
+  id: r.id, version: r.version, result: r.result, summary: r.summary, reason: r.reason, isCurrent: r.isCurrent, source: r.source,
   createdBy: { id: r.createdBy.id, fullName: r.createdBy.fullName, role: r.createdBy.role }, createdAt: iso(r.createdAt),
 });
 
@@ -79,10 +79,12 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
       await load(user, topicId, { write: true });
       const r = await repo.writeFeedback(topicId, async (o) => {
         const cur = await o.currentResult(topicId);
+        // GĐ7 §5.5 (M4 BM, G59): kết quả hội đồng chốt không bị GVHD ghi đè; chấm lại = đề nghị ra hội đồng lần nữa
+        if (cur?.source === 'COUNCIL') throw conflict('COUNCIL_RESULT_LOCKED', 'Kết quả do hội đồng quyết định, giảng viên không nhập lại được');
         if ((cur?.version ?? 0) !== body.expectedVersion) throw stale();
         const version = (await o.maxResultVersion(topicId)) + 1;
         if (cur) await o.demoteResult(cur.id);
-        const row = await o.createResult({ topicId, version, result: body.result, summary: body.summary, reason: null, isCurrent: true, createdById: user.id });
+        const row = await o.createResult({ topicId, version, result: body.result, summary: body.summary, reason: null, isCurrent: true, source: 'ADVISOR', createdById: user.id });
         await o.audit({ actorId: user.id, action: 'RESULT_CREATE', entityType: 'ResultVersion', entityId: row.id, before: cur && { result: cur.result, version: cur.version }, after: { result: row.result, version }, ip });
         await o.notify({ topicId, to: ['members'], actorId: user.id, type: 'RESULT_ENTERED', key: `RESULT_ENTERED:${row.id}`, link: `/de-tai/${topicId}`, title: (x) => `Giảng viên hướng dẫn đã nhập kết quả cuối đề tài ${topicName(x)}` });
         return row;
@@ -102,7 +104,7 @@ export const createFeedbackService = ({ repo, now = () => new Date() }) => {
         if (body.result === cur.result && summary === cur.summary) throw badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', { _: 'Kết quả mới phải khác kết quả hiện hành' });
         const version = (await o.maxResultVersion(topicId)) + 1;
         await o.demoteResult(cur.id);
-        const row = await o.createResult({ topicId, version, result: body.result, summary, reason: body.reason, isCurrent: true, createdById: user.id });
+        const row = await o.createResult({ topicId, version, result: body.result, summary, reason: body.reason, isCurrent: true, source: 'STAFF', createdById: user.id });
         await o.audit({ actorId: user.id, action: 'RESULT_CORRECT', entityType: 'ResultVersion', entityId: row.id, before: { version: cur.version, result: cur.result }, after: { version, result: row.result, reason: body.reason }, ip });
         await o.notify({ topicId, to: ['members', 'advisor'], actorId: user.id, type: 'RESULT_CORRECTED', key: `RESULT_CORRECTED:${row.id}`, link: `/de-tai/${topicId}`, title: (x) => `Kết quả cuối đề tài ${topicName(x)} đã được cán bộ khoa sửa` });
         return row;

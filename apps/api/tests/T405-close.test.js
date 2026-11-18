@@ -83,7 +83,8 @@ describe('REQUEST_CLOSE', () => {
   it('GVHD gửi đóng khi đủ điều kiện → WAITING_CLOSE; StatusHistory + AuditLog; cán bộ thấy RETURN/CONFIRM và closeReadiness', async () => {
     const { t, leader } = await mkRunning();
     const before = (await get('lecA', `/api/topics/${t.id}`)).body.topic;
-    expect(before.availableActions).toEqual(['REQUEST_CLOSE']);
+    // DC-07: đặc tả đổi (DAC_TA mục 9 FR34, API_GD7 §0) – GVHD ở Đang thực hiện có thêm "Đề nghị ra hội đồng"
+    expect(before.availableActions).toEqual(['REQUEST_CLOSE', 'REQUEST_DEFENSE']);
     expect(before.closeReadiness).toEqual({ requiredMilestonesPassed: true, hasFinalResult: true, requiredMilestoneCount: 1, pendingMilestones: 0, requiredRemovedCount: 0 });
     expect(before.permissions).toMatchObject({ manageMilestones: true, giveFeedback: true, enterResult: true, readExecution: true, addProgress: false });
     const r = await act('lecA', t, { action: 'REQUEST_CLOSE' });

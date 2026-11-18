@@ -93,6 +93,8 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   APPLICATION_ACCEPTED: 'Đơn ứng tuyển được nhận',
   APPLICATION_WITHDRAWN: 'Đơn ứng tuyển tự rút',
   GROUP_FINALIZED: 'Nhóm đã được chốt',
+  DEFENSE_REQUESTED: 'Đề nghị ra hội đồng',
+  DEFENSE_RETURNED: 'Đề tài được trả về đang thực hiện',
 });
 
 // GĐ6 (API_GD6 §2.7)

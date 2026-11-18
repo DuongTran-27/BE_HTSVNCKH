@@ -369,7 +369,9 @@ describe('MINOR DC-01', () => {
     const lec = await mkUser('LECTURER');
     const staff = await mkUser('STAFF');
     const t = await mkLecTopic(lec, { status: 'RECRUITING' });
-    for (const [who, body] of [[staff, { action: 'CANCEL', reason: REASON }], [lec, { action: 'COUNCIL_FINALIZE' }], [lec, { action: 'REQUEST_DEFENSE' }]]) { // DC-06 bật FINALIZE_GROUP (đặc tả: có endpoint) – ca 400 của nó chuyển sang DC06-applications
+    // Chỉ còn action nội bộ: DC-06 bật FINALIZE_GROUP, DC-07 bật REQUEST/RETURN_FROM_DEFENSE (có endpoint). Ca body sai (400 VALIDATION_ERROR)
+    // của các action đã bật: FINALIZE_GROUP ở DC06-applications "#9", REQUEST_DEFENSE/RETURN_FROM_DEFENSE ở DC07-defense "§5.6 #3"
+    for (const [who, body] of [[staff, { action: 'CANCEL', reason: REASON }], [lec, { action: 'COUNCIL_FINALIZE' }]]) {
       const r = await act(who, t, body);
       expect([r.status, code(r)], body.action).toEqual([400, 'UNKNOWN_ACTION']);
     }

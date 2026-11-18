@@ -8,7 +8,8 @@ import { withLockTx } from '../../lib/tx.js';
  * ctx (do service tính sẵn từ DB):
  *  isLeader, isRequestedLecturer, isCurrentAdvisor, inStaffScope, isCouncilOfficer (API_GD7 §1.1),
  *  similarity: {status, level} | null, cfg, similarityBypass (G5),
- *  đóng đề tài (closeConditions.js): requiredMilestoneCount, requiredMilestonesPassed, pendingMilestones, hasFinalResult, closeConditionsMet, roundEnded
+ *  đóng đề tài (closeConditions.js): requiredMilestoneCount, requiredMilestonesPassed, pendingMilestones, hasFinalResult, closeConditionsMet, roundEnded,
+ *  defenseRequired (GĐ7 §5.3)
  */
 export const checkTransition = ({ topic, action, actor, reason, justification, ctx = {}, skipSimilarity = false }) => {
   const t = findTransition(action);
@@ -48,6 +49,7 @@ export const checkTransition = ({ topic, action, actor, reason, justification, c
       throw conflict('MILESTONES_NOT_PASSED', 'Còn mốc bắt buộc chưa Đạt', ctx.pendingMilestones && { milestones: ctx.pendingMilestones });
     }
     if (!ctx.hasFinalResult) throw conflict('NO_FINAL_RESULT', 'Giảng viên hướng dẫn chưa nhập kết quả cuối và nhận xét tổng kết');
+    if (action === 'REQUEST_CLOSE' && ctx.defenseRequired) throw conflict('DEFENSE_REQUIRED', 'Đợt này bắt buộc bảo vệ trước hội đồng'); // GĐ7 §5.3
   }
   if (action === 'CLOSE_EXPIRED') { // FR27.5: chỉ khi đợt đã hết hạn và đề tài chưa đủ điều kiện (G26)
     if (!ctx.roundEnded) throw conflict('ROUND_NOT_ENDED', 'Đợt chưa hết hạn, chưa thể đóng với kết quả Không đạt');
