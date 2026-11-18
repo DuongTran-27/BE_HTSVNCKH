@@ -8,12 +8,14 @@ export const ROLES = Object.freeze({
 
 export const TOPIC_STATUS = Object.freeze({
   DRAFT: 'DRAFT',
+  RECRUITING: 'RECRUITING', // GĐ7 FR31: đề tài GV công bố đang tuyển SV
   WAITING_ADVISOR: 'WAITING_ADVISOR',
   HAS_ADVISOR: 'HAS_ADVISOR',
   UNDER_REVIEW: 'UNDER_REVIEW',
   NEEDS_REVISION: 'NEEDS_REVISION',
   REJECTED: 'REJECTED',
   IN_PROGRESS: 'IN_PROGRESS',
+  WAITING_DEFENSE: 'WAITING_DEFENSE', // GĐ7 FR34: chờ hội đồng nghiệm thu
   CANCELLED: 'CANCELLED',
   WAITING_CLOSE: 'WAITING_CLOSE',
   CLOSED: 'CLOSED',
@@ -21,12 +23,14 @@ export const TOPIC_STATUS = Object.freeze({
 
 export const TOPIC_STATUS_LABEL = Object.freeze({
   DRAFT: 'Nháp',
+  RECRUITING: 'Đang tuyển sinh viên',
   WAITING_ADVISOR: 'Chờ giảng viên hướng dẫn',
   HAS_ADVISOR: 'Đã có giảng viên hướng dẫn',
   UNDER_REVIEW: 'Chờ xét duyệt',
   NEEDS_REVISION: 'Cần chỉnh sửa',
   REJECTED: 'Bị từ chối',
   IN_PROGRESS: 'Đang thực hiện',
+  WAITING_DEFENSE: 'Chờ bảo vệ',
   CANCELLED: 'Đã hủy',
   WAITING_CLOSE: 'Chờ đóng',
   CLOSED: 'Đã đóng',
@@ -98,7 +102,8 @@ export const CHANGE_TYPE = Object.freeze({ TOPIC_CHANGE: 'TOPIC_CHANGE', ADVISOR
 export const CHANGE_STAGE = Object.freeze({ TARGET: 'TARGET', STAFF: 'STAFF' });
 // G35: thay GV được ở mọi trạng thái có GVHD còn làm việc (không WAITING_CLOSE)
 export const ADVISOR_CHANGE_STATUSES = Object.freeze(['HAS_ADVISOR', 'UNDER_REVIEW', 'NEEDS_REVISION', 'IN_PROGRESS']);
-export const PRE_APPROVAL_STATUSES = Object.freeze(['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'UNDER_REVIEW', 'NEEDS_REVISION']);
+// RECRUITING: GĐ7 §0 (FR21 rời tự do trước duyệt)
+export const PRE_APPROVAL_STATUSES = Object.freeze(['DRAFT', 'RECRUITING', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'UNDER_REVIEW', 'NEEDS_REVISION']);
 
 // FR14 (API_GD45 §9): chiều thống kê
 export const STATS_GROUP_BY = Object.freeze(['lecturer', 'field', 'status', 'result', 'academicYear', 'round']);

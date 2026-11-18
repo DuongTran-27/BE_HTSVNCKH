@@ -152,8 +152,11 @@ describe('Dữ liệu mẫu (seed)', () => {
       STUDENT: 40,
     });
     const statuses = await prisma.topic.groupBy({ by: ['status'], _count: true });
+    // TASK-DC-01: 2 trạng thái GĐ7 cần model của DC-05 (origin, TopicApplication) / DC-07 (ProcessScore) mới dựng được dữ liệu
+    // mẫu hợp lệ; các task đó thêm 3 đề tài mỗi trạng thái và xóa dòng tương ứng khỏi SEED_PENDING. Hiện phải là 0, không bỏ qua im lặng.
+    const SEED_PENDING = ['RECRUITING', 'WAITING_DEFENSE'];
     expect(Object.fromEntries(statuses.map((s) => [s.status, s._count]))).toEqual(
-      Object.fromEntries(Object.values(TOPIC_STATUS).map((s) => [s, 3])),
+      Object.fromEntries(Object.values(TOPIC_STATUS).filter((s) => !SEED_PENDING.includes(s)).map((s) => [s, 3])),
     );
   });
 

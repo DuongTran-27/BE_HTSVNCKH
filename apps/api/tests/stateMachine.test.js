@@ -50,4 +50,36 @@ describe('Luồng trạng thái', () => {
     expectCode(() => checkTransition({ topic: topic('IN_PROGRESS'), action: 'REQUEST_CLOSE', actor: gv,
       ctx: { isCurrentAdvisor: false, requiredMilestonesPassed: true, hasFinalResult: true } }), 'FORBIDDEN');
   });
+
+  // GĐ7 §0 (TASK-DC-01)
+  it('COUNCIL_FINALIZE: chỉ chủ tịch/thư ký (councilOfficerOnly); GVHD, SV, ADMIN 403; sai trạng thái 409', () => {
+    const base = { topic: topic('WAITING_DEFENSE'), action: 'COUNCIL_FINALIZE' };
+    expect(checkTransition({ ...base, actor: gv, ctx: { isCouncilOfficer: true } }).to).toBe('WAITING_CLOSE');
+    expectCode(() => checkTransition({ ...base, actor: gv, ctx: { isCouncilOfficer: false, isCurrentAdvisor: true } }), 'FORBIDDEN');
+    expectCode(() => checkTransition({ ...base, actor: sv, ctx: { isCouncilOfficer: true } }), 'FORBIDDEN');
+    expectCode(() => checkTransition({ ...base, actor: { id: 'a', role: 'ADMIN' }, ctx: { isCouncilOfficer: true } }), 'FORBIDDEN');
+    expectCode(() => checkTransition({ ...base, topic: topic('IN_PROGRESS'), actor: gv, ctx: { isCouncilOfficer: true } }), 'INVALID_TRANSITION');
+  });
+  it('PUBLISH_RECRUITMENT: GV không hướng dẫn 403, SV 403; FR06 lỗi → SIMILARITY_NOT_CHECKED; OK → RECRUITING', () => {
+    const base = { topic: topic('DRAFT'), action: 'PUBLISH_RECRUITMENT', actor: gv };
+    expectCode(() => checkTransition({ ...base, ctx: { isCurrentAdvisor: false, similarity: { status: 'OK', level: 'NONE' } } }), 'FORBIDDEN');
+    expectCode(() => checkTransition({ ...base, actor: sv, ctx: { isLeader: true } }), 'FORBIDDEN');
+    expectCode(() => checkTransition({ ...base, ctx: { isCurrentAdvisor: true, similarity: { status: 'ERROR' } } }), 'SIMILARITY_NOT_CHECKED');
+    expect(checkTransition({ ...base, ctx: { isCurrentAdvisor: true, similarity: { status: 'OK', level: 'NONE' } } }).to).toBe('RECRUITING');
+  });
+  it('UNPUBLISH_RECRUITMENT bắt buộc lý do; FINALIZE_GROUP chỉ GVHD hiện hành', () => {
+    const ctx = { isCurrentAdvisor: true };
+    expectCode(() => checkTransition({ topic: topic('RECRUITING'), action: 'UNPUBLISH_RECRUITMENT', actor: gv, ctx }), 'REASON_REQUIRED');
+    expect(checkTransition({ topic: topic('RECRUITING'), action: 'UNPUBLISH_RECRUITMENT', actor: gv, ctx, reason: 'Không đủ sinh viên' }).to).toBe('DRAFT');
+    expectCode(() => checkTransition({ topic: topic('RECRUITING'), action: 'FINALIZE_GROUP', actor: gv, ctx: { isCurrentAdvisor: false } }), 'FORBIDDEN');
+    expect(checkTransition({ topic: topic('RECRUITING'), action: 'FINALIZE_GROUP', actor: gv, ctx }).to).toBe('HAS_ADVISOR');
+  });
+  it('REQUEST_DEFENSE chỉ GVHD hiện hành; RETURN_FROM_DEFENSE chỉ cán bộ trong phạm vi, bắt buộc lý do', () => {
+    expect(checkTransition({ topic: topic('IN_PROGRESS'), action: 'REQUEST_DEFENSE', actor: gv, ctx: { isCurrentAdvisor: true } }).to).toBe('WAITING_DEFENSE');
+    expectCode(() => checkTransition({ topic: topic('IN_PROGRESS'), action: 'REQUEST_DEFENSE', actor: cb, ctx: { inStaffScope: true } }), 'FORBIDDEN');
+    const back = { topic: topic('WAITING_DEFENSE'), action: 'RETURN_FROM_DEFENSE', actor: cb };
+    expectCode(() => checkTransition({ ...back, ctx: { inStaffScope: false }, reason: 'Thiếu minh chứng' }), 'FORBIDDEN');
+    expectCode(() => checkTransition({ ...back, ctx: { inStaffScope: true } }), 'REASON_REQUIRED');
+    expect(checkTransition({ ...back, ctx: { inStaffScope: true }, reason: 'Thiếu minh chứng' }).to).toBe('IN_PROGRESS');
+  });
 });

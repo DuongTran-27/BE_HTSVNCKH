@@ -43,6 +43,13 @@ export const ACTION_LABEL = Object.freeze({
   RETURN_TO_ADVISOR: 'Trả lại giảng viên',
   CONFIRM_CLOSE: 'Xác nhận đóng đề tài',
   CLOSE_EXPIRED: 'Đóng do quá hạn',
+  // GĐ7 §0
+  PUBLISH_RECRUITMENT: 'Công bố tuyển sinh viên',
+  UNPUBLISH_RECRUITMENT: 'Ngừng tuyển',
+  FINALIZE_GROUP: 'Chốt nhóm',
+  REQUEST_DEFENSE: 'Đề nghị ra hội đồng',
+  RETURN_FROM_DEFENSE: 'Trả về đang thực hiện',
+  COUNCIL_FINALIZE: 'Chốt nghiệm thu',
 });
 
 export const MILESTONE_EVAL_LABEL = Object.freeze({ PENDING: 'Chưa đánh giá', PASSED: 'Đạt', NEEDS_WORK: 'Cần bổ sung' });

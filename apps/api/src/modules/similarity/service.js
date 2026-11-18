@@ -2,9 +2,9 @@
 import { DEFAULT_ROUND_CONFIG, countWords } from '@nckh/shared';
 import { compare, contentHash, ALGORITHM_VERSION } from './engine.js';
 
-// Trạng thái thuộc kho so (mục 3 đặc tả)
-export const PUBLIC_CORPUS_STATUSES = ['IN_PROGRESS', 'WAITING_CLOSE', 'CLOSED'];
-export const PENDING_SAME_ROUND_STATUSES = ['WAITING_ADVISOR', 'HAS_ADVISOR', 'UNDER_REVIEW', 'NEEDS_REVISION'];
+// Trạng thái thuộc kho so (mục 3 đặc tả; API_GD7 §0.1: WAITING_DEFENSE là đã duyệt, RECRUITING là hồ sơ đang chờ)
+export const PUBLIC_CORPUS_STATUSES = ['IN_PROGRESS', 'WAITING_DEFENSE', 'WAITING_CLOSE', 'CLOSED'];
+export const PENDING_SAME_ROUND_STATUSES = ['RECRUITING', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'UNDER_REVIEW', 'NEEDS_REVISION'];
 
 /**
  * Dựng từ dữ liệu đã lưu lúc kiểm (API_GD2 §7.2). Chỉ hồ sơ đã duyệt trở đi hiện cho mọi người;

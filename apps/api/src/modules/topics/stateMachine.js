@@ -6,7 +6,7 @@ import { withLockTx } from '../../lib/tx.js';
 
 /**
  * ctx (do service tính sẵn từ DB):
- *  isLeader, isRequestedLecturer, isCurrentAdvisor, inStaffScope,
+ *  isLeader, isRequestedLecturer, isCurrentAdvisor, inStaffScope, isCouncilOfficer (API_GD7 §1.1),
  *  similarity: {status, level} | null, cfg, similarityBypass (G5),
  *  đóng đề tài (closeConditions.js): requiredMilestoneCount, requiredMilestonesPassed, pendingMilestones, hasFinalResult, closeConditionsMet, roundEnded
  */
@@ -20,6 +20,7 @@ export const checkTransition = ({ topic, action, actor, reason, justification, c
   if (t.leaderOnly && !ctx.isLeader) throw forbidden('Chỉ trưởng nhóm được thực hiện');
   if (t.requestedLecturerOnly && !ctx.isRequestedLecturer) throw forbidden('Bạn không phải giảng viên được đề nghị');
   if (t.currentAdvisorOnly && !ctx.isCurrentAdvisor) throw forbidden('Chỉ giảng viên hướng dẫn hiện hành');
+  if (t.councilOfficerOnly && !ctx.isCouncilOfficer) throw forbidden('Chỉ chủ tịch hoặc thư ký hội đồng được thực hiện');
   if (actor.role === 'STAFF' && !ctx.inStaffScope) throw forbidden('Đề tài không thuộc khoa bạn quản lý');
   if (t.reasonRequired && (!reason || reason.trim().length < 5)) {
     throw badRequest('REASON_REQUIRED', 'Thao tác này bắt buộc nhập lý do');

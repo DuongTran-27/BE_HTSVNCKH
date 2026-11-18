@@ -98,6 +98,17 @@ describe('FR21 trước duyệt – POST /api/topics/:id/leave (§5.1, ca 1–2)
     expect(await prisma.auditLog.count({ where: { action: 'MEMBER_LEAVE', entityId: d.t.id } })).toBe(0);
   });
 
+  it('GĐ7 (TASK-DC-01): RECRUITING rời tự do (PRE_APPROVAL_STATUSES); WAITING_DEFENSE 409 LEAVE_NEEDS_APPROVAL như đề tài đã duyệt', async () => {
+    const r = await mkGroup({ status: 'RECRUITING' });
+    expect((await get(r.ms[0], `/api/topics/${r.t.id}`)).body.topic.permissions.leave).toBe(true);
+    expect((await leave(r.ms[0], r.t)).status).toBe(200);
+    expect(await live(r.t, r.ms[0])).toBeNull();
+    const d = await mkGroup({ status: 'WAITING_DEFENSE' });
+    const res = await leave(d.ms[0], d.t);
+    expect([res.status, code(res)]).toEqual([409, 'LEAVE_NEEDS_APPROVAL']);
+    expect(await live(d.t, d.ms[0])).not.toBeNull();
+  });
+
   it('403/400/409: SV ngoài, GV, cán bộ, ADMIN 403; version lệch 409 CONCURRENT_UPDATE; body sai 400', async () => {
     const { t, ms: [m] } = await mkGroup({ status: 'DRAFT' });
     const outsider = await mkUser('STUDENT');

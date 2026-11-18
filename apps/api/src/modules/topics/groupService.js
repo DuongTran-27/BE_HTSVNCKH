@@ -13,7 +13,7 @@ const assertCanLeave = (g, userId) => {
   const m = g.members.find((x) => x.userId === userId);
   if (!m) throw forbidden();
   if (m.role === 'LEADER') throw conflict('LEADER_CANNOT_LEAVE', 'Trưởng nhóm cần chuyển quyền trưởng nhóm trước khi rời nhóm');
-  if (['IN_PROGRESS', 'WAITING_CLOSE'].includes(g.status)) throw conflict('LEAVE_NEEDS_APPROVAL', 'Đề tài đã được duyệt, rời nhóm cần cán bộ khoa duyệt');
+  if (['IN_PROGRESS', 'WAITING_DEFENSE', 'WAITING_CLOSE'].includes(g.status)) throw conflict('LEAVE_NEEDS_APPROVAL', 'Đề tài đã được duyệt, rời nhóm cần cán bộ khoa duyệt');
   if (!PRE_APPROVAL_STATUSES.includes(g.status)) throw conflict('TOPIC_NOT_EDITABLE', 'Đề tài đã kết thúc, không rời nhóm được');
 };
 

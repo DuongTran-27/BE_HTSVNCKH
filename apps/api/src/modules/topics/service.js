@@ -10,7 +10,7 @@ const EDITABLE = ['DRAFT', 'NEEDS_REVISION'];
 // Hành động GĐ2 (API_GD2 §10). TopicDetail dùng ENABLED_ACTIONS (GĐ2 + đóng đề tài, API_GD45 §7.4)
 export const GD2_ACTIONS = ['REQUEST_ADVISOR', 'ACCEPT_ADVISING', 'DECLINE_ADVISING', 'WITHDRAW_ADVISOR_REQUEST', 'SUBMIT_FOR_REVIEW', 'RESUBMIT', 'REQUEST_REVISION', 'REJECT', 'APPROVE'];
 const FINISHED = ['REJECTED', 'CANCELLED', 'CLOSED'];
-const CLOSING = ['IN_PROGRESS', 'WAITING_CLOSE'];
+const CLOSING = ['IN_PROGRESS', 'WAITING_DEFENSE', 'WAITING_CLOSE']; // API_GD7 §0.1
 const iso = (d) => d.toISOString();
 
 // summary ghi dạng digest + số từ để log không phình (API_GD2 §5.1). Không đặt khóa tên "...hash": redact() sẽ lọc mất.

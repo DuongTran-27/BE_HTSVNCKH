@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { normalize, tokenize, trigramSimilarity, applySynonyms } from '../src/modules/similarity/text.js';
 import { compare, levelOf } from '../src/modules/similarity/engine.js';
-import { runSimilarityCheck, presentMatches } from '../src/modules/similarity/service.js';
+import { runSimilarityCheck, presentMatches, PUBLIC_CORPUS_STATUSES, PENDING_SAME_ROUND_STATUSES } from '../src/modules/similarity/service.js';
 import { DEFAULT_ROUND_CONFIG } from '@nckh/shared';
 
 const TH = DEFAULT_ROUND_CONFIG.similarity;
@@ -114,6 +114,12 @@ describe('Dịch vụ kiểm tra', () => {
       expect(v[1]).not.toHaveProperty('topicId');
     }
     expect(presentMatches(stored, 'STAFF')[0]).toMatchObject({ hidden: false, topicId: 'P', title: 'Bí mật' });
+  });
+  it('GĐ7 §0.1: WAITING_DEFENSE là đề tài đã duyệt (hiện); RECRUITING là hồ sơ đang chờ (ẩn với SV/GV)', () => {
+    const rows = ['WAITING_DEFENSE', 'RECRUITING'].map((status) => ({ topicId: status, code: status, title: 'T', status, titleScore: 0.6, contentScore: 0.4, level: 'REVIEW' }));
+    expect(presentMatches(rows, 'STUDENT').map((m) => m.hidden)).toEqual([false, true]);
+    expect(PUBLIC_CORPUS_STATUSES).toContain('WAITING_DEFENSE');
+    expect(PENDING_SAME_ROUND_STATUSES).toContain('RECRUITING');
   });
   it('trạng thái thiếu/lạ trong dữ liệu lưu thì ẩn (an toàn)', () => {
     expect(presentMatches([{ topicId: 'X', titleScore: 0.5, contentScore: 0.5, level: 'REVIEW' }], 'STUDENT')[0].hidden).toBe(true);
