@@ -1,3 +1,5 @@
+import { recordAudit } from '../audit/service.js';
+
 // staffScopes nạp kèm để publicUser trả staffFacultyIds (API_GD2 §1.1, T206)
 const withScopes = { staffScopes: { select: { facultyId: true } } };
 
@@ -22,6 +24,11 @@ export const createAuthRepo = (prisma) => ({
   findUserByIdentifier: (id) => prisma.user.findFirst({
     where: { OR: [{ email: id }, { code: { equals: id, mode: 'insensitive' } }] }, include: withScopes,
   }),
+  // SSO (API_GD7 §8.2): khớp email không phân biệt hoa thường; lấy 2 để phát hiện dữ liệu bẩn (> 1 bản ghi)
+  findUsersByEmailInsensitive: (email) => prisma.user.findMany({
+    where: { email: { equals: email, mode: 'insensitive' } }, take: 2, include: withScopes,
+  }),
+  recordAudit: (entry) => recordAudit(prisma, entry),
   findUserById: (id) => prisma.user.findUnique({ where: { id }, include: withScopes }),
   updateUser: (id, data) => prisma.user.update({ where: { id }, data }),
   createRefreshToken: (data) => prisma.refreshToken.create({ data }),

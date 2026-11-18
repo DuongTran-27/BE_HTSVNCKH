@@ -8,7 +8,8 @@ import { errorHandler } from './middlewares/errorHandler.js';
 import { createRequireAuth, requirePasswordChanged } from './middlewares/auth.js';
 import { createAuthService } from './modules/auth/service.js';
 import { authRouter } from './modules/auth/routes.js';
-import { LOG_REDACT } from './lib/logger.js';
+import { createSsoService } from './modules/auth/ssoService.js';
+import { LOG_REDACT, logReq } from './lib/logger.js';
 import { notFound } from './lib/errors.js';
 import { catalogRouters } from './modules/catalog/routes.js';
 import { roundsRouter } from './modules/rounds/routes.js';
@@ -26,13 +27,13 @@ import { buildOpenApi, swaggerHtml, swaggerInit } from './openapi/spec.js';
 
 /**
  * Tạo ứng dụng với phụ thuộc được tiêm vào để test không cần database thật.
- * deps: { env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, checkDb }
+ * deps: { env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, google (OAuth2Client, khi bật SSO), checkDb }
  */
-export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, topicRepo, storage, genPassword, checkDb = async () => true }) => {
+export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRepo, accountRepo, topicRepo, storage, genPassword, google, checkDb = async () => true }) => {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // sau proxy của Vercel/Render
-  app.use(pinoHttp({ ...(logger ? { logger } : { level: 'silent', redact: LOG_REDACT }), genReqId: (req) => { const id = req.get('x-request-id'); return id && /^[\w-]{1,64}$/.test(id) ? id : randomUUID(); }, autoLogging: env.NODE_ENV !== 'test' }));
+  app.use(pinoHttp({ ...(logger ? { logger } : { level: 'silent', redact: LOG_REDACT }), serializers: { req: logReq }, genReqId: (req) => { const id = req.get('x-request-id'); return id && /^[\w-]{1,64}$/.test(id) ? id : randomUUID(); }, autoLogging: env.NODE_ENV !== 'test' }));
   app.use(helmet()); // trước chốt ORIGIN_SECRET để 404 của chốt có cùng header bảo mật
   if (env.ORIGIN_SECRET) {
     // Chỉ nhận request qua proxy Vercel (gắn header bí mật); gọi thẳng Render -> 404 chuẩn. Chỉ miễn đúng GET /api/health.
@@ -49,6 +50,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
   app.use(cookieParser());
 
   const authService = createAuthService({ repo: authRepo, hasher, env });
+  const ssoService = createSsoService({ repo: authRepo, env, google, logger });
   const requireAuth = createRequireAuth({ env, loadUser: authRepo.findUserById });
 
   app.get('/api/health', async (req, res) => {
@@ -63,7 +65,7 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     app.get('/api/docs', (_req, res) => res.set('Content-Security-Policy', "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:; connect-src 'self'").type('html').send(swaggerHtml));
     app.get('/api/docs/init.js', (_req, res) => res.type('js').send(swaggerInit));
   }
-  app.use('/api/auth', authRouter({ authService, requireAuth, env }));
+  app.use('/api/auth', authRouter({ authService, ssoService, requireAuth, env }));
 
   // Router nghiệp vụ nhận `guard` và tự gắn đầu router (lib/router.js), mount ở tiền tố riêng.
   const guard = [requireAuth, requirePasswordChanged];

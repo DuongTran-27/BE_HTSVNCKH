@@ -9,6 +9,7 @@ import { createTopicRepo } from './modules/topics/prismaRepo.js';
 import { passwordHasher } from './lib/password.js';
 import { createCloudinaryStorage, createMemoryStorage } from './lib/storage.js';
 import { createLogger } from './lib/logger.js';
+import { missingGoogleEnv } from './config/env.js';
 
 const env = loadEnv();
 const logger = createLogger(env); // redact header bí mật: lib/logger.js
@@ -24,7 +25,17 @@ if (env.CLOUDINARY_URL) {
   storage = createMemoryStorage();
 }
 
+// SSO Google tùy chọn (FR28): thiếu biến → tắt, chỉ log TÊN biến thiếu
+const missingGoogle = missingGoogleEnv(env);
+let google;
+if (missingGoogle.length) logger.warn({ missing: missingGoogle }, 'Đăng nhập Google tắt: thiếu biến môi trường');
+else {
+  const { OAuth2Client } = await import('google-auth-library');
+  google = new OAuth2Client({ clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET });
+}
+
 const app = createApp({
+  google,
   env,
   storage,
   logger,

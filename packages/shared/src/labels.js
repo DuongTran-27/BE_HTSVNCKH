@@ -99,3 +99,15 @@ export const CHANGE_STAGE_LABEL = Object.freeze({ TARGET: 'Chờ người đư�
 export const STATS_DIMENSION_LABEL = Object.freeze({
   lecturer: 'Giảng viên hướng dẫn', field: 'Lĩnh vực', status: 'Trạng thái', result: 'Kết quả', academicYear: 'Năm học', round: 'Đợt',
 });
+
+// Mã lỗi SSO Google trả về trang qua `?sso_error=` (API_GD7 §8.2, UI §12.4). Mã lạ: FE dùng thông điệp chung.
+export const SSO_ERROR_LABEL = Object.freeze({
+  CANCELLED: 'Bạn đã hủy đăng nhập bằng Google',
+  STATE_MISMATCH: 'Phiên đăng nhập Google đã hết hạn, vui lòng thử lại',
+  GOOGLE_ERROR: 'Không kết nối được với Google, vui lòng thử lại sau',
+  EMAIL_NOT_VERIFIED: 'Email Google chưa được xác minh',
+  DOMAIN_NOT_ALLOWED: 'Truy cập bị từ chối. Vui lòng dùng email do trường cấp.',
+  NO_ACCOUNT: 'Tài khoản chưa được cấp trên hệ thống. Vui lòng liên hệ cán bộ khoa.',
+  PASSWORD_ONLY: 'Tài khoản quản trị chỉ đăng nhập bằng mật khẩu',
+  ACCOUNT_LOCKED: 'Tài khoản đã bị khóa hoặc đang tạm khóa',
+});

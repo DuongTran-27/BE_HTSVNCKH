@@ -6,19 +6,22 @@ import { sha256, newOpaqueToken, signAccessToken } from '../../lib/tokens.js';
 export const MAX_FAILED_LOGINS = 5;
 export const LOCK_MINUTES = 15;
 
+// Cấp refresh token (họ mới nếu không truyền `family`) + access token. Dùng chung cho đăng nhập mật khẩu, refresh và SSO
+// (API_GD7 §8.2); gọi trong transaction đã khóa SHARE dòng User (`r` là repo trên tx).
+export const issueTokens = async (r, user, { env, now = () => new Date(), family = randomUUID(), userAgent } = {}) => {
+  const refreshToken = newOpaqueToken();
+  const record = await r.createRefreshToken({
+    userId: user.id,
+    tokenHash: sha256(refreshToken),
+    family,
+    userAgent: userAgent ?? null,
+    expiresAt: new Date(now().getTime() + env.REFRESH_TOKEN_TTL_DAYS * 86400e3),
+  });
+  const accessToken = signAccessToken(user, { secret: env.JWT_ACCESS_SECRET, ttlSeconds: env.ACCESS_TOKEN_TTL_SECONDS });
+  return { accessToken, refreshToken, refreshRecord: record, user: publicUser(user) };
+};
+
 export const createAuthService = ({ repo, hasher, env, now = () => new Date() }) => {
-  const issueTokens = async (user, { family = randomUUID(), userAgent } = {}, r = repo) => {
-    const refreshToken = newOpaqueToken();
-    const record = await r.createRefreshToken({
-      userId: user.id,
-      tokenHash: sha256(refreshToken),
-      family,
-      userAgent: userAgent ?? null,
-      expiresAt: new Date(now().getTime() + env.REFRESH_TOKEN_TTL_DAYS * 86400e3),
-    });
-    const accessToken = signAccessToken(user, { secret: env.JWT_ACCESS_SECRET, ttlSeconds: env.ACCESS_TOKEN_TTL_SECONDS });
-    return { accessToken, refreshToken, refreshRecord: record, user: publicUser(user) };
-  };
 
   // Hash giả cùng tham số Argon2id: tài khoản không tồn tại vẫn tốn một lần verify (chống dò tài khoản qua thời gian)
   let dummyHash;
@@ -54,7 +57,7 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
         await r.lockUser(user.id, true);
         const fresh = await r.findUserById(user.id);
         if (!fresh || fresh.isLocked || fresh.passwordHash !== user.passwordHash) return null;
-        return issueTokens(fresh, { userAgent }, r);
+        return issueTokens(r, fresh, { env, now, userAgent });
       });
       if (!issued) throw generic;
       return issued;
@@ -84,7 +87,7 @@ export const createAuthService = ({ repo, hasher, env, now = () => new Date() })
         }
         // Tạo token mới rồi xoay token cũ có điều kiện (revokedAt còn null); thất bại (vd khóa tài khoản thu hồi
         // giữa chừng) thì thu hồi cả họ, kể cả token vừa tạo (BUG-002).
-        const issued = await issueTokens(user, { family: record.family, userAgent }, r);
+        const issued = await issueTokens(r, user, { env, now, family: record.family, userAgent });
         if (!(await r.revokeToken(record.id, now(), issued.refreshRecord.id))) {
           await r.revokeFamily(record.family, now());
           return { deny: 'Phiên đã bị thu hồi, vui lòng đăng nhập lại' };

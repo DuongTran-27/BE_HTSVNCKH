@@ -46,6 +46,13 @@ export const loginSchema = z.object({
   password: password.min(1, 'Nhập mật khẩu'),
 });
 
+// Query callback Google (API_GD7 §8.2, m2 BM): chỉ ba khóa, khóa khác bị bỏ; lặp khóa (mảng) hoặc quá dài → không hợp lệ
+export const ssoCallbackQuerySchema = z.object({
+  code: z.string().max(2048).optional(),
+  state: z.string().max(128).optional(),
+  error: z.string().max(64).optional(),
+});
+
 export const changePasswordSchema = z.object({
   currentPassword: password.min(1),
   newPassword: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự').max(128)
