@@ -81,7 +81,7 @@ export function SimilarityPanel({ check }) {
       {!err && check.level === 'NONE' && <p>Không phát hiện đề tài tương tự đáng kể.</p>}
       {check.matches?.length > 0 && <ul className="space-y-2">{check.matches.slice(0, 5).map((m, i) => <Match key={m.code ?? i} m={m} />)}</ul>}
       {check.justification && (
-        <div className="rounded-lg bg-white p-3"><p className="font-medium">Giải trình của nhóm</p><p className="whitespace-pre-wrap break-words">{check.justification}</p></div>
+        <div className="rounded-lg bg-card p-3"><p className="font-medium">Giải trình của nhóm</p><p className="whitespace-pre-wrap break-words">{check.justification}</p></div>
       )}
       <details className="text-sm text-slate-700">
         <summary className="min-h-11 cursor-pointer">Chi tiết kỹ thuật</summary>

@@ -26,7 +26,7 @@ export function StuckTopics({ roundId }) {
             <p className="mb-2 text-sm font-medium">Tổng cộng {d.total} đề tài kẹt</p>
             <ul className="space-y-2">
               {d.items.map((t) => (
-                <li key={t.id} className="rounded-md border border-slate-300 bg-white p-2 text-sm">
+                <li key={t.id} className="rounded-md border border-slate-300 bg-card p-2 text-sm">
                   <Link to={`/de-tai/${t.id}`} className="break-words font-medium text-blue-700 underline-offset-4 hover:underline">{t.code} – {t.title}</Link>
                   <p className="mt-1 flex flex-wrap items-center gap-2">
                     <Badge tone="amber">{TOPIC_STATUS_LABEL[t.status]}</Badge>

@@ -17,6 +17,7 @@ const F = 'STAFF';
 const A = 'ADMIN';
 // [đường dẫn, vai trò được vào, tiêu đề] – UI §3
 export const SCREENS = [
+  ['tong-quan', [S, L, F, A], 'Tổng quan'],
   ['de-tai', [S, L, F], 'Đề tài'],
   ['de-tai/moi', [S], 'Tạo đề tài'],
   ['de-tai/:id', [S, L, F], 'Chi tiết đề tài'],
@@ -68,13 +69,14 @@ export const canVisit = (role, path) => {
 const STATS = { to: '/thong-ke', label: 'Thống kê' };
 const YEU_CAU = { to: '/yeu-cau', label: 'Yêu cầu thay đổi' };
 const KHO = { to: '/kho', label: 'Kho đề tài' };
+const HOME_TILES = { to: '/tong-quan', label: 'Tổng quan' };
 export const MENU = {
-  STUDENT: [{ to: '/de-tai', label: 'Đề tài của tôi' }, { to: '/loi-moi', label: 'Lời mời' }, YEU_CAU, { to: '/lich-su-tham-gia', label: 'Lịch sử tham gia' }, KHO],
-  LECTURER: [{ to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, YEU_CAU, STATS, KHO],
+  STUDENT: [HOME_TILES, { to: '/de-tai', label: 'Đề tài của tôi' }, { to: '/loi-moi', label: 'Lời mời' }, YEU_CAU, { to: '/lich-su-tham-gia', label: 'Lịch sử tham gia' }, KHO],
+  LECTURER: [HOME_TILES, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, YEU_CAU, STATS, KHO],
   STAFF: [
-    { to: '/xet-duyet', label: 'Xét duyệt' }, { to: '/de-tai', label: 'Đề tài' }, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' },
+    HOME_TILES, { to: '/xet-duyet', label: 'Xét duyệt' }, { to: '/de-tai', label: 'Đề tài' }, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' },
     { to: '/quan-ly/dot', label: 'Đợt' }, { to: '/quan-ly/tai-khoan', label: 'Tài khoản' },
     { to: '/quan-ly/danh-muc/nganh', label: 'Danh mục' }, YEU_CAU, STATS, KHO,
   ],
-  ADMIN: [{ to: '/quan-ly/tai-khoan', label: 'Tài khoản' }, { to: '/quan-ly/danh-muc/khoa', label: 'Danh mục' }, KHO],
+  ADMIN: [HOME_TILES, { to: '/quan-ly/tai-khoan', label: 'Tài khoản' }, { to: '/quan-ly/danh-muc/khoa', label: 'Danh mục' }, KHO],
 };

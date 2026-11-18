@@ -39,6 +39,7 @@ const TopicRequestsPage = lazy(() => import('./pages/topics/TopicRequestsPage.js
 const PastTopicsPage = lazy(() => import('./pages/topics/PastTopicsPage.jsx').then((m) => ({ default: m.PastTopicsPage })));
 const PastTopicDetailPage = lazy(() => import('./pages/topics/PastTopicsPage.jsx').then((m) => ({ default: m.PastTopicDetailPage })));
 const ChangeRequestsPage = lazy(() => import('./pages/ChangeRequestsPage.jsx').then((m) => ({ default: m.ChangeRequestsPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx').then((m) => ({ default: m.DashboardPage })));
 const RoundFormPage = lazy(() => import('./pages/admin/RoundFormPage.jsx').then((m) => ({ default: m.RoundFormPage })));
 
 // Lỗi tải chunk lazy (mất mạng, bản mới đã thay file cũ) → thông báo + tải lại, thay vì trang trắng
@@ -50,7 +51,7 @@ export class ChunkErrorBoundary extends Component {
     return (
       <div role="alert" className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
         <p>Không tải được nội dung trang. Có thể do mất kết nối hoặc hệ thống vừa cập nhật.</p>
-        <button type="button" onClick={() => window.location.reload()} className="mt-2 inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-4 font-medium text-slate-900">Tải lại trang</button>
+        <button type="button" onClick={() => window.location.reload()} className="mt-2 inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-card px-4 font-medium text-slate-900">Tải lại trang</button>
       </div>
     );
   }
@@ -81,6 +82,7 @@ function RequireRole({ roles, children }) {
 
 // Màn đã làm (T304–T308); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
 const SCREEN_ELEMENT = {
+  'tong-quan': <DashboardPage />,
   'de-tai': <TopicListPage />,
   'thong-bao': <NotificationsPage />,
   'thong-ke': <StatsPage />,

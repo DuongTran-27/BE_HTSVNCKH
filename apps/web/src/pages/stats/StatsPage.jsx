@@ -110,7 +110,7 @@ export function StatsPage() {
                     <div className="inline-flex rounded-lg bg-slate-100 p-1" role="group" aria-label="Kiểu biểu đồ">
                       {Object.entries(CHARTS).map(([k, [l, Icon]]) => (
                         <button key={k} type="button" aria-pressed={chart === k} onClick={() => setChart(k)}
-                          className={`inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${chart === k ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                          className={`inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${chart === k ? 'bg-card text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
                           <Icon aria-hidden="true" className="size-4" />{l}
                         </button>
                       ))}

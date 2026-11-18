@@ -1,4 +1,5 @@
 import './lib/zodConfig.js';
+import './lib/theme.js'; // đặt lớp dark trước khi vẽ
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';

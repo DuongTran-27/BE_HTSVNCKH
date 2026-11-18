@@ -69,7 +69,7 @@ export function AdvisorRequestsPage() {
       <div role="tablist" aria-label="Trạng thái đề nghị" className="mt-3 flex flex-wrap gap-2">
         {TABS.map((s) => (
           <button key={s} type="button" role="tab" aria-selected={s === status} onClick={() => set('status', s === 'PENDING' ? '' : s)}
-            className={`min-h-11 rounded-md border px-3 ${s === status ? 'border-blue-700 bg-blue-700 text-white' : 'border-slate-300 bg-white'}`}>
+            className={`min-h-11 rounded-md border px-3 ${s === status ? 'border-blue-700 bg-navy text-white' : 'border-slate-300 bg-card'}`}>
             {REQUEST_STATUS_LABEL[s]}
           </button>
         ))}

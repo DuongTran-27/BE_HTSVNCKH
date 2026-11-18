@@ -41,8 +41,8 @@ export function NotificationsPage() {
             <>
               <ul className="space-y-2">
                 {d.items.map((n) => (
-                  <li key={n.id} className={`relative rounded-xl border p-4 pl-8 shadow-sm ${n.readAt ? 'border-slate-300 bg-white' : 'border-blue-200 bg-blue-50/60'}`}>
-                    {!n.readAt && <span aria-hidden="true" className="absolute top-[2.125rem] left-3.5 size-2 rounded-full bg-blue-700" />}
+                  <li key={n.id} className={`relative rounded-xl border p-4 pl-8 shadow-sm ${n.readAt ? 'border-slate-300 bg-card' : 'border-blue-200 bg-blue-50/60'}`}>
+                    {!n.readAt && <span aria-hidden="true" className="absolute top-[2.125rem] left-3.5 size-2 rounded-full bg-vlu-red" />}
                     <button type="button" onClick={() => open(n)} className="min-h-11 w-full break-words text-left hover:text-blue-700">
                       <span className={n.readAt ? '' : 'font-semibold'}>{n.title}</span>
                     </button>

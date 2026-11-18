@@ -5,6 +5,8 @@
 @import "@fontsource/be-vietnam-pro/600.css";
 @import "@fontsource/be-vietnam-pro/700.css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * Bảng màu theo nhận diện Đại học Văn Lang (vlu.edu.vn): navy #1F2251 cho chữ, menu, liên kết (thang blue-* được đổi
  * thành thang navy nên mọi trang đang dùng blue-* tự đổi theo); đỏ Văn Lang #D72134 cho nút chính và con dấu trạng thái;
@@ -26,6 +28,8 @@
   --color-slate-200: #e2e4e9;
   --color-slate-300: #d2d3dc;
 
+  /* Navy cố định cho nền thanh bên, avatar, panel đăng nhập: không đảo ở chế độ tối như thang blue-* */
+  --color-navy: #1f2251;
   --color-vlu-red: #d72134;
   --color-vlu-red-dark: #b50315;
   --color-vlu-gold: #febd25;
@@ -56,7 +60,7 @@
 
 /*
  * Token màu của component shadcn/ui (UI.md U9) ánh xạ vào nhận diện Văn Lang: nút chính đỏ Văn Lang, chữ và vòng focus
- * navy, nền thẻ trắng, viền slate-300. Không có chế độ tối.
+ * navy, nền thẻ trắng, viền slate-300. Chế độ tối: khối .dark bên dưới.
  */
 :root {
   --background: #ffffff;
@@ -77,6 +81,7 @@
   --border: #e4e6ee;
   --input: #d6d9e3;
   --ring: #1f2251;
+  --page: #f6f7fb;
 }
 
 @theme inline {
@@ -100,10 +105,82 @@
   --color-ring: var(--ring);
 }
 
+/*
+ * Chế độ tối (lib/theme.js đặt lớp .dark trên <html>). Các trang dùng thẳng thang blue/slate/red/amber/emerald nên ở đây
+ * đảo chính các thang đó: số nhỏ (nền nhạt) thành nền tối, số lớn (chữ đậm) thành chữ sáng. Không cần sửa từng trang.
+ * Nền cố định navy dùng bg-navy, nền trắng dùng bg-card (bg-white giữ trắng vì text-white phải giữ trắng).
+ */
+.dark {
+  color-scheme: dark;
+  --page: #0c0e22;
+  --background: #15183a;
+  --foreground: #e7e9f5;
+  --card: #15183a;
+  --card-foreground: #e7e9f5;
+  --popover: #1b1e44;
+  --popover-foreground: #e7e9f5;
+  --secondary: #262a5c;
+  --secondary-foreground: #e7e9f5;
+  --muted: #1d2046;
+  --muted-foreground: #a6abc8;
+  --accent: #262a5c;
+  --accent-foreground: #e7e9f5;
+  --destructive: #f87171;
+  --border: #2b2f5a;
+  --input: #3a3e6e;
+  --ring: #aab1ee;
+
+  --color-blue-50: #1b1e45;
+  --color-blue-100: #262a5c;
+  --color-blue-200: #3a3e6e;
+  --color-blue-500: #9aa1d6;
+  --color-blue-600: #b3b9e6;
+  --color-blue-700: #c7ccf3;
+  --color-blue-800: #d9ddf8;
+  --color-blue-900: #eceefb;
+
+  --color-slate-50: #1a1d40;
+  --color-slate-100: #22254b;
+  --color-slate-200: #2b2f5a;
+  --color-slate-300: #3a3e6e;
+  --color-slate-400: #6c7198;
+  --color-slate-500: #8b90b2;
+  --color-slate-600: #a6abc8;
+  --color-slate-700: #c0c4da;
+  --color-slate-800: #d5d8e7;
+  --color-slate-900: #e7e9f5;
+
+  --color-red-50: #3b1419;
+  --color-red-100: #4a1a20;
+  --color-red-200: #6b222b;
+  --color-red-300: #8a2a35;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-red-900: #fee2e2;
+
+  --color-amber-50: #362810;
+  --color-amber-200: #6b4e12;
+  --color-amber-300: #8a6516;
+  --color-amber-600: #fbbf24;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-amber-900: #fef3c7;
+
+  --color-emerald-50: #0f2e23;
+  --color-emerald-600: #34d399;
+  --color-emerald-800: #a7f3d0;
+  --color-green-50: #0f2e23;
+  --color-green-200: #155e45;
+  --color-green-300: #1c7a5a;
+  --color-green-800: #a7f3d0;
+  --color-green-900: #d1fae5;
+  --color-orange-700: #fdba74;
+}
+
 @layer base {
   * { @apply border-border; }
   html { -webkit-font-smoothing: antialiased; }
-  body { @apply bg-[#f6f7fb] text-blue-900; }
+  body { @apply bg-(--page) text-blue-900; }
   h1 { @apply tracking-tight text-blue-900; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-blue-600; }
   ::selection { @apply bg-blue-100; }

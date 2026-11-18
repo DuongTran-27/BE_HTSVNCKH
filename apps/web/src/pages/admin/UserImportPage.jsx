@@ -120,7 +120,7 @@ export function UserImportPage() {
         <div className="space-y-3" aria-label="Kết quả xem trước">
           <p className="flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-900"><CircleCheck aria-hidden="true" className="size-4" />Hợp lệ: <strong>{report.validCount}</strong></span>
-            <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 ${report.errorCount ? 'border-red-200 bg-red-50 text-red-900' : 'border-slate-200 bg-white text-slate-700'}`}><CircleX aria-hidden="true" className="size-4" />Lỗi: <strong>{report.errorCount}</strong></span>
+            <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 ${report.errorCount ? 'border-red-200 bg-red-50 text-red-900' : 'border-slate-200 bg-card text-slate-700'}`}><CircleX aria-hidden="true" className="size-4" />Lỗi: <strong>{report.errorCount}</strong></span>
           </p>
           {report.errorCount > 0 && (
             <>

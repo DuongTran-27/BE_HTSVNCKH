@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, ChevronLeft, ChevronRight, Inbox, KeyRound, Loader2 } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, Inbox, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Badge as UiBadge } from '@/components/ui/badge';
@@ -45,7 +45,18 @@ export function PageHeader({ title, description, children }) {
 
 /** Trạng thái đang tải / lỗi (error.message từ API) / dữ liệu; empty: nội dung khi rỗng (UI §6) */
 export function QueryBox({ query, empty, isEmpty, children }) {
-  if (query.isPending) return <p role="status" className="flex items-center gap-2 py-6 text-muted-foreground"><Loader2 aria-hidden="true" className="size-4 animate-spin" />Đang tải…</p>;
+  // Khung xám nhấp nháy theo dáng danh sách; chữ "Đang tải…" vẫn còn cho trình đọc màn hình (và E2E chờ theo nó)
+  if (query.isPending) return (
+    <div role="status" className="space-y-3">
+      <span className="sr-only">Đang tải…</span>
+      {[0, 1, 2].map((i) => (
+        <div key={i} aria-hidden="true" className="space-y-2.5 rounded-2xl border bg-card p-5">
+          <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+          <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+        </div>
+      ))}
+    </div>
+  );
   if (query.isError) {
     return (
       <Alert variant="destructive" className="border-red-200 bg-red-50">
@@ -128,7 +139,7 @@ export function TempPasswordBox({ password, onClose }) {
   return (
     <div role="alertdialog" aria-label="Mật khẩu tạm" className="rounded-xl border border-amber-300 bg-amber-50 p-5 animate-in fade-in-0 slide-in-from-top-1">
       <h2 className="flex items-center gap-2 font-semibold"><KeyRound aria-hidden="true" className="size-4" />Mật khẩu tạm</h2>
-      <p className="mt-2 break-all rounded-md border border-amber-200 bg-white p-3 font-mono text-lg tracking-wider" data-testid="temp-password">{password}</p>
+      <p className="mt-2 break-all rounded-md border border-amber-200 bg-card p-3 font-mono text-lg tracking-wider" data-testid="temp-password">{password}</p>
       <p className="mt-2 text-sm text-red-800">Mật khẩu chỉ hiện một lần. Người dùng phải đổi mật khẩu ở lần đăng nhập đầu.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" onClick={copy} className={btnGhost}>{copied ? 'Đã sao chép' : 'Sao chép'}</button>

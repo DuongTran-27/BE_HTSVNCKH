@@ -52,7 +52,7 @@ export function ReviewQueuePage() {
                 {d.items.map((t) => {
                   const late = t.round.reviewDeadline && new Date(t.round.reviewDeadline).getTime() < now;
                   return (
-                    <li key={t.id} className={`relative rounded-xl border bg-white p-4 pr-10 shadow-sm transition-shadow hover:shadow-md ${late ? 'border-red-200 border-l-4 border-l-red-600' : 'border-slate-300'}`}>
+                    <li key={t.id} className={`relative rounded-xl border bg-card p-4 pr-10 shadow-sm transition-shadow hover:shadow-md ${late ? 'border-red-200 border-l-4 border-l-red-600' : 'border-slate-300'}`}>
                       <ChevronRight aria-hidden="true" className="absolute top-1/2 right-3 size-5 -translate-y-1/2 text-slate-300" />
                       <Link to={`/xet-duyet/${t.id}`} state={{ from: here.pathname + here.search }} className="break-words font-medium text-blue-700 underline-offset-4 hover:underline">{t.code} – {t.title}</Link>
                       <p className="mt-1 text-sm text-slate-700">{t.round.name} · Trưởng nhóm: {t.leader?.fullName} · {t.memberCount} thành viên · Giảng viên hướng dẫn: {t.advisor?.fullName ?? 'Chưa có'}</p>

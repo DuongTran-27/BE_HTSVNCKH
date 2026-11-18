@@ -25,7 +25,7 @@ export function FullPageOffline({ onRetry }) {
       <Brand />
       <WifiOff aria-hidden="true" className="size-8 text-slate-400" />
       <p className="text-slate-700">Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.</p>
-      <button type="button" onClick={onRetry} className="min-h-11 rounded-md bg-blue-700 px-4 font-medium text-white hover:bg-blue-800">Thử lại</button>
+      <button type="button" onClick={onRetry} className="min-h-11 rounded-md bg-navy px-4 font-medium text-white hover:bg-navy/90">Thử lại</button>
     </div>
   );
 }
