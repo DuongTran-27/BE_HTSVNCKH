@@ -57,3 +57,4 @@
 - m2: `LoginPage.jsx` `ssoMessage` chỉ tra khóa riêng (`Object.hasOwn`) – `sso_error=constructor/toString/__proto__` → thông điệp chung. Test mới trong `dc12.test.jsx`.
 - m1: thêm `RATE_LIMITED`, `SERVER_ERROR` vào UI.md §12.3 và API_GD7.md (bảng shared `SSO_ERROR_LABEL`).
 - Lệnh: `npm run lint` → exit 0; `npm run db:test:reset` rồi `npm test` → exit 0 (số liệu ở trên).
+- Ghi chú: lần chạy `npm test` đầu sau khi sửa có 2 lỗi ở `T201-qa-guard-bypass.test.js` (TC-NFR08-04/05: `CREATE DATABASE nckh_qa_guard` → 23505 "already exists" ngay sau `DROP … WITH (FORCE)`), không liên quan DC-12. Chạy riêng file → 4/4; `db:test:reset` + `npm test` lại → exit 0: shared 115/115, api 1217/1217, web 272/272. Nguyên nhân chưa xác định (nghi embedded-postgres trên Windows) – theo dõi nếu lặp lại.
