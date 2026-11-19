@@ -18,6 +18,9 @@ const TopicEditPage = lazy(() => import('./pages/topics/TopicEditPage.jsx').then
 const GroupPage = lazy(() => import('./pages/topics/GroupPage.jsx').then((m) => ({ default: m.GroupPage })));
 const AdvisorInvitePage = lazy(() => import('./pages/topics/AdvisorInvitePage.jsx').then((m) => ({ default: m.AdvisorInvitePage })));
 const ApplicantsPage = lazy(() => import('./pages/topics/ApplicantsPage.jsx').then((m) => ({ default: m.ApplicantsPage })));
+const RecruitBoardPage = lazy(() => import('./pages/topics/RecruitBoardPage.jsx').then((m) => ({ default: m.RecruitBoardPage })));
+const RecruitDetailPage = lazy(() => import('./pages/topics/RecruitDetailPage.jsx').then((m) => ({ default: m.RecruitDetailPage })));
+const MyApplicationsPage = lazy(() => import('./pages/topics/MyApplicationsPage.jsx').then((m) => ({ default: m.MyApplicationsPage })));
 const SubmitPage = lazy(() => import('./pages/topics/SubmitPage.jsx').then((m) => ({ default: m.SubmitPage })));
 const InvitationsPage = lazy(() => import('./pages/topics/InvitationsPage.jsx').then((m) => ({ default: m.InvitationsPage })));
 const SubmissionHistoryPage = lazy(() => import('./pages/topics/SubmissionHistoryPage.jsx').then((m) => ({ default: m.SubmissionHistoryPage })));
@@ -99,6 +102,9 @@ const SCREEN_ELEMENT = {
   'thong-ke': <StatsPage />,
   kho: <RepositoryPage />,
   'kho/:code': <RepositoryDetailPage />,
+  'tuyen-sinh': <RecruitBoardPage />,
+  'tuyen-sinh/:topicId': <RecruitDetailPage />,
+  'don-ung-tuyen': <MyApplicationsPage />,
   'de-tai/moi': <TopicCreatePage />,
   'de-tai/:id': <TopicDetailPage />,
   'de-tai/:id/sua': <TopicEditPage />,

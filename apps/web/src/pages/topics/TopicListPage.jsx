@@ -87,7 +87,7 @@ export function TopicListPage() {
       {isStaff ? filters : <details className="mt-3" open={u.any}><summary className="min-h-11 cursor-pointer font-medium">Lọc</summary>{filters}</details>}
       {u.any && <button type="button" className={`${btnGhost} mt-2`} onClick={u.clear}>Xóa bộ lọc</button>}
       <div className="mt-3">
-        <QueryBox query={query} empty={u.any ? 'Không có đề tài nào khớp bộ lọc.' : 'Chưa có đề tài nào.'} isEmpty={(d) => d.items.length === 0}>
+        <QueryBox query={query} empty={u.any ? 'Không có đề tài nào khớp bộ lọc.' : (<>Chưa có đề tài nào.{isStudent && <Link to="/tuyen-sinh" className={`${btnGhost} mt-3 block`}>Xem đề tài giảng viên đang tuyển</Link>}</>)} isEmpty={(d) => d.items.length === 0}>
           {(d) => (
             <>
               <ul className="space-y-3">

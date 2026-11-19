@@ -21,6 +21,9 @@ export const SCREENS = [
   ['de-tai/moi', [S, L], 'Tạo đề tài'],
   ['de-tai/:id', [S, L, F], 'Chi tiết đề tài'],
   ['de-tai/:id/sua', [S, L], 'Soạn hồ sơ'],
+  ['tuyen-sinh', [S, L, F], 'Đề tài tuyển sinh viên'],
+  ['tuyen-sinh/:topicId', [S, L, F], 'Chi tiết đề tài tuyển'],
+  ['don-ung-tuyen', [S], 'Đơn ứng tuyển'],
   ['de-tai/:id/cong-bo', [L], 'Công bố tuyển sinh viên'],
   ['de-tai/:id/ung-vien', [L, F], 'Ứng viên'],
   ['de-tai/:id/nhom', [S, L, F], 'Nhóm'],
@@ -79,8 +82,8 @@ const YEU_CAU = { to: '/yeu-cau', label: 'Yêu cầu thay đổi' };
 const KHO = { to: '/kho', label: 'Kho đề tài' };
 const HOME_TILES = { to: '/tong-quan', label: 'Tổng quan' };
 export const MENU = {
-  STUDENT: [HOME_TILES, { to: '/de-tai', label: 'Đề tài của tôi' }, { to: '/loi-moi', label: 'Lời mời' }, YEU_CAU, { to: '/lich-su-tham-gia', label: 'Lịch sử tham gia' }, KHO],
-  LECTURER: [HOME_TILES, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, YEU_CAU, STATS, KHO],
+  STUDENT: [HOME_TILES, { to: '/de-tai', label: 'Đề tài của tôi' }, { to: '/tuyen-sinh', label: 'Đề tài tuyển sinh viên' }, { to: '/don-ung-tuyen', label: 'Đơn ứng tuyển' }, { to: '/loi-moi', label: 'Lời mời' }, YEU_CAU, { to: '/lich-su-tham-gia', label: 'Lịch sử tham gia' }, KHO],
+  LECTURER: [HOME_TILES, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, { to: '/tuyen-sinh', label: 'Đề tài tuyển sinh viên' }, YEU_CAU, STATS, KHO],
   STAFF: [
     HOME_TILES, { to: '/xet-duyet', label: 'Xét duyệt' }, { to: '/de-tai', label: 'Đề tài' }, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' },
     { to: '/quan-ly/dot', label: 'Đợt' }, { to: '/quan-ly/tai-khoan', label: 'Tài khoản' },
