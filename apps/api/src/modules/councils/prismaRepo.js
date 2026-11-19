@@ -3,6 +3,7 @@
 import { Prisma } from '@prisma/client';
 import { recordAudit } from '../audit/service.js';
 import { withLockTx } from '../../lib/tx.js';
+import { applyTransitionTx } from '../topics/stateMachine.js';
 import { notify, notifyTopic } from '../notifications/notify.js';
 
 const OPEN = { decidedAt: null, cancelledAt: null };
@@ -12,6 +13,21 @@ const ASSIGNMENT = {
   select: {
     id: true, finalScore: true, decision: true, decidedAt: true, cancelledAt: true, assignedAt: true, _count: { select: { scores: true } },
     topic: { select: { id: true, code: true, title: true, status: true, advisings: { where: { endAt: null }, take: 1, select: { lecturer: { select: { fullName: true } } } } } },
+  },
+};
+const ASSIGNMENT_VIEW = {
+  select: {
+    id: true, finalScore: true, decision: true, minutes: true, decidedAt: true, cancelledAt: true,
+    decidedBy: { select: { fullName: true } },
+    council: { select: { id: true, code: true, name: true, facultyId: true, members: MEMBERS } },
+    topic: {
+      select: {
+        id: true, code: true, title: true, status: true,
+        advisings: { where: { endAt: null }, take: 1, select: { lecturer: { select: { fullName: true } } } },
+        processScores: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1, select: { score: true, comment: true } },
+      },
+    },
+    scores: { select: { memberId: true, score: true, comment: true, updatedAt: true, member: { select: { fullName: true } } } },
   },
 };
 // `locked` (§6.1): hội đồng đã có ít nhất một điểm bảo vệ
@@ -44,10 +60,33 @@ const ops = (db) => ({
   lockTopics: (ids) => db.$queryRaw`SELECT id, code, status, "facultyId", "roundId" FROM "Topic" WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR NO KEY UPDATE`,
   currentAdvisors: (topicIds) => db.advising.findMany({ where: { topicId: { in: topicIds }, endAt: null }, select: { topicId: true, lecturerId: true, lecturer: { select: { fullName: true } } } }),
   createAssignment: (data) => db.councilAssignment.create({ data, select: { id: true } }),
-  lockTopic: async (id) => (await db.$queryRaw`SELECT id FROM "Topic" WHERE id = ${id} FOR NO KEY UPDATE`)[0] ?? null,
+  lockTopic: async (id) => (await db.$queryRaw`SELECT id, status, version, "roundId" FROM "Topic" WHERE id = ${id} FOR NO KEY UPDATE`)[0] ?? null,
   assignmentState: (id) => db.councilAssignment.findUnique({ where: { id }, select: { decidedAt: true, cancelledAt: true, _count: { select: { scores: true } } } }),
   // Cập nhật có điều kiện còn mở: true = bên này thắng
   cancelAssignment: async (id, at, reason) => (await db.councilAssignment.updateMany({ where: { id, ...OPEN }, data: { cancelledAt: at, cancelReason: reason } })).count === 1,
+  // --- Chấm, chốt (§7.3, §7.4): đọc sau khóa Council FOR SHARE (đổi thành viên cần FOR UPDATE) + Topic ---
+  myRole: async (councilId, lecturerId) => (await db.councilMember.findUnique({ where: { councilId_lecturerId: { councilId, lecturerId } }, select: { role: true } }))?.role ?? null,
+  findScore: (assignmentId, memberId) => db.defenseScore.findUnique({ where: { assignmentId_memberId: { assignmentId, memberId } }, select: { score: true } }),
+  upsertScore: ({ assignmentId, memberId, score, comment }) => db.defenseScore.upsert({
+    where: { assignmentId_memberId: { assignmentId, memberId } }, create: { assignmentId, memberId, score, comment }, update: { score, comment }, select: { id: true },
+  }),
+  // Thành viên hiện tại chưa chấm (§7.4 bước 3)
+  missingScores: async (councilId, assignmentId) => db.councilMember.findMany({
+    where: { councilId, lecturer: { defenseScores: { none: { assignmentId } } } }, select: { role: true, lecturer: { select: { fullName: true } } },
+  }),
+  // Trung bình bằng SQL trên Decimal (§2.2), chỉ điểm của thành viên hiện tại
+  averageScore: async (councilId, assignmentId) => (await db.$queryRaw`
+    SELECT round(avg(s.score), 2) AS avg FROM "DefenseScore" s
+    WHERE s."assignmentId" = ${assignmentId} AND s."memberId" IN (SELECT "lecturerId" FROM "CouncilMember" WHERE "councilId" = ${councilId})`)[0].avg,
+  roundConfig: async (roundId) => (await db.round.findUnique({ where: { id: roundId }, select: { config: true } })).config,
+  transition: (args) => applyTransitionTx(db, args), // StatusHistory (quy tắc 4)
+  // true = bên này thắng (bản đã chốt/hủy thì trigger cũng chặn)
+  decideAssignment: async (id, data) => (await db.councilAssignment.updateMany({ where: { id, ...OPEN }, data })).count === 1,
+  // Hạ bản hiện hành TRƯỚC khi tạo bản mới (result_one_current không deferrable, API_GD45 §6.4)
+  currentResult: (topicId) => db.resultVersion.findFirst({ where: { topicId, isCurrent: true }, select: { id: true, result: true, version: true } }),
+  maxResultVersion: async (topicId) => (await db.resultVersion.aggregate({ where: { topicId }, _max: { version: true } }))._max.version ?? 0,
+  demoteResult: (id) => db.resultVersion.updateMany({ where: { id, isCurrent: true }, data: { isCurrent: false } }),
+  createResult: (data) => db.resultVersion.create({ data, select: { id: true } }),
   audit: (entry) => recordAudit(db, entry),
   notify: (items, actorId) => notify(db, items, actorId), // FR13, cùng tx
   notifyTopic: (args) => notifyTopic(db, args),
@@ -77,4 +116,13 @@ export const createCouncilRepo = (prisma) => ({
     return { total, rows: rows.map((c) => ({ ...c, locked: scored.has(c.id) })) };
   },
   findAssignmentBrief: (id) => prisma.councilAssignment.findUnique({ where: { id }, select: { id: true, councilId: true, topicId: true, council: { select: { facultyId: true, name: true } } } }),
+  // AssignmentView (§7.1)
+  findAssignment: (id) => prisma.councilAssignment.findUnique({ where: { id }, ...ASSIGNMENT_VIEW }),
+  listAssignments: async ({ where, skip, take }) => {
+    const [total, rows] = await prisma.$transaction([
+      prisma.councilAssignment.count({ where }),
+      prisma.councilAssignment.findMany({ where, orderBy: [{ assignedAt: 'asc' }, { id: 'asc' }], skip, take, ...ASSIGNMENT_VIEW }),
+    ]);
+    return { total, rows };
+  },
 });

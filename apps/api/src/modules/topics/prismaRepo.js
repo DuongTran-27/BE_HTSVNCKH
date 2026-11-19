@@ -17,8 +17,20 @@ import { createDefenseRepo } from './defenseRepo.js';
 import { createCouncilRepo } from '../councils/prismaRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
-// GĐ7 §1.1: thành viên các hội đồng có phân công chưa hủy của đề tài (dùng chung với findExecTopic)
-export const COUNCIL_SEATS = { where: { cancelledAt: null }, select: { council: { select: { members: { select: { lecturerId: true } } } } } };
+// GĐ7 §1.1: thành viên các hội đồng có phân công chưa hủy của đề tài, mới nhất trước (dùng chung với findExecTopic)
+export const COUNCIL_SEATS = {
+  where: { cancelledAt: null }, orderBy: [{ assignedAt: 'desc' }, { id: 'desc' }],
+  select: { id: true, decidedAt: true, council: { select: { members: { select: { lecturerId: true, role: true } } } } },
+};
+// GĐ7 §7.5: thêm dữ liệu cho TopicDetail.defense / councilAccess
+const DEFENSE_SEATS = {
+  ...COUNCIL_SEATS,
+  select: {
+    ...COUNCIL_SEATS.select, finalScore: true, decision: true,
+    council: { select: { code: true, name: true, members: { select: { lecturerId: true, role: true } } } },
+    scores: { select: { memberId: true, score: true, comment: true, updatedAt: true, member: { select: { fullName: true } } } },
+  },
+};
 const DETAIL_INCLUDE = {
   round: true,
   field: { select: { id: true, name: true } },
@@ -35,8 +47,8 @@ const DETAIL_INCLUDE = {
   results: { where: { isCurrent: true }, take: 1, select: { version: true, result: true, source: true, summary: true, createdById: true, createdAt: true } },
   // GĐ7 §5.5: điểm quá trình mới nhất (chỉ thêm)
   processScores: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1, select: { score: true, comment: true, createdAt: true, lecturer: { select: { fullName: true } } } },
-  // GĐ7 §1.1: quan hệ isCouncilMember
-  councilAssignments: COUNCIL_SEATS,
+  // GĐ7 §1.1: quan hệ isCouncilMember/isCouncilOfficer; §7.5 defense
+  councilAssignments: DEFENSE_SEATS,
   // GĐ7 §3.2: applicationCounts.pending
   _count: { select: { milestones: { where: REQUIRED_REMOVED_WHERE }, applications: { where: { status: 'PENDING' } } } },
   // GĐ6 (API_GD6 §1.1, §2.5): yêu cầu đang chờ (quan hệ isChangeTarget + pendingChangeRequests)

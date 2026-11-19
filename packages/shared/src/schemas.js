@@ -175,6 +175,10 @@ export const councilAssignSchema = z.strictObject({
 });
 export const councilListQuerySchema = z.object({ roundId: opt(z.string().trim().max(64)), q: opt(z.string().trim().max(200)), ...pageQuery });
 export const councilViewQuerySchema = z.object({ includeCancelled: opt(z.enum(['true', 'false'])) });
+// FR36, FR37 chấm và chốt (API_GD7 §7.2–7.4)
+export const assignmentListQuerySchema = z.object({ status: opt(z.enum(['OPEN', 'DECIDED', 'CANCELLED'])), roundId: opt(z.string().trim().max(64)), ...pageQuery });
+export const defenseScoreSchema = z.strictObject({ score: scoreSchema, comment: z.string().trim().min(10, 'Nhận xét tối thiểu 10 ký tự').max(5000, 'Nhận xét tối đa 5000 ký tự') });
+export const defenseFinalizeSchema = z.strictObject({ version, minutes: z.string().trim().min(20, 'Nhận xét tổng kết tối thiểu 20 ký tự').max(5000, 'Nhận xét tổng kết tối đa 5000 ký tự') });
 // FR08: kho chung (API_GD2 §9.2) – chỉ kết quả đạt
 export const REPOSITORY_RESULTS = ['EXCELLENT', 'GOOD', 'PASS'];
 export const repositoryQuerySchema = z.object({

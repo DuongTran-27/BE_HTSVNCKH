@@ -5,6 +5,7 @@ import { badRequest, conflict, forbidden, notFound } from '../../lib/errors.js';
 import { contentHash } from '../similarity/engine.js';
 import { activeBypassOf, isUnchecked, presentBypass } from '../similarity/service.js';
 import { evaluateClose } from './closeConditions.js';
+import { presentDefenseScores } from '../councils/service.js';
 
 const EDITABLE = ['DRAFT', 'NEEDS_REVISION'];
 // Hành động GĐ2 (API_GD2 §10). TopicDetail dùng ENABLED_ACTIONS (GĐ2 + đóng đề tài, API_GD45 §7.4)
@@ -12,6 +13,7 @@ export const GD2_ACTIONS = ['REQUEST_ADVISOR', 'ACCEPT_ADVISING', 'DECLINE_ADVIS
 const FINISHED = ['REJECTED', 'CANCELLED', 'CLOSED'];
 const CLOSING = ['IN_PROGRESS', 'WAITING_DEFENSE', 'WAITING_CLOSE']; // API_GD7 §0.1
 const COUNCIL_GONE = ['CLOSED', 'CANCELLED'];
+const OFFICERS = ['CHAIR', 'SECRETARY'];
 const iso = (d) => d.toISOString();
 
 // summary ghi dạng digest + số từ để log không phình (API_GD2 §5.1). Không đặt khóa tên "...hash": redact() sẽ lọc mất.
@@ -35,6 +37,8 @@ export const inWindows = (at, windows) => windows.some((w) => w.joinedAt <= at &
 export const relations = (t, user) => {
   const me = t.members.find((m) => m.userId === user.id);
   const isCurrentAdvisor = t.advisings.some((a) => a.lecturerId === user.id);
+  const seatOf = (a) => a.council.members.find((m) => m.lecturerId === user.id);
+  const councilOpen = !COUNCIL_GONE.includes(t.status);
   return {
     isMember: !!me,
     isLeader: me?.role === 'LEADER',
@@ -47,7 +51,9 @@ export const relations = (t, user) => {
     // Chỉ khi không còn là thành viên hiện hành (§5.4); thành viên hiện hành đã đọc được mọi thứ
     formerMemberWindows: me ? [] : (t.formerMembers ?? []).filter((m) => m.userId === user.id).map((m) => ({ joinedAt: m.joinedAt, leftAt: m.leftAt })),
     // GĐ7 §1.1 (G62): thành viên hội đồng có phân công chưa hủy (chốt hay chưa), đề tài chưa đóng/hủy – chỉ đọc
-    isCouncilMember: !COUNCIL_GONE.includes(t.status) && (t.councilAssignments ?? []).some((a) => a.council.members.some((m) => m.lecturerId === user.id)),
+    isCouncilMember: councilOpen && (t.councilAssignments ?? []).some(seatOf),
+    // Chủ tịch/thư ký trên phân công chưa chốt (§1.1)
+    isCouncilOfficer: councilOpen && (t.councilAssignments ?? []).some((a) => !a.decidedAt && OFFICERS.includes(seatOf(a)?.role)),
   };
 };
 // GĐ7 §3.2: GV công bố sửa/kiểm tra trước nháp của mình (SV không có quan hệ nào với đề tài này ở DRAFT)
@@ -64,6 +70,27 @@ export const versionReader = (t, rel) => {
   if (canReadExecution(t, rel)) return () => true;
   const w = rel.formerMemberWindows;
   return w.length ? (at) => inWindows(at, w) : null;
+};
+
+// GĐ7 §7.5 + §1.1: khối bảo vệ (người đọc được phần thực hiện) và tư cách hội đồng của me.
+// state: ASSIGNED (phân công mới nhất còn mở) · WAITING_ASSIGNMENT (Chờ bảo vệ, chưa có phân công mở) · DECIDED (phân công mới nhất đã chốt) · null
+// Điểm từng thành viên chỉ hiện khi DECIDED, trừ cán bộ trong phạm vi và chủ tịch/thư ký.
+const presentDefense = (t, user, rel) => {
+  const seats = t.councilAssignments ?? [];
+  const mine = rel.isCouncilMember ? seats.find((a) => a.council.members.some((m) => m.lecturerId === user.id)) : null;
+  const latest = seats[0];
+  const state = latest && !latest.decidedAt ? 'ASSIGNED' : t.status === 'WAITING_DEFENSE' ? 'WAITING_ASSIGNMENT' : latest ? 'DECIDED' : null;
+  const a = state === 'WAITING_ASSIGNMENT' ? null : latest;
+  return {
+    councilAccess: mine ? { assignmentId: mine.id, role: mine.council.members.find((m) => m.lecturerId === user.id).role } : null,
+    defense: state && canReadExecution(t, rel)
+      ? {
+          assignmentId: a?.id ?? null, council: a ? { code: a.council.code, name: a.council.name } : null, state,
+          finalScore: a?.finalScore?.toFixed(2) ?? null, decision: a?.decision ?? null, decidedAt: a?.decidedAt ? iso(a.decidedAt) : null,
+          scores: a && (state === 'DECIDED' || rel.inStaffScope || rel.isCouncilOfficer) ? presentDefenseScores(a.council.members, a.scores) : [],
+        }
+      : null,
+  };
 };
 
 export const createTopicService = ({ repo, now = () => new Date() }) => {
@@ -127,6 +154,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
       processScore: ps && canReadExecution(t, rel)
         ? { score: ps.score.toFixed(2), comment: ps.comment, createdAt: iso(ps.createdAt), lecturer: { fullName: ps.lecturer.fullName } }
         : null,
+      ...presentDefense(t, user, rel),
       closeReadiness: CLOSING.includes(t.status) && (rel.isCurrentAdvisor || rel.inStaffScope)
         ? (({ requiredMilestonesPassed, hasFinalResult, requiredMilestoneCount, pendingCount }) => ({
             requiredMilestonesPassed, hasFinalResult, requiredMilestoneCount, pendingMilestones: pendingCount, requiredRemovedCount: t._count.milestones,

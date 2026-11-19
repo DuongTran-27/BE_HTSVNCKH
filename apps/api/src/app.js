@@ -20,7 +20,7 @@ import { invitationsRouter } from './modules/topics/invitationRoutes.js';
 import { repositoryRouter } from './modules/topics/repositoryRoutes.js';
 import { recruitmentsRouter } from './modules/topics/recruitmentRoutes.js';
 import { applicationsRouter } from './modules/topics/applicationRoutes.js';
-import { councilsRouter, councilAssignmentsRouter } from './modules/councils/routes.js';
+import { councilRouters } from './modules/councils/routes.js';
 import { defaultStorageFolder } from './lib/storage.js';
 import { milestonesRouter, progressRouter, documentsRouter } from './modules/execution/routes.js';
 import { notificationsRouter, cronRouter } from './modules/notifications/routes.js';
@@ -91,8 +91,9 @@ export const createApp = ({ env, logger, authRepo, hasher, catalogRepo, roundRep
     app.use('/api/repository', repositoryRouter({ repo: topicRepo, guard }));
     app.use('/api/recruitments', recruitmentsRouter({ repo: topicRepo, guard })); // FR31 bảng tin, FR32 ứng tuyển
     app.use('/api/applications', applicationsRouter({ repo: topicRepo, guard })); // FR32, FR33 hộp đơn
-    app.use('/api/councils', councilsRouter({ repo: topicRepo, guard })); // FR35 hội đồng
-    app.use('/api/council-assignments', councilAssignmentsRouter({ repo: topicRepo, guard }));
+    const councils = councilRouters({ repo: topicRepo, guard });
+    app.use('/api/councils', councils.councils); // FR35 hội đồng
+    app.use('/api/council-assignments', councils.assignments); // FR35–FR37 phân công, chấm, chốt
     app.use('/api/milestones', milestonesRouter({ repo: topicRepo, guard }));
     app.use('/api/documents', documentsRouter({ repo: topicRepo, guard, storage, folder, logger }));
     app.use('/api/progress', progressRouter({ repo: topicRepo, guard }));

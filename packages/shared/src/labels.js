@@ -99,6 +99,7 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   COUNCIL_MEMBER_REMOVED: 'Không còn trong hội đồng',
   COUNCIL_ASSIGNED: 'Đề tài được phân công hội đồng',
   COUNCIL_UNASSIGNED: 'Hủy phân công hội đồng',
+  DEFENSE_DECIDED: 'Hội đồng đã chốt kết quả bảo vệ',
 });
 
 // GĐ6 (API_GD6 §2.7)
