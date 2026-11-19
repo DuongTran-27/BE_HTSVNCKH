@@ -3,6 +3,7 @@ import { validate } from '../../middlewares/validate.js';
 import { requireRole } from '../../middlewares/auth.js';
 import { createLimiter } from '../../middlewares/rateLimit.js';
 import { businessRouter } from '../../lib/router.js';
+import { writeXlsx } from './xlsx.js';
 import { createStatsService } from './service.js';
 
 // FR14 (API_GD45 §9.2): chỉ STAFF và LECTURER; phạm vi dữ liệu kiểm trong service. Chỉ đọc nên không ghi AuditLog.
@@ -21,6 +22,16 @@ export const statsRouter = ({ repo, guard, now = () => new Date() }) => {
       'Content-Disposition': `attachment; filename="thong-ke-${req.validated.groupBy}-${formatVnDate(now())}.csv"`,
       'Cache-Control': 'no-store',
     }).send(csv);
+  });
+  // FR39 (GD7 §10.3): cùng quyền, bộ lọc và limiter (30/15 phút) với CSV; lỗi (403/400 quá trần) xảy ra trước khi ghi byte nào.
+  r.get('/export.xlsx', roles, createLimiter({ windowMs: 15 * 60e3, limit: 30, keyBy: 'user' }), query, async (req, res) => {
+    const sheets = await svc.buildXlsxSheets(req.user, req.validated);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="thong-ke-${req.validated.groupBy}-${formatVnDate(now())}.xlsx"`,
+      'Cache-Control': 'no-store',
+    });
+    await writeXlsx(res, sheets);
   });
   return r;
 };

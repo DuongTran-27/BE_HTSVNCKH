@@ -197,3 +197,18 @@ describe('redact (T204 bao-mat MINOR 1)', () => {
     expect(out.nul).toBeNull();
   });
 });
+
+// DC-11 (BM m1): lỗi sau khi đã gửi header (đang stream xlsx) không được gọi res.json lần nữa
+describe('errorHandler – header đã gửi', () => {
+  it('ghi log error, chuyển cho Express (next(err)), không ghi JSON', () => {
+    const logger = { error: vi.fn(), warn: vi.fn() };
+    const res = { headersSent: true, status: vi.fn(), json: vi.fn() };
+    const next = vi.fn();
+    const err = new Error('stream hỏng');
+    errorHandler(logger)(err, { id: 'r1' }, res, next);
+    expect(next).toHaveBeenCalledWith(err);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith({ err, reqId: 'r1' }, 'Error after headers sent');
+  });
+});

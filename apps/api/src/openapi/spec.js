@@ -122,6 +122,7 @@ export const ROUTES = [
   ['POST', '/notifications/:id/read', 'U', { body: S.emptyBodySchema }],
   ['GET', '/stats', 'SL', { query: S.statsQuerySchema }],
   ['GET', '/stats/export.csv', 'SL', { query: S.statsQuerySchema, note: 'Trả text/csv' }],
+  ['GET', '/stats/export.xlsx', 'SL', { query: S.statsQuerySchema, note: 'Trả file xlsx (2 sheet); tối đa 5.000 đề tài, vượt → 400' }],
   ['POST', '/cron/reminders', 'C'],
   ['POST', '/cron/similarity-rechecks', 'C'],
 ];

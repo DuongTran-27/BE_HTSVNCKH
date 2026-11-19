@@ -16,7 +16,12 @@ const duplicateDetails = (req, err) => {
 };
 
 // Định dạng lỗi chuẩn, không lộ stack trace (NFR02)
-export const errorHandler = (logger) => (err, req, res, _next) => {
+export const errorHandler = (logger) => (err, req, res, next) => {
+  // Lỗi khi đã gửi header (vd. đang stream file Excel): không ghi JSON được nữa – ghi log rồi để Express hủy kết nối
+  if (res.headersSent) {
+    logger?.error({ err, reqId: req.id }, 'Error after headers sent');
+    return next(err);
+  }
   if (err instanceof AppError) {
     return res.status(err.status).json({ error: { code: err.code, message: err.message, details: err.details } });
   }
