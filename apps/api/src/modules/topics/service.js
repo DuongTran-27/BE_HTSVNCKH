@@ -11,6 +11,7 @@ const EDITABLE = ['DRAFT', 'NEEDS_REVISION'];
 export const GD2_ACTIONS = ['REQUEST_ADVISOR', 'ACCEPT_ADVISING', 'DECLINE_ADVISING', 'WITHDRAW_ADVISOR_REQUEST', 'SUBMIT_FOR_REVIEW', 'RESUBMIT', 'REQUEST_REVISION', 'REJECT', 'APPROVE'];
 const FINISHED = ['REJECTED', 'CANCELLED', 'CLOSED'];
 const CLOSING = ['IN_PROGRESS', 'WAITING_DEFENSE', 'WAITING_CLOSE']; // API_GD7 §0.1
+const COUNCIL_GONE = ['CLOSED', 'CANCELLED'];
 const iso = (d) => d.toISOString();
 
 // summary ghi dạng digest + số từ để log không phình (API_GD2 §5.1). Không đặt khóa tên "...hash": redact() sẽ lọc mất.
@@ -45,14 +46,16 @@ export const relations = (t, user) => {
     isChangeTarget: (t.changeRequests ?? []).some((c) => c.type === 'ADVISOR_CHANGE' && c.targetUserId === user.id),
     // Chỉ khi không còn là thành viên hiện hành (§5.4); thành viên hiện hành đã đọc được mọi thứ
     formerMemberWindows: me ? [] : (t.formerMembers ?? []).filter((m) => m.userId === user.id).map((m) => ({ joinedAt: m.joinedAt, leftAt: m.leftAt })),
+    // GĐ7 §1.1 (G62): thành viên hội đồng có phân công chưa hủy (chốt hay chưa), đề tài chưa đóng/hủy – chỉ đọc
+    isCouncilMember: !COUNCIL_GONE.includes(t.status) && (t.councilAssignments ?? []).some((a) => a.council.members.some((m) => m.lecturerId === user.id)),
   };
 };
 // GĐ7 §3.2: GV công bố sửa/kiểm tra trước nháp của mình (SV không có quan hệ nào với đề tài này ở DRAFT)
 export const isLecturerDraftOwner = (t, rel) => rel.isCurrentAdvisor && t.origin === 'LECTURER' && t.status === 'DRAFT';
 export const canView = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isRequestedLecturer || rel.isFormerAdvisorReader || rel.isChangeTarget
-  || (rel.inStaffScope && t.status !== 'DRAFT');
+  || rel.isCouncilMember || (rel.inStaffScope && t.status !== 'DRAFT');
 // Quyền đọc phần thực hiện + snapshot/lịch sử (API_GD45 §1.1, API_GD2 §8.4, API_GD6 §1.1) – một nơi duy nhất
-export const canReadExecution = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || (rel.inStaffScope && t.status !== 'DRAFT');
+export const canReadExecution = (t, rel) => rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || rel.isCouncilMember || (rel.inStaffScope && t.status !== 'DRAFT');
 // Quyền đọc "phiên bản" (snapshot hồ sơ, phiên bản tài liệu – G41): null = không được; còn lại là hàm at → được đọc bản tạo lúc at.
 // Người đã rời nhóm chỉ đọc bản trong khoảng còn là thành viên (FR21, API_GD6 §5.4)
 // G46: lý do cho phép gửi khi chưa kiểm tra chỉ hiện theo quan hệ hiện hành (không cho GV cũ/SV đã rời)
@@ -134,7 +137,7 @@ export const createTopicService = ({ repo, now = () => new Date() }) => {
         invite: rel.isLeader && t.status === 'DRAFT',
         transferLeader: rel.isLeader && !FINISHED.includes(t.status),
         checkSimilarity: (rel.isMember && ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR', 'NEEDS_REVISION'].includes(t.status)) || isLecturerDraftOwner(t, rel),
-        viewHistory: rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || rel.inStaffScope,
+        viewHistory: rel.isMember || rel.isCurrentAdvisor || rel.isFormerAdvisorReader || rel.isCouncilMember || rel.inStaffScope,
         manageMilestones: (rel.isCurrentAdvisor || rel.inStaffScope) && running,
         addProgress: rel.isMember && running,
         uploadProposal: rel.isMember && EDITABLE.includes(t.status),

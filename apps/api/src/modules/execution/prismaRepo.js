@@ -4,7 +4,7 @@ import { recordAudit } from '../audit/service.js';
 import { lockTopicForExecution, lockTopicRow, assertCurrentAdvisor } from './lock.js';
 import { notifyTopic } from '../notifications/notify.js';
 import { REQUIRED_REMOVED_WHERE } from '../topics/closeConditions.js';
-import { findFormerAdvisings, findFormerMembers } from '../topics/prismaRepo.js';
+import { findFormerAdvisings, findFormerMembers, COUNCIL_SEATS } from '../topics/prismaRepo.js';
 
 const person = { select: { id: true, fullName: true, role: true } };
 const VIEW_INCLUDE = {
@@ -75,6 +75,7 @@ export const createExecutionRepo = (prisma) => {
         advisorRequests: { where: { status: 'PENDING' }, take: 1, select: { lecturerId: true } },
         members: { where: { leftAt: null }, select: { userId: true, role: true } },
         advisings: { where: { endAt: null }, take: 1, select: { lecturerId: true } },
+        councilAssignments: COUNCIL_SEATS,
       },
     });
     return t && { ...t, formerAdvisings: await findFormerAdvisings(prisma, id), formerMembers: await findFormerMembers(prisma, id) };

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isoDateTime, idSchema } from './catalog.js';
-import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT, DOCUMENT_STAGES, STATS_GROUP_BY, CHANGE_TYPE, CHANGE_STAGE } from './enums.js';
+import { DEFAULT_ROUND_CONFIG as C, TOPIC_STATUS, FINAL_RESULT, DOCUMENT_STAGES, STATS_GROUP_BY, CHANGE_TYPE, CHANGE_STAGE, COUNCIL_ROLE } from './enums.js';
 
 // Thông điệp mặc định tiếng Việt; có hiệu lực cho cả api vì chỉ có một bản zod (QD_ZOD §2)
 z.config(z.locales.vi());
@@ -133,6 +133,7 @@ export const topicListQuerySchema = z.object({
   result: opt(z.enum(Object.values(FINAL_RESULT))),
   q: opt(z.string().trim().min(2, 'Từ khóa tìm kiếm tối thiểu 2 ký tự').max(200)),
   stuck: opt(z.enum(['true', 'false'])), // FR16.5: đợt đã đóng đăng ký mà đề tài còn Chờ GVHD / Đã có GVHD
+  councilAssigned: opt(z.enum(['true', 'false'])), // GĐ7 §6.5: chỉ STAFF (service trả 400 với vai trò khác)
   sort: z.preprocess(emptyToUndef, z.enum(TOPIC_SORTS).default('updatedAt_desc')),
   ...pageQuery,
 });
@@ -154,6 +155,26 @@ export const applicationListQuerySchema = z.object({
   roundId: opt(z.string().trim().max(64)),
   ...pageQuery,
 });
+// FR35 hội đồng (API_GD7 §6.2–6.5): đúng 1 Chủ tịch, 1 Thư ký, 1–5 Ủy viên, không trùng GV – lỗi cơ cấu gom tại `members`
+const councilName = z.string().trim().min(3, 'Tên hội đồng tối thiểu 3 ký tự').max(200, 'Tên hội đồng tối đa 200 ký tự');
+const councilMembers = z.array(z.strictObject({ lecturerId: idSchema, role: z.enum(Object.values(COUNCIL_ROLE), { error: 'Vai trò không hợp lệ' }) }), { error: 'Chọn thành viên hội đồng' })
+  .max(7, 'Hội đồng tối đa 7 thành viên')
+  .superRefine((ms, ctx) => {
+    const n = (role) => ms.filter((m) => m.role === role).length;
+    const msg = (n('CHAIR') !== 1 && 'Hội đồng cần đúng 1 Chủ tịch') || (n('SECRETARY') !== 1 && 'Hội đồng cần đúng 1 Thư ký')
+      || ((n('MEMBER') < 1 || n('MEMBER') > 5) && 'Hội đồng cần từ 1 đến 5 Ủy viên')
+      || (new Set(ms.map((m) => m.lecturerId)).size !== ms.length && 'Mỗi giảng viên chỉ giữ một vai trò trong hội đồng');
+    if (msg) ctx.addIssue({ code: 'custom', message: msg });
+  });
+export const councilCreateSchema = z.strictObject({ roundId: idSchema, name: councilName, members: councilMembers });
+export const councilUpdateSchema = z.strictObject({ name: councilName, version });
+export const councilMembersSchema = z.strictObject({ members: councilMembers, version });
+export const councilAssignSchema = z.strictObject({
+  topicIds: z.array(idSchema, { error: 'Chọn đề tài' }).min(1, 'Chọn ít nhất 1 đề tài').max(50, 'Tối đa 50 đề tài mỗi lần')
+    .refine((ids) => new Set(ids).size === ids.length, 'Đề tài bị chọn trùng'),
+});
+export const councilListQuerySchema = z.object({ roundId: opt(z.string().trim().max(64)), q: opt(z.string().trim().max(200)), ...pageQuery });
+export const councilViewQuerySchema = z.object({ includeCancelled: opt(z.enum(['true', 'false'])) });
 // FR08: kho chung (API_GD2 §9.2) – chỉ kết quả đạt
 export const REPOSITORY_RESULTS = ['EXCELLENT', 'GOOD', 'PASS'];
 export const repositoryQuerySchema = z.object({

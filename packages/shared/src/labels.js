@@ -95,6 +95,10 @@ export const NOTIFICATION_TYPE_LABEL = Object.freeze({
   GROUP_FINALIZED: 'Nhóm đã được chốt',
   DEFENSE_REQUESTED: 'Đề nghị ra hội đồng',
   DEFENSE_RETURNED: 'Đề tài được trả về đang thực hiện',
+  COUNCIL_MEMBER_ADDED: 'Được mời vào hội đồng',
+  COUNCIL_MEMBER_REMOVED: 'Không còn trong hội đồng',
+  COUNCIL_ASSIGNED: 'Đề tài được phân công hội đồng',
+  COUNCIL_UNASSIGNED: 'Hủy phân công hội đồng',
 });
 
 // GĐ6 (API_GD6 §2.7)

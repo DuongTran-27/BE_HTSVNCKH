@@ -14,8 +14,11 @@ import { createChangeRequestRepo } from '../changeRequests/prismaRepo.js';
 import { createRecruitmentRepo } from './recruitmentRepo.js';
 import { createApplicationRepo } from './applicationRepo.js';
 import { createDefenseRepo } from './defenseRepo.js';
+import { createCouncilRepo } from '../councils/prismaRepo.js';
 
 const person = { select: { id: true, code: true, fullName: true } };
+// GĐ7 §1.1: thành viên các hội đồng có phân công chưa hủy của đề tài (dùng chung với findExecTopic)
+export const COUNCIL_SEATS = { where: { cancelledAt: null }, select: { council: { select: { members: { select: { lecturerId: true } } } } } };
 const DETAIL_INCLUDE = {
   round: true,
   field: { select: { id: true, name: true } },
@@ -32,6 +35,8 @@ const DETAIL_INCLUDE = {
   results: { where: { isCurrent: true }, take: 1, select: { version: true, result: true, source: true, summary: true, createdById: true, createdAt: true } },
   // GĐ7 §5.5: điểm quá trình mới nhất (chỉ thêm)
   processScores: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1, select: { score: true, comment: true, createdAt: true, lecturer: { select: { fullName: true } } } },
+  // GĐ7 §1.1: quan hệ isCouncilMember
+  councilAssignments: COUNCIL_SEATS,
   // GĐ7 §3.2: applicationCounts.pending
   _count: { select: { milestones: { where: REQUIRED_REMOVED_WHERE }, applications: { where: { status: 'PENDING' } } } },
   // GĐ6 (API_GD6 §1.1, §2.5): yêu cầu đang chờ (quan hệ isChangeTarget + pendingChangeRequests)
@@ -61,6 +66,7 @@ export const createTopicRepo = (prisma) => ({
   ...createRecruitmentRepo(prisma),
   ...createApplicationRepo(prisma),
   ...createDefenseRepo(prisma),
+  ...createCouncilRepo(prisma),
   findRound: (id) => prisma.round.findUnique({ where: { id } }),
   findField: (id) => prisma.field.findUnique({ where: { id }, select: { id: true, name: true, isActive: true } }),
   findDetail: async (id) => {

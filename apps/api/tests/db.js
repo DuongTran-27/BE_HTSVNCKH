@@ -18,4 +18,5 @@ export async function resetData(prisma) {
     ]);
   }
   await prisma.$executeRawUnsafe('ALTER SEQUENCE topic_code_seq RESTART');
+  await prisma.$executeRawUnsafe('ALTER SEQUENCE council_code_seq RESTART'); // GĐ7 §2.3, mã hội đồng (m3 BM DC-07)
 }

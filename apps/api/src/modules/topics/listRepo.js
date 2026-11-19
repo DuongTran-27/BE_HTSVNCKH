@@ -10,6 +10,8 @@ const LIST_INCLUDE = {
   submissions: { orderBy: { seq: 'desc' }, take: 1, select: { seq: true, createdAt: true, similarityCheck: { select: { status: true } } } },
   similarityChecks: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1, select: { status: true, level: true } },
   results: { where: { isCurrent: true }, take: 1, select: { result: true } },
+  // GĐ7 §6.5: hội đồng của phân công mở (defenseCouncil, chỉ trả cho STAFF)
+  councilAssignments: { where: { decidedAt: null, cancelledAt: null }, take: 1, select: { council: { select: { id: true, code: true } } } },
 };
 // Kho chung (§9.2): chỉ chọn đúng trường FR08, không include quan hệ nào khác
 const REPO_SELECT = { code: true, title: true, summary: true, field: { select: { name: true } }, round: { select: { academicYear: true } }, results: { where: { isCurrent: true }, take: 1, select: { result: true } } };

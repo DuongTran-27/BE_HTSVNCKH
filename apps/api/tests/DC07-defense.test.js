@@ -216,9 +216,13 @@ describe('§5.6 #5 RETURN_FROM_DEFENSE', () => {
     const { t, leader } = await mkRunning();
     expect((await defend('lecA', t)).status).toBe(200);
     const council = await mkCouncil();
-    const decided = await prisma.councilAssignment.create({ data: { councilId: council.id, topicId: t.id, assignedById: U.staff1.id, decidedAt: new Date(Date.now() - day), decidedById: U.lecB.id, finalScore: 4, decision: 'FAILED', minutes: 'Lần trước' } });
+    // Phân công đã chốt của lần trước thuộc hội đồng khác (thành viên lecF2) – m4 BM DC-07: tách quyền đọc của hai phân công
+    const older = await prisma.council.create({ data: { code: `HD-T-${++seq}`, facultyId: S.F1.id, roundId: S.round.id, name: 'Hội đồng lần trước', createdById: U.staff1.id, members: { create: [{ lecturerId: U.lecF2.id, role: 'CHAIR' }] } } });
+    const decided = await prisma.councilAssignment.create({ data: { councilId: older.id, topicId: t.id, assignedById: U.staff1.id, decidedAt: new Date(Date.now() - day), decidedById: U.lecF2.id, finalScore: 4, decision: 'FAILED', minutes: 'Lần trước' } });
     const open = await prisma.councilAssignment.create({ data: { councilId: council.id, topicId: t.id, assignedById: U.staff1.id } });
     await prisma.defenseScore.create({ data: { assignmentId: open.id, memberId: U.lecB.id, score: 6.5, comment: 'Đã chấm trước khi trả' } });
+    // m4 BM DC-07: phân công mở → thành viên hội đồng đọc được (isCouncilMember, DC-08)
+    for (const who of ['lecB', 'lecC']) expect((await get(who, `/api/topics/${t.id}`)).status, who).toBe(200);
     const r = await giveBack('staff1', t, { version: 1 });
     expect(r.status, JSON.stringify(r.body)).toBe(200);
     expect(r.body.topic).toMatchObject({ status: 'IN_PROGRESS', version: 2 });
@@ -230,8 +234,9 @@ describe('§5.6 #5 RETURN_FROM_DEFENSE', () => {
     expect((await prisma.auditLog.findFirst({ where: { action: 'TOPIC_RETURN_FROM_DEFENSE', entityId: t.id } })).after).toMatchObject({ status: 'IN_PROGRESS', cancelledAssignments: [open.id] });
     for (const who of ['lecA', leader, 'lecB', 'lecC']) expect(await notes(who, 'DEFENSE_RETURNED', t), who).toBe(1);
     expect(await notes('staff1', 'DEFENSE_RETURNED', t)).toBe(0);
-    // Phân công đã hủy: thành viên hội đồng không đọc được (quan hệ isCurrent/isCouncilMember của DC-08 xét cancelledAt)
+    // Phân công đã hủy: thành viên hội đồng mất quyền đọc (isCouncilMember xét cancelledAt); phân công đã chốt (không hủy) vẫn đọc (GD7 §1.1)
     for (const who of ['lecB', 'lecC']) expect((await get(who, `/api/topics/${t.id}`)).status, who).toBe(403);
+    expect((await get('lecF2', `/api/topics/${t.id}`)).status).toBe(200);
     // Đề nghị lại → phân công mới được phép (bản cũ đã hủy)
     expect((await defend('lecA', t, { version: 2, processScore: 8 })).status).toBe(200);
     expect((await scoresOf(t)).map((p) => p.score.toFixed(2)).sort()).toEqual(['7.25', '8.00']);

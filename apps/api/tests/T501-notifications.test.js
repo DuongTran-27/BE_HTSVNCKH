@@ -110,7 +110,7 @@ describe('shared – hằng và schema thông báo', () => {
   it('mỗi type có nhãn tiếng Việt; query unread chỉ nhận true/false', () => {
     expect(NOTIFICATION_TYPES.filter((t) => !NOTIFICATION_TYPE_LABEL[t])).toEqual([]);
     // DC-05 (đặc tả đổi – API_GD7 §3.4, §11): +RECRUITMENT_CANCELLED, APPLICATION_DECLINED
-    expect(NOTIFICATION_TYPES).toHaveLength(39); // DC-07 thêm DEFENSE_REQUESTED, DEFENSE_RETURNED (API_GD7 §5.1, §5.4, §11); DC-06 thêm APPLICATION_RECEIVED/ACCEPTED/WITHDRAWN, GROUP_FINALIZED (API_GD7 §11, G51); T601: API_GD6 §11b thêm 6 loại (CHANGE_*, ADVISOR_HANDOVER); T604 thêm RESULT_CORRECTED; T606 thêm MILESTONE_REOPENED; T609 thêm SIMILARITY_BYPASS_GRANTED, SIMILARITY_RECHECKED
+    expect(NOTIFICATION_TYPES).toHaveLength(43); // DC-08 thêm COUNCIL_MEMBER_ADDED/REMOVED, COUNCIL_ASSIGNED/UNASSIGNED (API_GD7 §6.2–6.4, §11); DC-07 thêm DEFENSE_REQUESTED, DEFENSE_RETURNED (API_GD7 §5.1, §5.4, §11); DC-06 thêm APPLICATION_RECEIVED/ACCEPTED/WITHDRAWN, GROUP_FINALIZED (API_GD7 §11, G51); T601: API_GD6 §11b thêm 6 loại (CHANGE_*, ADVISOR_HANDOVER); T604 thêm RESULT_CORRECTED; T606 thêm MILESTONE_REOPENED; T609 thêm SIMILARITY_BYPASS_GRANTED, SIMILARITY_RECHECKED
     expect(notificationListQuerySchema.safeParse({ unread: 'yes' }).success).toBe(false);
     expect(notificationListQuerySchema.parse({})).toEqual({ page: 1, pageSize: 20 });
   });
