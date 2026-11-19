@@ -12,6 +12,7 @@ import { TopicActionBar } from '../../components/TopicActionBar.jsx';
 import { FormerAdvisors, LeaveGroupButton, ReadOnlyBanner } from '../../components/MembershipActions.jsx';
 import { SimilarityBadge, SimilarityPanel, UncheckedFlag } from '../../components/SimilarityPanel.jsx';
 import { BypassNote, GrantBypass } from '../../components/SimilarityBypass.jsx';
+import { CouncilAccessBanner, DefenseSection, ProcessScoreCard } from '../../components/DefenseSection.jsx';
 
 const NOTICE_STATUSES = ['DRAFT', 'WAITING_ADVISOR', 'HAS_ADVISOR'];
 const h2 = 'flex items-center gap-2 text-sm font-semibold text-blue-900';
@@ -59,6 +60,7 @@ function TopicDetail({ topic: t }) {
       </header>
 
       <ReadOnlyBanner topic={t} />
+      <CouncilAccessBanner access={t.councilAccess} />
       {showReason && (
         <Notice tone="amber">
           <p className="font-semibold">{t.status === 'REJECTED' ? 'Đề tài bị từ chối' : 'Cần chỉnh sửa'}</p>
@@ -110,6 +112,9 @@ function TopicDetail({ topic: t }) {
             <div className="mt-2 space-y-2"><BypassNote bypass={t.similarityBypass} /><GrantBypass topic={t} /></div>
             {showSim && <div className="mt-2">{sim.isPending ? <p role="status">Đang tải…</p> : sim.isError ? <p role="alert" className="text-red-800">{sim.error.message}</p> : <SimilarityPanel check={sim.data} />}</div>}
           </div>
+          {/* DC-15: bảo vệ trước hội đồng + điểm quá trình (UI §12.7) */}
+          <DefenseSection defense={t.defense} />
+          <ProcessScoreCard score={t.processScore} />
           <ResultSection topic={t} />
         </div>
 

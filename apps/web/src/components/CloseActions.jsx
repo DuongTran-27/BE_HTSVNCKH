@@ -76,6 +76,8 @@ export function CloseActions({ topic: t, actions }) {
           title={ACTION_LABEL[dialog]} confirmLabel={ACTION_LABEL[dialog]} busy={confirm.isPending} error={error}
           message={(dialog === 'REQUEST_CLOSE'
             ? `Gửi đề nghị đóng đề tài ${t.code}? Cán bộ khoa sẽ xem lại; trong lúc chờ không sửa được mốc, tiến độ, tài liệu, kết quả.`
+              // DC-15 (UI §12.7): đợt bắt buộc bảo vệ → nhắc trước; server vẫn trả DEFENSE_REQUIRED nếu chưa đủ điều kiện
+              + (t.round?.effectiveConfig?.requireDefense ? ' Đợt này bắt buộc bảo vệ trước hội đồng (trừ kết quả Không đạt hoặc kết quả do hội đồng chốt).' : '')
             : `Đóng đề tài ${t.code}? Hệ thống kiểm tra lại điều kiện theo đánh giá hiện hành; sau khi đóng hồ sơ chỉ đọc.`) + readinessText(t.closeReadiness)}
           onConfirm={() => confirm.mutate(dialog)} onCancel={() => setDialog(null)}
         />

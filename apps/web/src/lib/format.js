@@ -31,3 +31,6 @@ export const qs = (params) => {
   const s = p.toString();
   return s ? `?${s}` : '';
 };
+
+// Điểm chuỗi thập phân của API ("7.25") → hiển thị kiểu Việt Nam "7,25"; không có điểm → "—"
+export const fmtScore = (s) => (s == null ? '—' : String(s).replace('.', ','));

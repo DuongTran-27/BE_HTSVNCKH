@@ -42,6 +42,12 @@ export const SCREENS = [
   ['loi-moi', [S], 'Lời mời'],
   ['de-nghi-huong-dan', [L, F], 'Đề nghị hướng dẫn'],
   ['xet-duyet', [F], 'Xét duyệt'],
+  // DC-15: hội đồng (UI §12.8). Thành viên hội đồng (GV) mở R32 chỉ đọc; R34 thuộc DC-16 (trang tạm để liên kết "Đến màn chấm" có đích)
+  ['hoi-dong', [F], 'Hội đồng'],
+  ['hoi-dong/moi', [F], 'Lập hội đồng'],
+  ['hoi-dong/:id', [F, L], 'Hội đồng'],
+  ['cham-bao-ve', [L], 'Chấm bảo vệ'],
+  ['cham-bao-ve/:assignmentId', [L], 'Chấm bảo vệ'],
   ['xet-duyet/:id', [F], 'Màn xét duyệt'],
   ['quan-ly/tai-khoan', [A, F], 'Tài khoản'],
   ['quan-ly/tai-khoan/moi', [A, F], 'Tạo tài khoản'],
@@ -86,7 +92,7 @@ export const MENU = {
   LECTURER: [HOME_TILES, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, { to: '/tuyen-sinh', label: 'Đề tài tuyển sinh viên' }, YEU_CAU, STATS, KHO],
   STAFF: [
     HOME_TILES, { to: '/xet-duyet', label: 'Xét duyệt' }, { to: '/de-tai', label: 'Đề tài' }, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' },
-    { to: '/quan-ly/dot', label: 'Đợt' }, { to: '/quan-ly/tai-khoan', label: 'Tài khoản' },
+    { to: '/hoi-dong', label: 'Hội đồng' }, { to: '/quan-ly/dot', label: 'Đợt' }, { to: '/quan-ly/tai-khoan', label: 'Tài khoản' },
     { to: '/quan-ly/danh-muc/nganh', label: 'Danh mục' }, YEU_CAU, STATS, KHO,
   ],
   ADMIN: [HOME_TILES, { to: '/quan-ly/tai-khoan', label: 'Tài khoản' }, { to: '/quan-ly/danh-muc/khoa', label: 'Danh mục' }, KHO],

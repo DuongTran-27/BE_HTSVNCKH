@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import { applyServerErrors } from './forms.js';
 
-// Trạng thái có dữ liệu thực hiện (mốc, tiến độ, kết quả) – chỉ để chọn tab hiển thị, quyền do server quyết
-export const EXEC_STATUSES = ['IN_PROGRESS', 'WAITING_CLOSE', 'CLOSED'];
+// Trạng thái có dữ liệu thực hiện (mốc, tiến độ, kết quả) – chỉ để chọn tab hiển thị, quyền do server quyết.
+// DC-15: thêm WAITING_DEFENSE để GVHD, nhóm và thành viên hội đồng vẫn đọc được mốc/tiến độ khi chờ bảo vệ (API_GD7 §1.1)
+export const EXEC_STATUSES = ['IN_PROGRESS', 'WAITING_DEFENSE', 'WAITING_CLOSE', 'CLOSED'];
 
 /** Mốc của đề tài (API_GD45 §3.2) – mảng MilestoneView, sắp theo order */
 export const useMilestones = (topicId, enabled = true) => useQuery({

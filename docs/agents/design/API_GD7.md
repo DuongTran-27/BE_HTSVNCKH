@@ -489,7 +489,7 @@ Sau đó cán bộ `CONFIRM_CLOSE` / `RETURN_TO_ADVISOR` như FR27 (không đổ
 "defense": { "assignmentId": "as1", "council": { "code": "…", "name": "…" }, "state": "ASSIGNED",
   "finalScore": null, "decision": null, "decidedAt": null, "scores": [] }
 ```
-- `state`: `WAITING_ASSIGNMENT` (WAITING_DEFENSE, chưa gán) · `ASSIGNED` · `DECIDED` (phân công mới nhất đã chốt). `null` nếu đề tài chưa từng đề nghị ra hội đồng.
+- `state`: `WAITING_ASSIGNMENT` (WAITING_DEFENSE, chưa gán) · `ASSIGNED` · `DECIDED` (phân công mới nhất đã chốt). `null` nếu đề tài chưa từng đề nghị ra hội đồng hoặc đã bị trả về (`RETURN_FROM_DEFENSE`, chỉ còn phân công đã hủy) – web không hiện khối bảo vệ (DC-15).
 - Cho `canReadExecution`. `scores` (vai trò, họ tên, điểm, nhận xét từng thành viên) chỉ có khi `DECIDED` (UC07: SV xem kết quả bảo vệ); trước đó `[]` với mọi người trừ cán bộ trong phạm vi và `isCouncilOfficer`.
 
 ### 7.6 Test bắt buộc (DC-09)
