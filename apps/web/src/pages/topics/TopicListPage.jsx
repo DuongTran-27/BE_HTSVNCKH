@@ -71,6 +71,7 @@ export function TopicListPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{TITLE[user?.role] ?? 'Đề tài'}</h1>
         {isStudent && <Link to="/de-tai/moi" className={btnPrimary}>Tạo đề tài</Link>}
+        {user?.role === 'LECTURER' && <Link to="/de-tai/moi" className={btnPrimary}>Công bố đề tài tuyển sinh viên</Link>}
       </div>
       {isStudent && pending > 0 && (
         <p role="status" className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-4 text-blue-900">

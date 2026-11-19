@@ -17,6 +17,7 @@ const TopicCreatePage = lazy(() => import('./pages/topics/TopicCreatePage.jsx').
 const TopicEditPage = lazy(() => import('./pages/topics/TopicEditPage.jsx').then((m) => ({ default: m.TopicEditPage })));
 const GroupPage = lazy(() => import('./pages/topics/GroupPage.jsx').then((m) => ({ default: m.GroupPage })));
 const AdvisorInvitePage = lazy(() => import('./pages/topics/AdvisorInvitePage.jsx').then((m) => ({ default: m.AdvisorInvitePage })));
+const ApplicantsPage = lazy(() => import('./pages/topics/ApplicantsPage.jsx').then((m) => ({ default: m.ApplicantsPage })));
 const SubmitPage = lazy(() => import('./pages/topics/SubmitPage.jsx').then((m) => ({ default: m.SubmitPage })));
 const InvitationsPage = lazy(() => import('./pages/topics/InvitationsPage.jsx').then((m) => ({ default: m.InvitationsPage })));
 const SubmissionHistoryPage = lazy(() => import('./pages/topics/SubmissionHistoryPage.jsx').then((m) => ({ default: m.SubmissionHistoryPage })));
@@ -104,6 +105,8 @@ const SCREEN_ELEMENT = {
   'de-tai/:id/nhom': <GroupPage />,
   'de-tai/:id/moi-gvhd': <AdvisorInvitePage />,
   'de-tai/:id/gui': <SubmitPage />,
+  'de-tai/:id/cong-bo': <SubmitPage />,
+  'de-tai/:id/ung-vien': <ApplicantsPage />,
   'de-tai/:id/lich-su': <SubmissionHistoryPage />,
   'de-tai/:id/lan-gui/:seq': <SubmissionPage />,
   'de-tai/:id/so-sanh': <SubmissionDiffPage />,

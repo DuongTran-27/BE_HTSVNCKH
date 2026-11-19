@@ -5,7 +5,7 @@ import { ACTION_LABEL } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { invalidateAfterAction, useSimilarityLatest } from '../../lib/queries.js';
 import { justificationState, needsFreshCheck } from '../../lib/similarity.js';
-import { SUBMIT_FIELDS, submitProblems, topicToForm } from '../../lib/topicForm.js';
+import { PUBLISH_FIELDS, SUBMIT_FIELDS, submitProblems, topicToForm } from '../../lib/topicForm.js';
 import { toast } from '../../lib/toast.js';
 import { useCooldown } from '../../lib/useCooldown.js';
 import { FormField } from '../../components/FormField.jsx';
@@ -13,7 +13,8 @@ import { SimilarityPanel } from '../../components/SimilarityPanel.jsx';
 import { BypassNote } from '../../components/SimilarityBypass.jsx';
 import { QueryBox, btnGhost, btnPrimary } from '../../components/ui.jsx';
 
-// R10 – UI §4.10, API §8.2
+// R10 – UI §4.10, API §8.2. Cũng là trang công bố đề tài tuyển của giảng viên (UI §12.5, U12): cùng 4 bước, đổi action PUBLISH_RECRUITMENT,
+// danh sách điều kiện (thêm số sinh viên cần tuyển) và lời báo thành công (không có lần gửi/snapshot).
 export function SubmitPage() {
   const { id } = useParams();
   const query = useQuery({ queryKey: ['topic', id], queryFn: async () => (await api(`/topics/${id}`)).topic });
@@ -23,10 +24,11 @@ export function SubmitPage() {
 function Submit({ topic: t }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const action = ['SUBMIT_FOR_REVIEW', 'RESUBMIT'].find((a) => t.availableActions.includes(a));
+  const action = ['SUBMIT_FOR_REVIEW', 'RESUBMIT', 'PUBLISH_RECRUITMENT'].find((a) => t.availableActions.includes(a));
   useEffect(() => { if (!action) navigate(`/de-tai/${t.id}`, { replace: true }); }, [action, t.id, navigate]);
-  const problems = submitProblems(topicToForm(t), t.round.effectiveConfig);
-  const missing = SUBMIT_FIELDS.filter(([k]) => problems[k]);
+  const publish = action === 'PUBLISH_RECRUITMENT';
+  const problems = submitProblems(topicToForm(t), t.round.effectiveConfig, publish);
+  const missing = (publish ? PUBLISH_FIELDS : SUBMIT_FIELDS).filter(([k]) => problems[k]);
   const complete = missing.length === 0;
 
   const latest = useSimilarityLatest(t.id, !!action && complete);
@@ -58,7 +60,7 @@ function Submit({ topic: t }) {
     onMutate: () => setError(''),
     onSuccess: (r) => {
       qc.setQueryData(['topic', t.id], r.topic);
-      toast(`Đã gửi hồ sơ lần ${r.submission.seq}${r.submission.unchecked ? ' (chưa kiểm tra được trùng lặp, hệ thống sẽ tự kiểm tra lại)' : ''}`, { type: 'success' });
+      toast(publish ? 'Đã công bố đề tài, sinh viên có thể ứng tuyển' : `Đã gửi hồ sơ lần ${r.submission.seq}${r.submission.unchecked ? ' (chưa kiểm tra được trùng lặp, hệ thống sẽ tự kiểm tra lại)' : ''}`, { type: 'success' });
       navigate(`/de-tai/${t.id}`);
     },
     onError: (err) => {
@@ -125,7 +127,7 @@ function Submit({ topic: t }) {
           )}
 
           <div>
-            <h2 className="font-bold">4. Gửi</h2>
+            <h2 className="font-bold">{publish ? '4. Công bố' : '4. Gửi'}</h2>
             {error && <p role="alert" className="mb-2 break-words rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error}</p>}
             <button type="button" className={btnPrimary} disabled={submit.isPending || run.isPending || (!st.ok && !(st.kind === 'unchecked' && t.similarityBypass))} onClick={() => submit.mutate()}>
               {submit.isPending ? 'Đang xử lý…' : label}

@@ -3,16 +3,16 @@ import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-rou
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { countWords, topicDraftSchema } from '@nckh/shared';
+import { countWords } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { applyServerErrors } from '../../lib/forms.js';
 import { useCatalog, useSimilarityLatest } from '../../lib/queries.js';
-import { SUBMIT_FIELDS, submitProblems, topicToForm } from '../../lib/topicForm.js';
+import { PUBLISH_FIELDS, SUBMIT_FIELDS, editSchemaFor, submitProblems, topicToForm } from '../../lib/topicForm.js';
 import { toast } from '../../lib/toast.js';
 import { useCooldown } from '../../lib/useCooldown.js';
 import { FormField, inputClass } from '../../components/FormField.jsx';
 import { SimilarityPanel } from '../../components/SimilarityPanel.jsx';
-import { ArrowLeft, CircleAlert, CircleCheck, FileText, Save, ScanSearch, Tags, X } from 'lucide-react';
+import { ArrowLeft, CircleAlert, CircleCheck, FileText, Megaphone, Save, ScanSearch, Tags, X } from 'lucide-react';
 import { ConfirmDialog, Options, QueryBox, btnGhost, btnPrimary, card, keepOpenOnOutside, useReturnFocus } from '../../components/ui.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 
@@ -32,9 +32,9 @@ function Section({ icon: Icon, title, description, children }) {
   );
 }
 
-const FIELD_NAMES = ['title', 'summary', 'objectives', 'keywords', 'fieldId'];
+const FIELD_NAMES = ['title', 'summary', 'objectives', 'keywords', 'fieldId', 'requirements', 'recruitSlots'];
 
-// R7 – UI §4.7. Chỉ dựng form khi đã có dữ liệu; tải lại ngầm không được unmount form (mất chữ đang nhập).
+// R7 – UI §4.7; R7' (UI §12.5) khi topic.origin === 'LECTURER': thêm yêu cầu ứng viên + số sinh viên cần tuyển, điều kiện đủ = topicPublishSchema. Chỉ dựng form khi đã có dữ liệu; tải lại ngầm không được unmount form (mất chữ đang nhập).
 export function TopicEditPage() {
   const { id } = useParams();
   const query = useQuery({ queryKey: ['topic', id], queryFn: async () => (await api(`/topics/${id}`)).topic });
@@ -82,7 +82,7 @@ function EditForm({ topic }) {
   // R7: giá trị ban đầu nạp đúng một lần. Về sau chỉ `topic.version` đọc từ cache được cập nhật, không đụng ô đang nhập.
   const [initial] = useState(() => topicToForm(topic));
   const { register, handleSubmit, setError, setValue, reset, watch, formState: { errors, isDirty } } = useForm({
-    resolver: zodResolver(topicDraftSchema), defaultValues: initial,
+    resolver: zodResolver(editSchemaFor(topic)), defaultValues: initial,
   });
   const [busy, setBusy] = useState(false);
   const [conflict, setConflict] = useState(false);
@@ -93,7 +93,9 @@ function EditForm({ topic }) {
   const latest = useSimilarityLatest(id, topic.permissions?.checkSimilarity);
   const cfg = topic.round.effectiveConfig;
   const values = watch();
-  const problems = submitProblems(values, cfg);
+  const recruit = topic.origin === 'LECTURER';
+  const conditions = recruit ? PUBLISH_FIELDS : SUBMIT_FIELDS;
+  const problems = submitProblems(values, cfg, recruit);
   const blocker = useBlocker(({ currentLocation, nextLocation }) => isDirty && currentLocation.pathname !== nextLocation.pathname);
 
   useEffect(() => {
@@ -158,7 +160,7 @@ function EditForm({ topic }) {
   const showInactive = inactiveField && fieldValue === inactiveField.id;
   const words = countWords(values.summary);
 
-  const passed = SUBMIT_FIELDS.filter(([k]) => !problems[k]).length;
+  const passed = conditions.filter(([k]) => !problems[k]).length;
   const keywordError = errors.keywords?.message ?? Object.entries(errors.keywords ?? {}).map(([, e]) => e?.message).find(Boolean);
 
   return (
@@ -167,7 +169,7 @@ function EditForm({ topic }) {
         <div className="min-w-0">
           <p data-testid="topic-code" className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground tabular-nums">{topic.code}</p>
           <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Soạn hồ sơ</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{topic.round.name} · Lưu nháp thường xuyên; chỉ gửi xét duyệt khi đủ mọi điều kiện.</p>
+          <p className="mt-1 text-sm text-muted-foreground">{topic.round.name} · Lưu nháp thường xuyên; {recruit ? 'chỉ công bố tuyển sinh viên khi đủ mọi điều kiện.' : 'chỉ gửi xét duyệt khi đủ mọi điều kiện.'}</p>
         </div>
         <Link to={`/de-tai/${id}`} className={btnGhost}><ArrowLeft aria-hidden="true" className="size-4" />Về chi tiết</Link>
       </div>
@@ -188,6 +190,16 @@ function EditForm({ topic }) {
             <FormField label="Tóm tắt" error={errors.summary?.message} hint={`${words}/${cfg.minSummaryWords} từ`}><textarea rows={7} {...register('summary')} /></FormField>
             <FormField label="Mục tiêu" error={errors.objectives?.message}><textarea rows={4} {...register('objectives')} /></FormField>
           </Section>
+
+          {recruit && (
+            <Section icon={Megaphone} title="Tuyển sinh viên" description="Yêu cầu đối với ứng viên và số sinh viên cần tuyển cho đề tài.">
+              <FormField label="Yêu cầu ứng viên" error={errors.requirements?.message}><textarea rows={4} {...register('requirements')} /></FormField>
+              <FormField label="Số sinh viên cần tuyển" error={errors.recruitSlots?.message} hint={`Từ 1 đến ${cfg.maxMembers} sinh viên`}>
+                {/* Ô trống → null (nháp chưa nhập), khác 0: để schema báo "ít nhất 1" */}
+                <input type="number" inputMode="numeric" min={1} max={cfg.maxMembers} {...register('recruitSlots', { setValueAs: (v) => (v === '' || v == null ? null : Number(v)) })} />
+              </FormField>
+            </Section>
+          )}
 
           <Section icon={Tags} title="Từ khóa" description={`Tối đa ${cfg.maxKeywords} từ khóa, mỗi từ khóa là một cụm chuyên môn ngắn.`}>
             <KeywordsInput value={values.keywords ?? []} max={cfg.maxKeywords} error={keywordError}
@@ -213,14 +225,14 @@ function EditForm({ topic }) {
         <aside aria-label="Điều kiện gửi và thao tác" className="space-y-4 lg:sticky lg:top-24">
           <div className={card}>
             <div className="flex items-baseline justify-between gap-2">
-              <h2 className="font-semibold">Đủ điều kiện gửi</h2>
-              <span className="text-sm font-medium text-muted-foreground tabular-nums">{passed}/{SUBMIT_FIELDS.length}</span>
+              <h2 className="font-semibold">{recruit ? 'Đủ điều kiện công bố' : 'Đủ điều kiện gửi'}</h2>
+              <span className="text-sm font-medium text-muted-foreground tabular-nums">{passed}/{conditions.length}</span>
             </div>
             <div aria-hidden="true" className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div className={`h-full rounded-full transition-[width] duration-300 ${passed === SUBMIT_FIELDS.length ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${(passed / SUBMIT_FIELDS.length) * 100}%` }} />
+              <div className={`h-full rounded-full transition-[width] duration-300 ${passed === conditions.length ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${(passed / conditions.length) * 100}%` }} />
             </div>
             <ul className="mt-4 space-y-3 text-sm">
-              {SUBMIT_FIELDS.map(([k, label]) => (
+              {conditions.map(([k, label]) => (
                 <li key={k} className="flex gap-2.5">
                   {problems[k]
                     ? <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber-600" />

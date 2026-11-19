@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { topicCreateSchema } from '@nckh/shared';
 import { api } from '../../lib/api.js';
+import { useAuth } from '../../lib/auth.js';
 import { applyServerErrors } from '../../lib/forms.js';
 import { toast } from '../../lib/toast.js';
 import { FormField } from '../../components/FormField.jsx';
@@ -17,9 +18,16 @@ const STEPS = [
   ['Kiểm tra trùng lặp và gửi', 'Hệ thống so với các đề tài đã có rồi chuyển hồ sơ cho khoa xét duyệt.'],
 ];
 
-// R5 – UI §4.5
+const LECTURER_STEPS = [
+  ['Tạo nháp', 'Chọn đợt đang mở đăng ký, đặt tên tạm cho đề tài.'],
+  ['Soạn hồ sơ', 'Viết tóm tắt, mục tiêu, từ khóa, yêu cầu ứng viên và số sinh viên cần tuyển.'],
+  ['Kiểm tra trùng lặp và công bố', 'Hệ thống so với các đề tài đã có rồi đưa đề tài lên bảng tin để sinh viên ứng tuyển.'],
+];
+
+// R5 – UI §4.5; bản của giảng viên (UI §12.5) dùng chung form, chỉ đổi chữ và quy trình
 export function TopicCreatePage() {
   const navigate = useNavigate();
+  const lecturer = useAuth().user?.role === 'LECTURER'; // R5' (UI §12.5): giảng viên tạo nháp đề tài tuyển sinh viên
   const qc = useQueryClient();
   const rounds = useQuery({ queryKey: ['rounds', 'all'], queryFn: async () => (await api('/rounds?pageSize=100')).items });
   const { register, handleSubmit, setError, formState: { errors } } = useForm({ resolver: zodResolver(topicCreateSchema), defaultValues: { roundId: '', title: '' } });
@@ -40,7 +48,7 @@ export function TopicCreatePage() {
   });
   return (
     <section>
-      <PageHeader title="Tạo đề tài" description="Bước 1/4: chọn đợt và đặt tên tạm. Nội dung đầy đủ được soạn ở bước sau." />
+      <PageHeader title={lecturer ? 'Công bố đề tài tuyển sinh viên' : 'Tạo đề tài'} description={lecturer ? 'Bước 1/3: chọn đợt và đặt tên tạm. Yêu cầu ứng viên, số sinh viên cần tuyển và nội dung được soạn ở bước sau.' : 'Bước 1/4: chọn đợt và đặt tên tạm. Nội dung đầy đủ được soạn ở bước sau.'} />
       <QueryBox query={rounds} empty="Khoa chưa mở đợt đăng ký nào." isEmpty={(d) => d.length === 0}>
         {(items) => (
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -66,7 +74,7 @@ export function TopicCreatePage() {
             <aside aria-label="Quy trình đăng ký đề tài" className={card}>
               <h2 className="font-semibold">Quy trình</h2>
               <ol className="mt-4 space-y-4">
-                {STEPS.map(([title, text], i) => (
+                {(lecturer ? LECTURER_STEPS : STEPS).map(([title, text], i) => (
                   <li key={title} className="flex gap-3">
                     <span aria-hidden="true" className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold ${i === 0 ? 'bg-vlu-red text-white' : 'bg-muted text-muted-foreground'}`}>{i + 1}</span>
                     <div className="min-w-0">

@@ -35,6 +35,7 @@ export const useSimilarityLatest = (id, enabled = true) => useQuery({
 export const invalidateAfterAction = (qc, id) => [
   ['topic', id], ['similarity-latest', id], ['topics'], ['submissions', id], ['submission', id],
   ['status-history', id], ['advisor-requests'], ['lecturers'], ['invitations'],
+  ['recruitments'], ['applications'], ['topic-applications', id], // DC-13: công bố/ngừng tuyển/chốt nhóm đổi bảng tin và danh sách đơn (UI §12.12)
 ].forEach((queryKey) => qc.invalidateQueries({ queryKey }));
 
 export const useTopic = (id) => useQuery({ queryKey: ['topic', id], queryFn: async () => (await api(`/topics/${id}`)).topic });

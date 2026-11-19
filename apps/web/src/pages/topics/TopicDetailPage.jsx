@@ -66,6 +66,12 @@ function TopicDetail({ topic: t }) {
           <p className="mt-1 text-sm opacity-80">{decision.decidedBy?.fullName} · {fmtDateTime(decision.decidedAt)}</p>
         </Notice>
       )}
+      {t.status === 'RECRUITING' && (
+        <Notice>
+          <p className="font-semibold">Đang tuyển sinh viên – {t.acceptedCount}/{t.recruitSlots} chỗ{t.applicationCounts && `, ${t.applicationCounts.pending} đơn chờ`}</p>
+          {t.applicationCounts && <Link to={`/de-tai/${t.id}/ung-vien`} className="mt-1 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">Xem ứng viên</Link>}
+        </Notice>
+      )}
       {t.status === 'WAITING_ADVISOR' && t.pendingAdvisorRequest && (
         <Notice>Đang chờ {t.pendingAdvisorRequest.lecturer.fullName} phản hồi – {t.pendingAdvisorRequest.pendingDays} ngày</Notice>
       )}
@@ -84,6 +90,7 @@ function TopicDetail({ topic: t }) {
           <div className={`${card} space-y-5`}>
             <Block title="Tóm tắt">{t.summary || '—'}</Block>
             <Block title="Mục tiêu">{t.objectives || '—'}</Block>
+            {t.origin === 'LECTURER' && <Block title="Yêu cầu ứng viên">{t.requirements || '—'}</Block>}
             <div>
               <h2 className={h2}>Từ khóa</h2>
               <div className="mt-2 flex flex-wrap gap-1.5">{t.keywords.length ? t.keywords.map((k) => <Badge key={k} tone="blue">{k}</Badge>) : '—'}</div>
