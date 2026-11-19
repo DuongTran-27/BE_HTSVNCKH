@@ -7,12 +7,15 @@ import { topicName } from '../notifications/notify.js';
 const iso = (d) => d.toISOString();
 const invalid = (details) => badRequest('VALIDATION_ERROR', 'Dữ liệu không hợp lệ', details);
 
+// "Chờ phản hồi" (FR38 – GD7 §10.2): đã có bản nộp mới nhất và bản đó chưa có nhận xét nào mang đánh giá;
+// nhận xét không đánh giá không đưa thẻ rời cột "Chờ đánh giá", còn nộp bản mới thì bản mới chưa có nhận xét nên quay lại true.
 export const presentMilestone = (m, n) => {
   const doc = m.documents?.[0];
   return {
     id: m.id, topicId: m.topicId, order: m.order, name: m.name, output: m.output, dueAt: iso(m.dueAt), required: m.required,
     evaluation: m.evaluation, version: m.version, isOverdue: m.evaluation !== 'PASSED' && n > m.dueAt,
     latestDocument: doc ? { id: doc.id, version: doc.version, uploadedAt: iso(doc.uploadedAt), isLate: doc.isLate } : null,
+    awaitingFeedback: !!doc && !(doc.feedbacks?.length > 0),
     dueChangeCount: m._count?.dueChanges ?? 0,
     reopenCount: m._count?.reopens ?? 0,
     lastReopen: m.reopens?.[0] ? { reason: m.reopens[0].reason, reopenedAt: iso(m.reopens[0].reopenedAt), reopenedBy: { fullName: m.reopens[0].reopenedBy.fullName } } : null, createdAt: iso(m.createdAt),

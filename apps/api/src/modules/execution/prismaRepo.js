@@ -7,8 +7,13 @@ import { REQUIRED_REMOVED_WHERE } from '../topics/closeConditions.js';
 import { findFormerAdvisings, findFormerMembers, COUNCIL_SEATS } from '../topics/prismaRepo.js';
 
 const person = { select: { id: true, fullName: true, role: true } };
+// `feedbacks` lồng trong bản nộp mới nhất: chỉ nhận xét CÓ đánh giá (take 1 là đủ để biết "đã được đánh giá").
+// Prisma gộp theo IN cho cả danh sách mốc nên số truy vấn không tăng theo số mốc (FR38 – GD7 §10.2, không N+1).
 const VIEW_INCLUDE = {
-  documents: { where: { status: 'READY' }, orderBy: { version: 'desc' }, take: 1, select: { id: true, version: true, uploadedAt: true, isLate: true } },
+  documents: {
+    where: { status: 'READY' }, orderBy: { version: 'desc' }, take: 1,
+    select: { id: true, version: true, uploadedAt: true, isLate: true, feedbacks: { where: { evaluation: { not: null } }, take: 1, select: { id: true } } },
+  },
   _count: { select: { dueChanges: true, reopens: true } },
   reopens: { orderBy: [{ reopenedAt: 'desc' }, { id: 'desc' }], take: 1, select: { reason: true, reopenedAt: true, reopenedBy: { select: { fullName: true } } } },
 };
