@@ -64,6 +64,12 @@ export const ssoCallbackQuerySchema = z.object({
   error: z.string().max(64).optional(),
 });
 
+// `next` sau đăng nhập/SSO (UI §1.2, API_GD7 §8.2; m3 BM DC-03): một quy tắc cho cả API (start SSO) và web (chống open redirect).
+// Chỉ đường nội bộ: bắt đầu '/', không '//', không dấu gạch ngược, không ký tự điều khiển (trình duyệt bỏ tab/CR/LF: '/<tab>/x' thành '//x').
+export const nextPathSchema = z.string().max(512).refine(
+  (v) => v.startsWith('/') && !v.startsWith('//') && !v.includes('\\') && ![...v].some((c) => c <= '\u001f' || c === '\u007f'),
+);
+
 export const changePasswordSchema = z.object({
   currentPassword: password.min(1),
   newPassword: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự').max(128)

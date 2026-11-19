@@ -2,7 +2,7 @@ import { Component, Suspense, lazy } from 'react';
 import { Navigate, redirect } from 'react-router';
 import { bootstrapSession } from './lib/api.js';
 import { auth, useAuth } from './lib/auth.js';
-import { SCREENS, homePath } from './lib/nav.js';
+import { SCREENS, afterLoginPath, homePath } from './lib/nav.js';
 import { Layout } from './components/Layout.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { ChangePasswordPage } from './pages/ChangePasswordPage.jsx';
@@ -40,6 +40,7 @@ const PastTopicsPage = lazy(() => import('./pages/topics/PastTopicsPage.jsx').th
 const PastTopicDetailPage = lazy(() => import('./pages/topics/PastTopicsPage.jsx').then((m) => ({ default: m.PastTopicDetailPage })));
 const ChangeRequestsPage = lazy(() => import('./pages/ChangeRequestsPage.jsx').then((m) => ({ default: m.ChangeRequestsPage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx').then((m) => ({ default: m.DashboardPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx').then((m) => ({ default: m.ProfilePage })));
 const RoundFormPage = lazy(() => import('./pages/admin/RoundFormPage.jsx').then((m) => ({ default: m.RoundFormPage })));
 
 // Lỗi tải chunk lazy (mất mạng, bản mới đã thay file cũ) → thông báo + tải lại, thay vì trang trắng
@@ -74,6 +75,14 @@ const guestLoader = async () => {
   return user ? redirect(user.mustChangePassword ? '/doi-mat-khau' : homePath(user.role)) : null;
 };
 
+// /dang-nhap/google (UI §12.3): callback Google đã đặt cookie nckh_rt; refresh lúc khởi động (bootstrapSession) lấy phiên,
+// rồi điều hướng như đăng nhập mật khẩu. Không có phiên (cookie bị chặn, đã hết hạn) → về trang đăng nhập.
+export const ssoLoader = async ({ request }) => {
+  await bootstrapSession();
+  const { user } = auth.get();
+  return redirect(user ? afterLoginPath(user, new URL(request.url).searchParams.get('next')) : '/dang-nhap');
+};
+
 function RequireRole({ roles, children }) {
   const { user } = useAuth();
   return user && roles.includes(user.role) ? children : <Forbidden />;
@@ -83,6 +92,7 @@ function RequireRole({ roles, children }) {
 // Màn đã làm (T304–T308); còn lại là trang tạm. key ép dựng lại khi đổi loại danh mục
 const SCREEN_ELEMENT = {
   'tong-quan': <DashboardPage />,
+  'ho-so': <ProfilePage />,
   'de-tai': <TopicListPage />,
   'thong-bao': <NotificationsPage />,
   'thong-ke': <StatsPage />,
@@ -131,6 +141,7 @@ function HomeRedirect() {
 const hydrateFallbackElement = <p role="status" className="p-4">Đang tải…</p>;
 export const routes = [
   { path: '/dang-nhap', loader: guestLoader, hydrateFallbackElement, element: <LoginPage /> },
+  { path: '/dang-nhap/google', loader: ssoLoader, hydrateFallbackElement },
   {
     loader: authLoader,
     hydrateFallbackElement,

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginPage } from '../src/pages/LoginPage.jsx';
 import { ChangePasswordPage } from '../src/pages/ChangePasswordPage.jsx';
 import { canVisit, homePath, safeNext } from '../src/lib/nav.js';
@@ -16,7 +17,10 @@ const renderAt = (url) => {
     { path: '/doi-mat-khau', element: <ChangePasswordPage /> },
     { path: '*', element: <p>Trang khác</p> },
   ], { initialEntries: [url] });
-  render(<RouterProvider router={router} />);
+  // DC-12: R1 đọc /auth/providers qua TanStack Query; đặt sẵn (SSO tắt) để fetch giả chỉ phục vụ đăng nhập
+  const client = new QueryClient();
+  client.setQueryData(['auth-providers'], { google: false });
+  render(<QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider>);
   return router;
 };
 const type = (label, value) => fireEvent.change(screen.getByLabelText(label), { target: { value } });

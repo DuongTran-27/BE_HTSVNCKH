@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema } from '@nckh/shared';
+import { useQuery } from '@tanstack/react-query';
+import { SSO_ERROR_LABEL, loginSchema } from '@nckh/shared';
 import { useNavigate, useSearchParams } from 'react-router';
-import { login } from '../lib/api.js';
+import { api, login } from '../lib/api.js';
 import { applyServerErrors } from '../lib/forms.js';
 import { useCooldown } from '../lib/useCooldown.js';
-import { canVisit, homePath, safeNext } from '../lib/nav.js';
+import { afterLoginPath, safeNext } from '../lib/nav.js';
 import { FormField } from '../components/FormField.jsx';
-import { btnPrimary } from '../components/ui.jsx';
+import { btn, btnPrimary } from '../components/ui.jsx';
 import { BookOpenCheck, Eye, EyeOff, FlaskConical, ShieldCheck, Users } from 'lucide-react';
 
 const FEATURES = [
@@ -22,11 +23,35 @@ const DEMO_ACCOUNTS = import.meta.env.DEV ? [
   ['Quản trị viên', 'QT001'], ['Cán bộ khoa', 'CB001'], ['Giảng viên', 'GV001'], ['Sinh viên', '2374801030010'],
 ].map(([label, code]) => ({ label, code, password: 'Nckh@2026-dev' })) : [];
 
+// Mã `sso_error` do callback Google gắn lên URL (UI §12.3); mã lạ → thông điệp chung
+// Chỉ tra khóa riêng của bảng nhãn: mã tùy ý trên URL (vd. `constructor`) không được lấy giá trị thừa kế từ Object
+const ssoMessage = (code) =>
+  code ? (Object.hasOwn(SSO_ERROR_LABEL, code) ? SSO_ERROR_LABEL[code] : 'Đăng nhập bằng Google không thành công') : '';
+
+// Logo "G" nhiều màu của Google (nhận diện nút theo hướng dẫn thương hiệu); trang trí, trình đọc màn hình đọc chữ của nút
+function GoogleLogo() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 48 48" className="size-5">
+      <path fill="#EA4335" d="M24 9.5c3.5 0 6.7 1.2 9.2 3.6l6.9-6.9C35.9 2.4 30.4 0 24 0 14.6 0 6.6 5.4 2.6 13.3l8 6.2C12.5 13.6 17.8 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z" />
+      <path fill="#FBBC05" d="M10.6 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-8-6.2C.9 16.6 0 20.2 0 24s.9 7.4 2.6 10.7l8-6.2z" />
+      <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.8l-8 6.2C6.6 42.6 14.6 48 24 48z" />
+    </svg>
+  );
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const [show, setShow] = useState(false);
-  const [formError, setFormError] = useState('');
+  const [formError, setFormError] = useState(() => ssoMessage(params.get('sso_error')));
+  // Nút Google chỉ hiện khi server bật SSO; lỗi gọi coi như tắt, form mật khẩu vẫn dùng được (UI §12.3)
+  const providers = useQuery({ queryKey: ['auth-providers'], queryFn: () => api('/auth/providers'), staleTime: Infinity, retry: false });
+  const next = safeNext(params.get('next'));
+  // Thông điệp đã giữ trong state; bỏ `sso_error` khỏi URL để tải lại/chia sẻ link không hiện lỗi cũ
+  useEffect(() => {
+    if (params.has('sso_error')) setParams((p) => { const n = new URLSearchParams(p); n.delete('sso_error'); return n; }, { replace: true });
+  }, [params, setParams]);
   const cd = useCooldown();
   const { register, handleSubmit, setError, resetField, setFocus, setValue, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(loginSchema),
@@ -38,8 +63,7 @@ export function LoginPage() {
     try {
       const user = await login(values);
       // next là trang của phiên trước (có thể vai trò khác): vai trò mới không vào được thì về trang chủ của vai trò
-      const next = safeNext(params.get('next'));
-      navigate(user.mustChangePassword ? '/doi-mat-khau' : (next && canVisit(user.role, next) ? next : homePath(user.role)), { replace: true });
+      navigate(afterLoginPath(user, next), { replace: true });
     } catch (err) {
       if (err.status === 429) cd.start(err.retryAfter);
       const msgs = applyServerErrors(err, setError, ['identifier', 'password']);
@@ -71,6 +95,15 @@ export function LoginPage() {
       <p className="mb-8 flex items-center gap-2.5 font-semibold text-blue-800 lg:hidden"><span className="grid size-8 place-items-center rounded-lg bg-vlu-red text-white"><FlaskConical aria-hidden="true" className="size-4" /></span>Nghiên cứu khoa học sinh viên</p>
       <h1 className="text-2xl font-bold">Đăng nhập</h1>
       <p className="mt-1 text-sm text-slate-600">Dùng mã sinh viên/giảng viên hoặc email do khoa cấp.</p>
+      {providers.data?.google === true && (
+        <>
+          {/* Liên kết GET cấp trên cùng, không form/window.location: CSP form-action 'self' chặn chuỗi chuyển hướng sang Google (API_GD7 §8.2) */}
+          <a href={`/api/auth/google/start${next ? `?next=${encodeURIComponent(next)}` : ''}`} className={`${btn} mt-6 w-full gap-3`}>
+            <GoogleLogo />Đăng nhập bằng Google
+          </a>
+          <p className="mt-4 flex items-center gap-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">hoặc</p>
+        </>
+      )}
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6 space-y-4">
         <FormField label="Mã hoặc email" error={errors.identifier?.message}>
           <input type="text" autoComplete="username" autoCapitalize="none" {...register('identifier')} />

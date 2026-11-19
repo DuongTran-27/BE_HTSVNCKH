@@ -1,7 +1,7 @@
 // T215 – schema dùng chung trên zod 4 (QD_ZOD §2, §5, §6)
 import { describe, it, expect, vi } from 'vitest';
 import { z } from 'zod';
-import { topicDraftSchema, topicSubmitSchema, loginSchema, changePasswordSchema, documentLinkSchema } from './index.js';
+import { topicDraftSchema, topicSubmitSchema, loginSchema, changePasswordSchema, documentLinkSchema, nextPathSchema } from './index.js';
 
 const validTopic = {
   title: 'Hệ thống quản lý đề tài NCKH',
@@ -88,5 +88,13 @@ describe('documentLinkSchema (T406)', () => {
     }
     expect(documentLinkSchema.safeParse({ stage: 'PROPOSAL', title: 'a', url: 'https://u:p@x.com' }).success).toBe(false);
     expect(documentLinkSchema.safeParse({ stage: 'PROPOSAL', title: 'a', url: 'https://x.com' }).success).toBe(true);
+  });
+});
+
+// TASK-DC-12 (m3 BM DC-03): một quy tắc `next` cho API (start SSO) và web (đăng nhập, /dang-nhap/google)
+describe('nextPathSchema', () => {
+  it.each(['/de-tai', '/de-tai?x=1&y=2', `/${'a'.repeat(511)}`])('nhận %s', (v) => expect(nextPathSchema.safeParse(v).success).toBe(true));
+  it.each(['//evil.com', '/\\evil.com', 'https://evil.com', 'de-tai', '', '/\t/evil.com', '/\n/x', '/\u007f', `/${'a'.repeat(512)}`, ['/a'], null, undefined])('từ chối %j', (v) => {
+    expect(nextPathSchema.safeParse(v).success).toBe(false);
   });
 });

@@ -604,7 +604,7 @@ Tắt: `emailStatus` null, không gọi transport. Tiêu đề đề tài chứa
 | `profileUpdateSchema`, `PHONE_REGEX` | §10.1 | DC-02 |
 | `DEFAULT_ROUND_CONFIG` + `requireDefense`, `defenseGrades`; `roundConfigSchema` tương ứng; hàm thuần `gradeFromDefenseScore(score, grades)` (unit test biên 4.99/5/6.99/7/8.99/9) | §2.4, §7.4 | DC-07 |
 | `NOTIFICATION_TYPES` + nhãn: `APPLICATION_RECEIVED`, `APPLICATION_ACCEPTED`, `APPLICATION_DECLINED`, `GROUP_FINALIZED`, `DEFENSE_REQUESTED`, `DEFENSE_RETURNED`, `COUNCIL_MEMBER_ADDED`, `COUNCIL_MEMBER_REMOVED`, `COUNCIL_ASSIGNED`, `COUNCIL_UNASSIGNED`, `DEFENSE_DECIDED` | §3–§7 | task gắn sự kiện |
-| `SSO_ERROR_LABEL` (mã `sso_error` → thông điệp tiếng Việt: `CANCELLED`, `STATE_MISMATCH`, `GOOGLE_ERROR`, `EMAIL_NOT_VERIFIED`, `DOMAIN_NOT_ALLOWED`, `NO_ACCOUNT`, `PASSWORD_ONLY`, `ACCOUNT_LOCKED`); `ssoCallbackQuerySchema` (chỉ dùng ở API) | §8 | DC-03 |
+| `SSO_ERROR_LABEL` (mã `sso_error` → thông điệp tiếng Việt: `CANCELLED`, `STATE_MISMATCH`, `GOOGLE_ERROR`, `EMAIL_NOT_VERIFIED`, `DOMAIN_NOT_ALLOWED`, `NO_ACCOUNT`, `PASSWORD_ONLY`, `ACCOUNT_LOCKED`, `RATE_LIMITED`, `SERVER_ERROR` – hai mã cuối bổ sung ở DC-12: callback bị 429 hoặc lỗi máy chủ cũng 302 về `/dang-nhap`); `ssoCallbackQuerySchema` (chỉ dùng ở API) | §8 | DC-03 |
 | `NOTIFICATION_TYPES` thêm `RECRUITMENT_CANCELLED` (thành viên bị gỡ khi ngừng tuyển) | §3.4 | DC-05 |
 | `NOTIFICATION_TYPES` thêm `APPLICATION_WITHDRAWN` (GVHD đề tài có đơn tự rút theo G51) | §4.4 bước 6 | DC-06 |
 

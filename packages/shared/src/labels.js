@@ -123,4 +123,7 @@ export const SSO_ERROR_LABEL = Object.freeze({
   NO_ACCOUNT: 'Tài khoản chưa được cấp trên hệ thống. Vui lòng liên hệ cán bộ khoa.',
   PASSWORD_ONLY: 'Tài khoản quản trị chỉ đăng nhập bằng mật khẩu',
   ACCOUNT_LOCKED: 'Tài khoản đã bị khóa hoặc đang tạm khóa',
+  // m2 BM DC-03: callback bị giới hạn tần suất hoặc lỗi hệ thống vẫn quay về trang đăng nhập
+  RATE_LIMITED: 'Thử đăng nhập quá nhiều lần, vui lòng thử lại sau',
+  SERVER_ERROR: 'Hệ thống đang gặp sự cố, vui lòng thử lại sau',
 });

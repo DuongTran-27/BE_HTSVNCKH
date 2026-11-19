@@ -84,6 +84,15 @@ export const authRouter = ({ authService, ssoService, requireAuth, env }) => {
     // Đích cố định trên PUBLIC_APP_URL; token không lên URL, FE gọi /refresh. `next` chỉ là tham số đã mã hóa.
     res.redirect(302, `${ssoService.appUrl}/dang-nhap/google${out.next ? `?next=${encodeURIComponent(out.next)}` : ''}`);
   });
+  // m2 BM DC-03: callback là điều hướng trình duyệt – 429 của limiter và lỗi hạ tầng (DB, lock timeout…) cũng 302 về
+  // trang đăng nhập thay vì trang JSON thô. SSO tắt (404 của ssoOn) hoặc đã gửi header → errorHandler chung như cũ.
+  r.use('/google/callback', (err, req, res, next) => {
+    if (!ssoService.enabled || res.headersSent) return next(err);
+    const rateLimited = err?.status === 429;
+    if (!rateLimited) req.log?.error({ err }, 'Lỗi callback SSO'); // tx đã rollback, không cấp phiên
+    res.clearCookie(OAUTH_COOKIE, { path: oauthCookieOpts.path });
+    res.redirect(302, `${ssoService.appUrl}/dang-nhap?sso_error=${rateLimited ? 'RATE_LIMITED' : 'SERVER_ERROR'}`);
+  });
 
   r.get('/me', requireAuth, (req, res) => res.json({ user: req.user }));
   return r;

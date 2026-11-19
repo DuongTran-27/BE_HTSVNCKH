@@ -125,6 +125,7 @@ function UserDetail({ user: target }) {
           {target.isLocked ? <Badge tone="red">Đã khóa</Badge> : <Badge tone="green">Hoạt động</Badge>}
           {target.mustChangePassword && <Badge tone="amber">Chờ đổi mật khẩu</Badge>}
         </dd>
+        <dt className="text-slate-500">Số điện thoại</dt><dd>{target.phone ?? '—'}</dd>
         <dt className="text-slate-500">Tạo lúc</dt><dd>{fmtDateTime(target.createdAt)}</dd>
       </dl>
       </div>

@@ -1,15 +1,13 @@
 import { matchPath } from 'react-router';
+import { nextPathSchema } from '@nckh/shared';
 
 // Trang chủ theo vai trò (UI §2) và kiểm `next` chống open redirect (UI §1.2)
 const HOME = { STUDENT: '/de-tai', LECTURER: '/de-nghi-huong-dan', STAFF: '/xet-duyet', ADMIN: '/quan-ly/tai-khoan' };
 
 export const homePath = (role) => HOME[role] ?? '/';
 
-/** Chỉ nhận đường dẫn nội bộ: bắt đầu bằng '/', không '//', không có '\'. Sai → null. */
-export const safeNext = (next) => {
-  if (typeof next !== 'string' || !next.startsWith('/') || next.startsWith('//') || next.includes('\\') || [...next].some((c) => c <= '\u001f' || c === '\u007f')) return null; // tab/CR/LF bị trình duyệt bỏ: '/\t/x' thành '//x'
-  return next;
-};
+/** Chỉ nhận đường dẫn nội bộ (nextPathSchema dùng chung với API, m3 BM DC-03). Sai → null. */
+export const safeNext = (next) => (nextPathSchema.safeParse(next).success ? next : null);
 
 const S = 'STUDENT';
 const L = 'LECTURER';
@@ -18,6 +16,7 @@ const A = 'ADMIN';
 // [đường dẫn, vai trò được vào, tiêu đề] – UI §3
 export const SCREENS = [
   ['tong-quan', [S, L, F, A], 'Tổng quan'],
+  ['ho-so', [S, L, F, A], 'Hồ sơ cá nhân'],
   ['de-tai', [S, L, F], 'Đề tài'],
   ['de-tai/moi', [S], 'Tạo đề tài'],
   ['de-tai/:id', [S, L, F], 'Chi tiết đề tài'],
@@ -63,6 +62,13 @@ export const canVisit = (role, path) => {
   if (pathname === '/' || pathname === '/doi-mat-khau') return true;
   const screen = SCREENS.find(([p]) => matchPath(`/${p}`, pathname));
   return Boolean(screen?.[1].includes(role));
+};
+
+/** Đích sau khi có phiên (mật khẩu hoặc Google – UI §4.1, §12.3): mật khẩu tạm → đổi mật khẩu; `next` của vai trò khác → trang chủ */
+export const afterLoginPath = (user, nextRaw) => {
+  if (user.mustChangePassword) return '/doi-mat-khau';
+  const next = safeNext(nextRaw);
+  return next && canVisit(user.role, next) ? next : homePath(user.role);
 };
 
 // Menu theo vai trò (UI §2). Chỉ để dẫn đường, backend vẫn kiểm quyền (FR25)

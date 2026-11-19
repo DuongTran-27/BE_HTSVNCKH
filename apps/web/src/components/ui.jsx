@@ -80,8 +80,8 @@ export function QueryBox({ query, empty, isEmpty, children }) {
 
 /** Màu nhãn trạng thái đề tài: chờ người khác = blue, cần sinh viên xử lý = amber, đang chạy = green, kết thúc xấu = red */
 export const STATUS_TONE = {
-  WAITING_ADVISOR: 'blue', HAS_ADVISOR: 'blue', UNDER_REVIEW: 'blue', WAITING_CLOSE: 'blue',
-  NEEDS_REVISION: 'amber', IN_PROGRESS: 'green', REJECTED: 'red',
+  WAITING_ADVISOR: 'blue', HAS_ADVISOR: 'blue', UNDER_REVIEW: 'blue', WAITING_CLOSE: 'blue', WAITING_DEFENSE: 'blue',
+  NEEDS_REVISION: 'amber', IN_PROGRESS: 'green', RECRUITING: 'green', REJECTED: 'red',
 };
 
 export function Badge({ children, tone = 'slate' }) {

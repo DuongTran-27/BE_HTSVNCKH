@@ -209,14 +209,39 @@ describe('GET /api/auth/google/callback – mọi nhánh lỗi → 302 /dang-nha
 });
 
 describe('Giới hạn tần suất SSO (M1, n1 BM)', () => {
-  it('21 callback lỗi cùng IP → lần 21 bị 429 RATE_LIMITED; IP khác không bị ảnh hưởng', async () => {
-    const statuses = [];
-    for (let i = 0; i < 21; i++) statuses.push((await request(app).get('/api/auth/google/callback?code=a&state=b').set('x-forwarded-for', '203.0.113.7')).status);
-    expect(statuses.slice(0, 20).every((s) => s === 302)).toBe(true);
-    const last = await request(app).get('/api/auth/google/callback?code=a&state=b').set('x-forwarded-for', '203.0.113.7');
-    expect(statuses[20]).toBe(429);
-    expect(last.body.error.code).toBe('RATE_LIMITED');
-    expect((await request(app).get('/api/auth/google/callback?code=a&state=b').set('x-forwarded-for', '203.0.113.8')).status).toBe(302);
+  // m2 BM DC-03 (làm ở DC-12): lần bị chặn không còn trả JSON 429 mà 302 về /dang-nhap?sso_error=RATE_LIMITED
+  it('21 callback lỗi cùng IP → lần 21 bị chặn: 302 sso_error=RATE_LIMITED, xóa nckh_oauth; IP khác không bị ảnh hưởng', async () => {
+    const hit = (ip) => request(app).get('/api/auth/google/callback?code=a&state=b').set('x-forwarded-for', ip);
+    const codes = [];
+    for (let i = 0; i < 20; i++) codes.push(ssoError(await hit('203.0.113.7')));
+    expect(codes.every((c) => c === 'STATE_MISMATCH')).toBe(true);
+    const last = await hit('203.0.113.7').set('Cookie', 'nckh_oauth=x');
+    expect(last.status).toBe(302);
+    expect(last.headers.location).toBe(`${APP_URL}/dang-nhap?sso_error=RATE_LIMITED`);
+    expect(last.headers['ratelimit-remaining']).toBe('0');
+    expect(setCookieLine(last, 'nckh_oauth')).toMatch(/Expires=Thu, 01 Jan 1970/);
+    expect(SSO_ERROR_LABEL.RATE_LIMITED).toBeTruthy();
+    expect(ssoError(await hit('203.0.113.8'))).toBe('STATE_MISMATCH');
+  });
+
+  it('lỗi DB khi cấp phiên → 302 sso_error=SERVER_ERROR, không cookie nckh_rt, không JSON (m2 BM DC-03)', async () => {
+    repo.transaction = async () => { throw Object.assign(new Error('db down'), { name: 'PrismaClientKnownRequestError', code: 'P2010', meta: { code: '55P03' } }); };
+    const { res } = await runSso(app, google);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(`${APP_URL}/dang-nhap?sso_error=SERVER_ERROR`);
+    expect(res.headers['content-type'] ?? '').not.toMatch(/json/);
+    expect(cookieValue(res, 'nckh_rt')).toBeUndefined();
+    expect(repo.tokens.size).toBe(0);
+    expect(SSO_ERROR_LABEL.SERVER_ERROR).toBeTruthy();
+    repo.findUsersByEmailInsensitive = async () => { throw new Error('connection reset'); };
+    expect(ssoError((await runSso(app, google)).res)).toBe('SERVER_ERROR');
+  });
+
+  it('SSO tắt: callback vẫn 404 JSON chuẩn (lỗi không bị đổi thành 302)', async () => {
+    build(testEnv, [student]);
+    const res = await request(app).get('/api/auth/google/callback?code=a&state=b');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('NOT_FOUND');
   });
 
   it('25 lần SSO thành công cùng IP trong 15 phút không bị 429', async () => {

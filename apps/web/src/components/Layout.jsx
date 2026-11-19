@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Navigate, Outlet, matchPath, useLocation } from 'react-router';
 import {
   Archive, BarChart3, CalendarRange, ChevronRight, ClipboardCheck, FileStack, FlaskConical, GitPullRequestArrow, History,
-  KeyRound, LayoutDashboard, LibraryBig, LogOut, Mail, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, Tags, UserCheck, Users,
+  KeyRound, LayoutDashboard, LibraryBig, LogOut, Mail, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, Tags, UserCheck, UserRound, Users,
 } from 'lucide-react';
 import { logout } from '../lib/api.js';
 import { useAuth } from '../lib/auth.js';
@@ -146,6 +146,7 @@ export function Layout() {
               <ThemeIcon aria-hidden="true" className="size-4" /><span className="sr-only">Chế độ tối</span>
             </button>
             {!user.mustChangePassword && <NotificationBell />}
+            {!user.mustChangePassword && <NavLink to="/ho-so" className={linkClass}><UserRound aria-hidden="true" className="size-4" /><span className="sr-only sm:not-sr-only">Hồ sơ</span></NavLink>}
             {!user.mustChangePassword && <NavLink to="/doi-mat-khau" className={linkClass}><KeyRound aria-hidden="true" className="size-4" /><span className="sr-only sm:not-sr-only">Đổi mật khẩu</span></NavLink>}
             <button type="button" onClick={logout} className={linkClass({ isActive: false })}><LogOut aria-hidden="true" className="size-4" /><span className="sr-only sm:not-sr-only">Đăng xuất</span></button>
             <div className="ml-1 flex min-w-0 items-center gap-2.5 border-l pl-3">

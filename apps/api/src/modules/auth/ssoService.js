@@ -2,13 +2,12 @@
 // ADMIN chỉ dùng mật khẩu (G60). `google` là OAuth2Client của google-auth-library (test tiêm bản giả, không gọi mạng).
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import jwt from 'jsonwebtoken';
-import { ssoCallbackQuerySchema } from '@nckh/shared';
+import { nextPathSchema, ssoCallbackQuerySchema } from '@nckh/shared';
 import { missingGoogleEnv } from '../../config/env.js';
 import { issueTokens } from './service.js';
 
 export const OAUTH_COOKIE = 'nckh_oauth';
 export const OAUTH_TTL_SECONDS = 600;
-const NEXT_MAX = 512;
 
 const random = () => randomBytes(32).toString('base64url');
 const sameString = (a, b) => {
@@ -16,8 +15,8 @@ const sameString = (a, b) => {
   return x.length === y.length && timingSafeEqual(x, y);
 };
 // `next` chỉ là đường nội bộ để FE quay lại; sai dạng thì bỏ (m3 BM). Server không bao giờ chuyển hướng tới nó.
-export const safeNext = (v) =>
-  typeof v === 'string' && v.length <= NEXT_MAX && v.startsWith('/') && !v.startsWith('//') && !v.includes('\\') ? v : undefined;
+// Cùng schema với web (nextPathSchema, m3 BM DC-03) để hai phía không lệch quy tắc.
+export const safeNext = (v) => (nextPathSchema.safeParse(v).success ? v : undefined);
 
 export const createSsoService = ({ repo, env, google, logger, now = () => new Date() }) => {
   const enabled = missingGoogleEnv(env).length === 0;
