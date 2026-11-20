@@ -513,6 +513,66 @@ export async function seed(prisma, { now = new Date() } = {}) {
         }
         await tx.topic.update({ where: { id: topic.id }, data: { status, version: PATHS[i].length } });
       }
+
+      // DC-19 (FR32, FR33): đơn ứng tuyển của đề tài GV đang tuyển. Chọn SV có đề tài không hoạt động (bị từ chối/hủy)
+      // để không vượt hạn mức đề tài hoạt động khi GV duyệt đơn. Đề tài 33: 2 đơn chờ + 1 đơn bị từ chối; đề tài 34: 1 đơn chờ.
+      const applyAt = (hoursAgo) => new Date(nowMs - hoursAgo * 3600000);
+      const applications = [
+        [33, 15, 'PENDING', 30],
+        [33, 16, 'PENDING', 20],
+        [33, 17, 'DECLINED', 50],
+        [34, 21, 'PENDING', 10],
+      ];
+      for (const [t, s, appStatus, hoursAgo] of applications) {
+        const declined = appStatus === 'DECLINED';
+        await tx.topicApplication.create({
+          data: {
+            topicId: created[t].topic.id,
+            studentId: students[s].id,
+            coverLetter: `Em đã học Cấu trúc dữ liệu và giải thuật, muốn tham gia đề tài "${created[t].content.title}" để rèn luyện kỹ năng nghiên cứu.`,
+            status: appStatus,
+            ...(declined && {
+              reason: 'Nhóm ưu tiên bạn đã có kinh nghiệm với chủ đề này',
+              decidedById: lecturers[t % 8].id,
+              respondedAt: applyAt(hoursAgo - 5),
+            }),
+            createdAt: applyAt(hoursAgo),
+          },
+        });
+      }
+
+      // DC-19 (FR35–FR37): hội đồng cho đề tài Chờ bảo vệ số 30 (GVHD = lecturers[6]); 3 thành viên khác GVHD (xung đột
+      // lợi ích), mã HD-… lấy từ council_code_seq như ứng dụng, một phân công mở và một điểm bảo vệ đã nhập.
+      const defTopic = created[30].topic;
+      const [{ nextval }] = await tx.$queryRaw`SELECT nextval('council_code_seq')`;
+      const council = await tx.council.create({
+        data: {
+          code: `HD-${academicYear.slice(0, 4)}-${String(Number(nextval)).padStart(3, '0')}`,
+          facultyId: faculty.id,
+          roundId: round.id,
+          name: 'Hội đồng nghiệm thu mẫu số 1',
+          createdById: staff[0].id,
+          createdAt: new Date(nowMs - 3 * DAY),
+          members: {
+            create: [
+              { lecturerId: lecturers[1].id, role: 'CHAIR' },
+              { lecturerId: lecturers[2].id, role: 'SECRETARY' },
+              { lecturerId: lecturers[3].id, role: 'MEMBER' },
+            ],
+          },
+        },
+      });
+      const assignment = await tx.councilAssignment.create({
+        data: { councilId: council.id, topicId: defTopic.id, assignedById: staff[0].id, assignedAt: new Date(nowMs - 2 * DAY) },
+      });
+      await tx.defenseScore.create({
+        data: {
+          assignmentId: assignment.id,
+          memberId: lecturers[3].id,
+          score: 8.25,
+          comment: 'Sản phẩm hoàn chỉnh, trình bày rõ ràng; cần bổ sung thêm phần đánh giá hiệu năng.',
+        },
+      });
     },
     { timeout: 120000 },
   );
