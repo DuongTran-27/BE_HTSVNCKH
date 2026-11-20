@@ -135,6 +135,24 @@ async function buildDataset(P) {
   // FR21 trước duyệt: DRAFT, thành viên rời ngay
   const draft = await mkTopic('DRAFT', sv[18], { members: [sv[19]], lecturer: null, content: { title: `Đề tài nháp ${P}` }, version: 1 });
 
+  // ---------- DC-21..23 (FR31–FR39): tài khoản riêng, không spec nào khác dùng ----------
+  // DC-21: GV mới (chưa có đề tài, không chạm hạn mức FR16) + 2 SV chưa có đề tài (FR03: 1 đề tài hoạt động)
+  const [gvR, svRA, svRB] = [await mk('LECTURER', `GV${P}R`, `TS. Trịnh Văn Tuyển ${P}`), await mk('STUDENT', `SV${P}RA`, `Lương Thị Ứng Tuyển ${P}`), await mk('STUDENT', `SV${P}RB`, `Âu Văn Bị Từ Chối ${P}`)];
+  // DC-22: GVHD + 3 GV hội đồng mới, đề tài IN_PROGRESS đủ điều kiện ra hội đồng (mốc bắt buộc Đạt + báo cáo FINAL READY)
+  const [gvD, h1, h2, h3, svD] = [
+    await mk('LECTURER', `GV${P}D`, `TS. Đinh Văn Hướng Dẫn ${P}`), await mk('LECTURER', `GV${P}H1`, `PGS. Chu Thị Chủ Tịch ${P}`),
+    await mk('LECTURER', `GV${P}H2`, `TS. Ông Văn Thư Ký ${P}`), await mk('LECTURER', `GV${P}H3`, `TS. Yên Thị Ủy Viên ${P}`),
+    await mk('STUDENT', `SV${P}D`, `Giáp Văn Bảo Vệ ${P}`),
+  ];
+  const defense = await mkExec(svD, `Đề tài hội đồng ${P} – chấm bảo vệ tiếng Việt`, [['Báo cáo tổng kết hội đồng E2E', -DAY, 'PASSED']], gvD);
+  const defMs = await prisma.milestone.findFirst({ where: { topicId: defense.id } });
+  await prisma.document.create({ data: { topicId: defense.id, milestoneId: defMs.id, stage: 'FINAL', kind: 'LINK', version: 1, fileName: 'Báo cáo tổng kết', externalUrl: 'https://github.com/nckh/e2e', status: 'READY', uploadedById: svD.id } });
+  // DC-23: SV sửa SĐT; đề tài Kanban: mốc 1 có bản nộp chưa đánh giá (Chờ đánh giá), mốc 2 Đạt
+  const [svP, gvK, svK] = [await mk('STUDENT', `SV${P}P`, `Phùng Thị Hồ Sơ ${P}`), await mk('LECTURER', `GV${P}K`, `TS. Khổng Văn Kanban ${P}`), await mk('STUDENT', `SV${P}K`, `Lục Thị Thẻ ${P}`)];
+  const kanban = await mkExec(svK, `Đề tài Kanban ${P}`, [['Mốc chờ đánh giá Kanban', 10 * DAY], ['Mốc đã đạt Kanban', 5 * DAY, 'PASSED']], gvK);
+  const kMs = await prisma.milestone.findFirst({ where: { topicId: kanban.id, order: 1 } });
+  await prisma.document.create({ data: { topicId: kanban.id, milestoneId: kMs.id, stage: 'MIDTERM', kind: 'LINK', version: 1, fileName: 'Bản nộp Kanban', externalUrl: 'https://github.com/nckh/kanban', status: 'READY', uploadedById: svK.id } });
+
   const closedOk = await prisma.topic.findMany({ where: { status: 'CLOSED', results: { some: { isCurrent: true, result: { in: ['EXCELLENT', 'GOOD', 'PASS'] } } } }, select: { code: true, title: true, summary: true }, orderBy: { code: 'asc' } });
   const leaders = await prisma.user.findMany({ where: { code: { in: ['2374802010027', '2374801030028'] } }, select: { fullName: true } });
   const u = (x) => ({ id: x.id, code: x.code, name: x.fullName });
@@ -147,6 +165,10 @@ async function buildDataset(P) {
     fail: { code: failTopic.code, title: failTopic.title }, closedOk, leaderNames: leaders.map((l) => l.fullName),
     users: { sv1: u(sv1), sv2: u(sv2), sv3: u(sv3), gv: u(gv), cb: u(cb), admin: { code: 'QT001' }, gv2: u(gv2), gv3: u(gv3), cbx: u(cbx),
       ...Object.fromEntries(Object.entries(sv).map(([i, x]) => [`sv${i}`, u(x)])) },
+    // nội dung trùng đề tài đang thực hiện đầu tiên -> FR06 HIGH khi công bố
+    rec: { gv: u(gvR), svA: u(svRA), svB: u(svRB), content: { ...content(inProg[0]), title: `${inProg[0].title} tuyển ${P}` } },
+    def: { topic: t(defense), gv: u(gvD), sv: u(svD), h1: u(h1), h2: u(h2), h3: u(h3) },
+    dc23: { sv: u(svP), kanban: t(kanban), gv: u(gvK), sv2: u(svK) },
     gd6: { adv: t(adv), cancel: t(cancel), leave: t(leave), change: t(change), reopen: t(reopen), result: t(result), revise: t(revise), reject: t(reject), g5: t(g5), draft: t(draft) },
   };
 }
