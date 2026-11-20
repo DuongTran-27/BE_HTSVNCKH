@@ -1,6 +1,6 @@
 # Báo cáo hoàn thành – Website quản lý nghiên cứu khoa học sinh viên Khoa Công nghệ Thông tin
 
-Ngày: 2026-11-11 (cập nhật; bản đầu 2026-11-08). Kiểm tra cuối chạy lại: `docs/agents/reviews/FINAL-reviewer.md` (APPROVED, hai lượt cùng kết quả), `docs/agents/reviews/FINAL-bao-mat.md` (v2, APPROVED).
+Ngày: 2026-11-20 (cập nhật sau phần bổ sung theo đề cương DC-00..24; các bản trước 2026-11-08, 2026-11-11). Kiểm tra cuối 2026-11-20: hai lượt cùng kết quả (mục 2), `docs/agents/reviews/FINAL-bao-mat-v3.md` APPROVED.
 
 ## 1. Tính năng
 Đủ FR01–FR27 theo `docs/DAC_TA.md` (truy vết FR ↔ test: `docs/agents/TRUY_VET.md`; mọi FR có test mang mã `TC-FRxx`):
@@ -17,7 +17,22 @@ Bổ sung sau bản 2026-11-08 (yêu cầu trực tiếp của chủ dự án, x
 - Lỗi khóa ngoại trả 409 với thông điệp tiếng Việt thay cho 500.
 - Dữ liệu demo thống kê nhiều năm học: `npm run demo:stats -w @nckh/api` (chỉ DB dev/demo).
 
-## 2. Kiểm thử (hai lượt liên tiếp, cùng kết quả – 2026-11-11)
+Bổ sung theo đề cương nhóm (2026-11-18 → 2026-11-20, FR28–FR39 trong `docs/DAC_TA.md` §9, TASK-DC-00..24, truy vết `docs/agents/TRUY_VET.md` mục 2b):
+- Đăng nhập Google (FR28, chỉ tên miền trường, bật bằng biến môi trường) và email thông báo SMTP (FR29, hộp thư đi có thử lại, bật bằng biến môi trường).
+- Hồ sơ cá nhân (FR30); giảng viên công bố đề tài tuyển, sinh viên ứng tuyển, giảng viên duyệt/từ chối và chốt nhóm (FR31–FR33).
+- Điểm quá trình, đề nghị ra hội đồng, lập hội đồng (chặn xung đột lợi ích), chấm độc lập, thư ký/chủ tịch chốt nghiệm thu 2 bước, kết quả nguồn hội đồng (FR34–FR37).
+- Kanban mốc (kéo thả + bàn phím, FR38), xuất Excel thống kê (FR39).
+
+## 2. Kiểm thử (hai lượt liên tiếp, cùng kết quả – 2026-11-20)
+| Lệnh | Kết quả |
+|---|---|
+| `npm ci`, `npm run lint`, `npm run build -w @nckh/web` | exit 0 |
+| `npm test -- --coverage` | shared 115, api 1222, web 384 – tất cả đạt; độ phủ ≥ 70% (api lines 95,25%, shared lines 95,95%) |
+| `npm run test:e2e -w @nckh/web` | 100/100 đạt (6,3 và 6,4 phút; desktop 1280 + 360 px) |
+
+Sau review bảo mật cuối v3 (thêm CHECK điểm 0..10, limiter rút đơn, test bảo mật FINAL-v3): `npm test` shared 115, api 1227, web 384 đạt; lint 0; E2E 100/100 (6,3 phút).
+
+### Lượt trước (2026-11-11)
 | Lệnh | Kết quả |
 |---|---|
 | `npm ci`, `npm run lint`, `npm run build -w @nckh/web` | exit 0 |
@@ -53,10 +68,15 @@ Agent không deploy, không tạo tài khoản dịch vụ, không đọc `.env`
 3. **Bắt buộc trước khi dùng thật** – checklist sau deploy §6.4: đo số hop rồi đặt `trust proxy` đúng (MAJOR T703c mục 3, đặt sai sẽ hỏng giới hạn đăng nhập theo IP), sau đó gỡ `LOG_PROXY_HOPS`; kiểm gọi thẳng Render nhận 404, cron qua domain Vercel trả 200, `/api/docs` 404 ở production, header bảo mật/CSP, cookie trên Chrome/Safari, nhập CSV 2.000 dòng không bị proxy cắt.
 4. **CSP với giao diện mới** – đã kiểm cục bộ trên build production với header của `vercel.json` (`docs/agents/reports/TASK-CSP-CHECK.md`): thuộc tính `style` không bị chặn; vi phạm `eval` của Zod đã sửa; còn một vi phạm đã biết khi mở hộp thoại (Radix chèn `<style>` khóa cuộn nền → chỉ mất khóa cuộn) – **chờ quyết**: giữ CSP nghiêm (đề xuất) hay thêm `'unsafe-inline'` riêng cho `style-src-elem` (cần bao-mat duyệt). Sau deploy vẫn xem Console trên bản preview theo `VAN_HANH.md` §6.4 mục 8.
 5. Cấu hình secret sao lưu và diễn tập khôi phục một lần có biên bản (§3.1–§3.3).
-6. Trả lời `docs/agents/CAU_HOI.md` #10–#12 (G33, G37/G41, G44) – hệ thống đang chạy theo phương án đề xuất ghi trong đó.
+6. **Google SSO + SMTP (tùy chọn)** – `docs/VAN_HANH.md` §6.5–§6.6: tạo OAuth client (Internal, redirect URI `https://<domain web>/api/auth/google/callback`, `GOOGLE_ALLOWED_DOMAINS` = tên miền trường), tài khoản SMTP có STARTTLS + SPF/DKIM/DMARC; nhập biến `sync: false` trên Render. Migration mới `20261120000000_dc20_email_status_check`, `20261120010000_final_score_range_check` chạy qua workflow Migrate.
+7. Trả lời `docs/agents/CAU_HOI.md` #10–#12 (G33, G37/G41, G44) – hệ thống đang chạy theo phương án đề xuất ghi trong đó.
 
 ## 6. Hạn chế đã biết
 - Số đo NFR01–NFR04, NFR10 trên hạ tầng thật chỉ có sau deploy (§6.4).
 - Limiter `/api/auth/refresh` 300 lần/15 phút/IP – nếu cả trường đi chung một IP NAT (> ~250 phiên đồng thời) thì nâng mức này sau khi đo thật. API không khởi động nếu `ACCESS_TOKEN_TTL_SECONDS` > 900 hoặc `REFRESH_TOKEN_TTL_DAYS` > 30.
 - `npm audit`: 4 lỗ hổng mức moderate ở `minimatch` qua `eslint` (chỉ dùng khi phát triển); `npm audit --omit=dev` = 0. Theo dõi bản vá eslint.
 - Hoãn (ngoài đặc tả): phân trang nhận xét (B5).
+- `npm audit --omit=dev`: 2 moderate `uuid` qua `exceljs` – không khai thác được (exceljs chỉ gọi `uuid.v4()` không `buf`; bao-mat DC-20 + FINAL v3 chấp nhận); theo dõi bản exceljs mới.
+- FR29 (email) không có E2E – cần SMTP thật, kiểm sau deploy. Kanban kéo thả bằng chuột chỉ test trong jsdom; E2E đi qua bàn phím.
+- FINAL-bao-mat-v3 m3 (MINOR, chấp nhận): `DefenseScore`/`CouncilAssignment` chưa có trigger chặn TRUNCATE – chỉ khai thác được khi có quyền DB trực tiếp.
+- Bộ E2E dùng khoảng 160/300 lượt refresh mỗi project (`QUY_TRINH.md`, ghi chú E2E).

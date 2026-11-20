@@ -6,7 +6,7 @@ Gọi subagent `reviewer` thực hiện kiểm tra sau, ghi kết quả vào `do
 
 1. `BANG_CONG_VIEC.md`: mọi task và BUG ở DONE (BLOCKED chỉ được chấp nhận khi `CAU_HOI.md` có câu trả lời của con người đồng ý bỏ qua).
 2. Chạy tuần tự, **hai lần liên tiếp**, ghi kết quả nguyên văn phần cuối:
-   - `npm ci`
+   - `npm ci` (Windows: trước đó `npm run db:test:down` và dừng mọi `postgres.exe`/vitest đang giữ file trong `node_modules`, nếu không `npm ci` lỗi EPERM và xóa dở `node_modules`; sau đó `npx -w @nckh/api prisma generate`)
    - `npm run lint`
    - `npm test -- --coverage` (độ phủ ≥ 70% ở `apps/api/src/modules` và `packages/shared`)
    - `npm run build -w @nckh/web`

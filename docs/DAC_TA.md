@@ -291,7 +291,7 @@ Thêm 2 trạng thái: **Đang tuyển sinh viên** (`RECRUITING`) và **Chờ b
 | Điểm quá trình tối thiểu ra hội đồng | 5,0 (cố định theo đề cương) | FR34 |
 | Số thành viên hội đồng | 1 Chủ tịch, 1 Thư ký, 1–5 Ủy viên | FR35 |
 
-**Ma trận truy vết bổ sung** (chi tiết test ở `docs/agents/TRUY_VET.md` sau TASK-DC-24)
+**Ma trận truy vết bổ sung** (chi tiết test ở `docs/agents/TRUY_VET.md` mục 2b, TASK-DC-24)
 
 | Mục tiêu | FR | Integration | E2E |
 | --- | --- | --- | --- |

@@ -18,7 +18,7 @@ export const applicationsRouter = ({ repo, now, guard }) => {
     next();
   });
   r.get('/', requireRole('STAFF', 'LECTURER', 'STUDENT'), validate(applicationListQuerySchema, 'query'), async (req, res) => res.json(await svc.list(req.user, req.validated)));
-  r.post('/:id/withdraw', requireRole('STUDENT'), validate(emptyBodySchema), async (req, res) => res.json(await svc.withdraw(req.user, req.params.id, req.ip)));
+  r.post('/:id/withdraw', requireRole('STUDENT'), decideLimiter, validate(emptyBodySchema), async (req, res) => res.json(await svc.withdraw(req.user, req.params.id, req.ip)));
   r.post('/:id/accept', lecturer, decideLimiter, validate(emptyBodySchema), async (req, res) => res.json(await svc.accept(req.user, req.params.id, req.ip)));
   r.post('/:id/decline', lecturer, decideLimiter, validate(reasonSchema), async (req, res) => res.json(await svc.decline(req.user, req.params.id, req.body, req.ip)));
   return r;

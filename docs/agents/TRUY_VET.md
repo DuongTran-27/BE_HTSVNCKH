@@ -1,4 +1,4 @@
-# Ma trận truy vết M1–M5, FR01–FR27, NFR01–NFR10 ↔ test (T707 bước A)
+# Ma trận truy vết M1–M5, FR01–FR39, NFR01–NFR10 ↔ test (T707 bước A; FR28–FR39 bổ sung ở TASK-DC-24, mục 2b)
 
 Lập ngày 2026-11-08 bằng grep thật trên `apps/api/tests`, `apps/web/{e2e,tests,src}`, `packages/shared/src` (lệnh ở cuối file và ở `reports/T707a.md`). Quy ước:
 - Chỉ ghi ID `TC-xxx` khi grep thấy trong file; test không có ID ghi `file › tên khối describe`. Không bịa ID.
@@ -71,6 +71,30 @@ Kiểm tra đủ định nghĩa hoàn thành mục 4 `QUY_TRINH.md` ("mỗi FR P
 
 ### 3.1 Các số đo/kiểm chỉ làm được sau deploy (tổng hợp)
 `VAN_HANH.md` §6.4 mục 1–9 (header `x-middleware-*` rỗng, chặn gọi thẳng Render, **số hop → `trust proxy`**, tắt Data API, cron qua Vercel, **nhập CSV 2.000 dòng vs timeout proxy**, tách role, header bảo mật, Swagger tắt); p95 NFR04 trên hạ tầng thật; cookie Chrome/Safari (NFR01); sao lưu hằng ngày + biên bản diễn tập khôi phục (FR26); chạy thật `reminders.yml`/`similarity-recheck.yml` (FR13, G5). **MAJOR T703c mục 3 chỉ đóng khi §6.4 có số đo thật**; mã `LOG_PROXY_HOPS` gỡ sau khi đo.
+
+## 2b. Chức năng FR28–FR39 (bổ sung TASK-DC-24, 2026-11-20)
+
+Lập bằng grep thật (`TC-FR(2[89]|3[0-9])` và tên khối `describe` trong `DC02..DC09`, `dc12..dc17.test.jsx`, `DC18.test.jsx`, `dc21..23.spec.js`, `defense.test.js`). Quy ước như mục đầu file. **Lưu ý:** FR28–FR34 (API, web) chưa gắn mã `TC-FRxx` vào test integration/unit, chỉ E2E có mã; bước 4 của `/kiem-tra-cuoi` đòi mã `TC-FRxx` và test đạt: các FR đó đạt nhờ mã E2E (cột "Mã TC"), FR29 có mã `TC-FR29-01…07` ở integration (gắn 2026-11-20 khi kiểm tra cuối).
+
+| FR | Ưu tiên | Test tự động (loại · file · khối) | Mã TC | Ghi chú |
+|---|---|---|---|---|
+| FR28 | P2 | I · `a/DC03-sso.test.js` (khối "FR28 bật/tắt theo cấu hình", "…/start", "…/callback – thành công", "…mọi nhánh lỗi → 302 /dang-nhap?sso_error=", "Giới hạn tần suất SSO"); I · `a/DC03-sso-db.test.js`; `a/DC03-log.test.js`; W · `w/dc12.test.jsx` ("R1 – nút Đăng nhập bằng Google", "R1 – thông điệp sso_error", "/dang-nhap/google"); E · `e/dc23.spec.js` | TC-FR28-E02 | |
+| FR29 | P2 | I · `a/DC04-email.test.js` ("DC-04 cấu hình", "DC-04 nội dung thư", "DC-04 hộp thư đi"); `a/DC20-ops.test.js` (SKIP LOCKED, requireTLS) | TC-FR29-01…07 (`a/DC04-email.test.js`) | E2E: không có (cần SMTP thật; SAU DEPLOY) |
+| FR30 | P2 | I · `a/DC02-profile.test.js` ("GET /api/me/profile", "PATCH /api/me/profile", "GET /api/users/:id có phone"); W · `w/dc12.test.jsx` "R35 – hồ sơ cá nhân"; E · `e/dc23.spec.js` | TC-FR30-E01 | |
+| FR31 | P2 | I · `a/DC05-recruitment.test.js` (khối "§3.1–3.2 tạo và sửa nháp GV", "§3.3 công bố", "§3.4 ngừng tuyển", "assertPublishable"); W · `w/dc13.test.jsx` (R5′, R7′, R6 đang tuyển + ngừng tuyển); S/U · `s/transitions.test.js`; E · `e/dc21.spec.js` | TC-FR31-E01 | |
+| FR32 | P2 | I · `a/DC05-recruitment.test.js` "§4.2 bảng tin GET /api/recruitments"; `a/DC06-applications.test.js` ("§4.3 ứng tuyển, rút đơn", "§4.2 đọc đơn, quyền", `#10 đồng thời: ứng tuyển ‖ FINALIZE_GROUP…`); W · `w/dc14.test.jsx` (R26 bảng tin, R27, R28); E · `e/dc21.spec.js` | TC-FR32-E02 | |
+| FR33 | P2 | I · `a/DC06-applications.test.js` ("§4.4 duyệt, từ chối", "§4.5 chốt nhóm", `#2 đồng thời… GV duyệt 2 đơn cùng lúc`, `#3 đồng thời… giới hạn 1`, `#11 đồng thời chéo luồng cũ`); W · `w/dc13.test.jsx` "R29 ứng viên"; E · `e/dc21.spec.js` | TC-FR33-E03, TC-FR33-E04 | |
+| FR34 | P2 | I · `a/DC07-defense.test.js` ("§5.6 #1 REQUEST_DEFENSE đủ điều kiện", "#2 điều kiện", "#3 điểm sai định dạng", "#4 requireDefense", "#5 RETURN_FROM_DEFENSE", `#7 đồng thời`); U · `s/defense.test.js` ("scoreSchema", "topicActionSchema – REQUEST_DEFENSE…"); W · `w/dc15.test.jsx` ("R6 – đề nghị ra hội đồng", "R6 – khối bảo vệ và điểm quá trình"); E · `e/dc22.spec.js` | TC-FR34-E01 | |
+| FR35 | P2 | I · `a/DC08-councils.test.js`; `a/DC09-scoring.test.js` TC-FR35-20; `a/DC07-defense.test.js` "§5.6 #6 + §2.3 – SQL thô dc_council"; W · `w/dc15.test.jsx` (R30, R31); E · `e/dc22.spec.js` | TC-FR35-01..19, TC-FR35-20, TC-FR35-E02 | Xung đột lợi ích, không đổi thành viên khi đã có điểm: trong `DC08` |
+| FR36 | P2 | I · `a/DC09-scoring.test.js`; W · `w/dc16.test.jsx` (R33, R34); E · `e/dc22.spec.js` | TC-FR36-01..09 (kể cả -07 ủy viên chỉ thấy điểm mình), TC-FR36-E03 | |
+| FR37 | P2 | I · `a/DC09-scoring.test.js` (TC-FR37-04 thiếu điểm/ủy viên chốt 403/sai version; -08 sửa điểm ‖ chốt; …); U · `s/defense.test.js` "gradeFromDefenseScore"; W · `w/dc16.test.jsx` "R34 – chốt (thư ký)"; E · `e/dc22.spec.js` | TC-FR37-01..11, TC-FR37-E04 | |
+| FR38 | P2 | I · `a/T610-awaiting-feedback.test.js` ("MilestoneView.awaitingFeedback"); W · `w/dc17.test.jsx` ("kanbanColumn, kanbanTargets", "R36 hiển thị", "chỉ xem cho người không phải GVHD hiện hành", "GVHD hiện hành chuyển cột"); E · `e/dc23.spec.js` (bàn phím) | TC-FR38-01..04, TC-FR38-E03 | Kéo thả HTML5 chỉ kiểm bằng component + E2E bàn phím |
+| FR39 | P2 | I · `a/TC-FR39-xlsx.test.js` (quyền, nội dung, chống formula injection, header, trần 5.000); W · `src/pages/stats/DC18.test.jsx` "Xuất Excel"; E · `e/dc23.spec.js` | TC-FR39-01..05 (+03b), TC-FR39-E04 | |
+
+## 4b. FR28–FR39 chưa đủ test (TASK-DC-24)
+1. **FR29**: đã gắn `TC-FR29-01…07` vào `a/DC04-email.test.js` (chỉ đổi tên, 12/12 đạt). Không E2E (cần SMTP thật – kiểm sau deploy).
+2. **FR28, FR30–FR34** (API/web): có test thật nhưng chưa có mã `TC-FRxx` ở tầng integration/web; chỉ mã E2E (`TC-FRxx-E0n`). Đạt bước 4 nhờ E2E, nhưng nên gắn mã cho integration.
+3. Không FR28–FR39 nào hoàn toàn không có test tự động.
 
 ## 4. Mục chưa có test tự động (tóm tắt cho T708)
 1. E2E: không còn FR P1/P2 nào chỉ có integration (2026-11-11 đã thêm `e/gd6b.spec.js`: TC-FR18-E01, TC-FR19-E01, TC-FR20-E01, TC-FR22-E01, TC-FR23-E01; `e/gd45b.spec.js`: TC-FR04-E01, TC-FR09-E01, TC-FR10-E01; đã có từ T707b: FR24 tải tài liệu `e/m4.spec.js` TC-FR24-E01; hồ sơ cờ G5 + job similarity-recheck `e/gd6.spec.js` TC-FR06-E10). Các FR này vẫn có integration + test component (bảng trên).

@@ -65,7 +65,7 @@ describe('DC-04 nội dung thư', () => {
     expect(mailSubject('x'.repeat(500))).toHaveLength(200);
   });
 
-  it('chỉ title + link; link null hoặc //evil → /thong-bao; escape HTML', () => {
+  it('TC-FR29-01 chỉ title + link; link null hoặc //evil → /thong-bao; escape HTML', () => {
     const m = buildMail({ title: 'Đề tài <script>alert(1)</script> & "x"', link: null }, { to: 'a@t.vn', from: FROM, appUrl: APP });
     expect(m).toEqual({
       from: FROM,
@@ -100,7 +100,7 @@ describe('DC-04 nội dung thư', () => {
 });
 
 describe('DC-04 hộp thư đi', () => {
-  it('tắt: emailStatus null, dispatch không gọi transport', async () => {
+  it('TC-FR29-02 tắt: emailStatus null, dispatch không gọi transport', async () => {
     await mk('s1');
     expect((await row('s1')).emailStatus).toBeNull();
     const tr = fakeTransport();
@@ -108,7 +108,7 @@ describe('DC-04 hộp thư đi', () => {
     expect(tr.calls).toBe(0);
   });
 
-  it('bật: request nghiệp vụ 200 → PENDING → dispatch → SENT đúng 1 lần, đúng người nhận, chỉ title + link', async () => {
+  it('TC-FR29-03 bật: request nghiệp vụ 200 → PENDING → dispatch → SENT đúng 1 lần, đúng người nhận, chỉ title + link', async () => {
     setEmailOutbox(true);
     const t = await mkTopic('s2');
     await addMember(t, 's3');
@@ -129,7 +129,7 @@ describe('DC-04 hộp thư đi', () => {
     expect(tr.sent).toHaveLength(1);
   });
 
-  it('transport lỗi 3 lần → PENDING, PENDING, FAILED; không thử lần 4; log không chứa địa chỉ', async () => {
+  it('TC-FR29-04 transport lỗi 3 lần → PENDING, PENDING, FAILED; không thử lần 4; log không chứa địa chỉ', async () => {
     setEmailOutbox(true);
     await mk('s4');
     const tr = fakeTransport({ fail: 99 });
@@ -148,7 +148,7 @@ describe('DC-04 hộp thư đi', () => {
     expect(logged).toContain('EENVELOPE');
   });
 
-  it('lỗi 2 lần rồi thành công → SENT, emailAttempts 3', async () => {
+  it('TC-FR29-05 lỗi 2 lần rồi thành công → SENT, emailAttempts 3', async () => {
     setEmailOutbox(true);
     await mk('s5');
     const tr = fakeTransport({ fail: 2 });
@@ -157,7 +157,7 @@ describe('DC-04 hộp thư đi', () => {
     expect(tr.sent).toHaveLength(1);
   });
 
-  it('request nghiệp vụ vẫn 2xx dù SMTP hỏng (gửi tách khỏi request)', async () => {
+  it('TC-FR29-06 request nghiệp vụ vẫn 2xx dù SMTP hỏng (gửi tách khỏi request)', async () => {
     setEmailOutbox(true);
     const t = await mkTopic('s6');
     const r = await act('s6', t, { action: 'REQUEST_ADVISOR', lecturerId: U.lecC.id });
@@ -195,7 +195,7 @@ describe('DC-04 hộp thư đi', () => {
     expect(tr.sent.map((m) => m.to)).toEqual(['s9@t.vn']);
   });
 
-  it('hai bộ gửi chạy song song → mỗi thư gửi đúng 1 lần', async () => {
+  it('TC-FR29-07 hai bộ gửi chạy song song → mỗi thư gửi đúng 1 lần', async () => {
     setEmailOutbox(true);
     const who = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12'];
     for (let i = 0; i < 3; i++) {
