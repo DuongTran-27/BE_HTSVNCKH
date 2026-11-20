@@ -80,7 +80,7 @@ describe('§6.2 tạo, sửa hội đồng', () => {
     expect(r.status, JSON.stringify(r.body)).toBe(201);
     expect(r.body.council).toMatchObject({
       code: 'HD-2026-001', name: 'Hội đồng CNPM 1', version: 0, locked: false, assignments: [],
-      round: { id: S.round.id, academicYear: '2026-2027' },
+      round: { id: S.round.id, academicYear: '2026-2027', facultyId: S.F1.id },
       members: [{ lecturerId: U.lecB.id, fullName: U.lecB.fullName, role: 'CHAIR' }, { lecturerId: U.lecC.id, role: 'SECRETARY' }, { lecturerId: U.lecD.id, role: 'MEMBER' }],
     });
     expect((await create('staff1', members('lecB', 'lecC', 'lecE'))).body.council.code).toBe('HD-2026-002');

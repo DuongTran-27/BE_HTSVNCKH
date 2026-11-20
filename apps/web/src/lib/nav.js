@@ -42,7 +42,7 @@ export const SCREENS = [
   ['loi-moi', [S], 'Lời mời'],
   ['de-nghi-huong-dan', [L, F], 'Đề nghị hướng dẫn'],
   ['xet-duyet', [F], 'Xét duyệt'],
-  // DC-15: hội đồng (UI §12.8). Thành viên hội đồng (GV) mở R32 chỉ đọc; R34 thuộc DC-16 (trang tạm để liên kết "Đến màn chấm" có đích)
+  // DC-15: hội đồng (UI §12.8). Thành viên hội đồng (GV) mở R32 chỉ đọc; R33/R34 chấm bảo vệ (DC-16, UI §12.9)
   ['hoi-dong', [F], 'Hội đồng'],
   ['hoi-dong/moi', [F], 'Lập hội đồng'],
   ['hoi-dong/:id', [F, L], 'Hội đồng'],
@@ -89,7 +89,7 @@ const KHO = { to: '/kho', label: 'Kho đề tài' };
 const HOME_TILES = { to: '/tong-quan', label: 'Tổng quan' };
 export const MENU = {
   STUDENT: [HOME_TILES, { to: '/de-tai', label: 'Đề tài của tôi' }, { to: '/tuyen-sinh', label: 'Đề tài tuyển sinh viên' }, { to: '/don-ung-tuyen', label: 'Đơn ứng tuyển' }, { to: '/loi-moi', label: 'Lời mời' }, YEU_CAU, { to: '/lich-su-tham-gia', label: 'Lịch sử tham gia' }, KHO],
-  LECTURER: [HOME_TILES, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, { to: '/tuyen-sinh', label: 'Đề tài tuyển sinh viên' }, YEU_CAU, STATS, KHO],
+  LECTURER: [HOME_TILES, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' }, { to: '/de-tai', label: 'Đề tài hướng dẫn' }, { to: '/tuyen-sinh', label: 'Đề tài tuyển sinh viên' }, { to: '/cham-bao-ve', label: 'Chấm bảo vệ' }, YEU_CAU, STATS, KHO],
   STAFF: [
     HOME_TILES, { to: '/xet-duyet', label: 'Xét duyệt' }, { to: '/de-tai', label: 'Đề tài' }, { to: '/de-nghi-huong-dan', label: 'Đề nghị hướng dẫn' },
     { to: '/hoi-dong', label: 'Hội đồng' }, { to: '/quan-ly/dot', label: 'Đợt' }, { to: '/quan-ly/tai-khoan', label: 'Tài khoản' },

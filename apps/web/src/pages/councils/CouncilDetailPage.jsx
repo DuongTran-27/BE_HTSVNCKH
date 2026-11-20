@@ -29,7 +29,7 @@ export function CouncilDetailPage() {
   return <section><QueryBox query={query}>{(c) => <CouncilDetail council={c} />}</QueryBox></section>;
 }
 
-// R32: thông tin hội đồng, thành viên và danh sách đề tài được gán; nút sửa/gán theo quyền server trả về
+// CouncilDetail – R32: thông tin hội đồng, thành viên và danh sách đề tài được gán; nút sửa/gán theo quyền server trả về
 function CouncilDetail({ council: c }) {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -135,26 +135,32 @@ function EditCouncil({ council: c, onDone, refresh }) {
     defaultValues: { name: c.name, members: c.members.map(({ lecturerId, role }) => ({ lecturerId, role })) },
   });
   const submit = async ({ name, members }) => {
+    let renamed = false; // PATCH tên đã thành công – nếu PUT thành viên lỗi phải báo rõ tên đã lưu (m2 DC-15)
     try {
       let version = c.version;
-      if (name !== c.name) version = (await api(`/councils/${c.id}`, { method: 'PATCH', body: { name, version } })).council.version;
+      if (name !== c.name) {
+        version = (await api(`/councils/${c.id}`, { method: 'PATCH', body: { name, version } })).council.version;
+        renamed = true;
+      }
       const same = JSON.stringify(members) === JSON.stringify(c.members.map(({ lecturerId, role }) => ({ lecturerId, role })));
       if (!same) await api(`/councils/${c.id}/members`, { method: 'PUT', body: { members, version } });
       toast('Đã lưu hội đồng', { type: 'success' });
       onDone();
     } catch (err) {
       if (err.sessionExpired) return;
+      const saved = renamed ? 'Đã lưu tên mới; thành viên chưa lưu' : null;
       // Đã có điểm: đóng form, khối thành viên về chỉ đọc (dữ liệu tải lại có locked = true)
-      if (err.code === 'COUNCIL_LOCKED') { toast(err.message, { type: 'error' }); onDone(); return; }
+      if (err.code === 'COUNCIL_LOCKED') { toast([saved, err.message].filter(Boolean).join('. '), { type: 'error' }); onDone(); return; }
       const lines = conflictLines(err);
       const msgs = lines.length ? [err.message, ...lines] : applyServerErrors(err, setError, ['name', 'members']);
+      if (saved) msgs.unshift(saved);
       if (msgs.length) setError('root', { message: msgs.join('. ') });
     } finally { refresh(); }
   };
   return (
     <form noValidate onSubmit={handleSubmit(submit)} className="space-y-3">
       <FormField label="Tên hội đồng" error={errors.name?.message}><input maxLength={200} {...register('name')} /></FormField>
-      <CouncilMembersFields control={control} register={register} watch={watch} errors={errors} known={c.members} />
+      <CouncilMembersFields control={control} register={register} watch={watch} errors={errors} facultyId={c.round.facultyId} known={c.members} />
       <FormError error={errors.root?.message} />
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className={btnGhost} onClick={onDone}>Hủy</button>

@@ -38,7 +38,7 @@ export const invalidateAfterAction = (qc, id) => [
   ['recruitments'], ['applications'], ['topic-applications', id], // DC-13: công bố/ngừng tuyển/chốt nhóm đổi bảng tin và danh sách đơn (UI §12.12)
 ].forEach((queryKey) => qc.invalidateQueries({ queryKey }));
 
-export const useTopic = (id) => useQuery({ queryKey: ['topic', id], queryFn: async () => (await api(`/topics/${id}`)).topic });
+export const useTopic = (id, enabled = true) => useQuery({ queryKey: ['topic', id], enabled, queryFn: async () => (await api(`/topics/${id}`)).topic });
 
 /** Danh sách lần gửi (seq giảm dần) – API §8.4 */
 export const useSubmissions = (id, enabled = true) => useQuery({

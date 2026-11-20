@@ -14,6 +14,7 @@ const ResultLine = ({ r }) => (
   <>
     <p className="flex flex-wrap items-center gap-2">
       <Badge tone={r.result === 'FAIL' ? 'red' : 'green'}>{FINAL_RESULT_LABEL[r.result] ?? r.result}</Badge>
+      {r.source === 'COUNCIL' && <Badge tone="blue">Biên bản hội đồng</Badge>}
       <span className="text-sm text-slate-700">Phiên bản {r.version} · {r.createdBy?.fullName} · {fmtDateTime(r.createdAt)}</span>
     </p>
     <p className="whitespace-pre-wrap break-words">{r.summary}</p>
@@ -43,7 +44,10 @@ export function ResultSection({ topic: t }) {
                 <ul className="space-y-2">{items.filter((r) => !r.isCurrent).map((r) => <li key={r.id} className="rounded-md bg-slate-50 p-2"><ResultLine r={r} /></li>)}</ul>
               </details>
             )}
-            {t.permissions?.enterResult && <ResultForm topic={t} expectedVersion={current?.version ?? 0} />}
+            {/* Kết quả hiện hành do hội đồng chốt: GVHD không nhập lại (UI §12.9; server trả COUNCIL_RESULT_LOCKED nếu cố gửi) */}
+            {t.permissions?.enterResult && (current?.source === 'COUNCIL'
+              ? <p role="note" className="rounded-md bg-blue-50 p-3 text-sm text-blue-900">Kết quả do hội đồng quyết định.</p>
+              : <ResultForm topic={t} expectedVersion={current?.version ?? 0} />)}
             {t.permissions?.correctResult && current && <CorrectResult topic={t} current={current} />}
           </>
         )}

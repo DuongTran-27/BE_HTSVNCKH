@@ -18,7 +18,8 @@ export const membersError = (errors) => errors.members?.message ?? errors.member
 
 /**
  * Ba khối "Chủ tịch" (1), "Thư ký" (1), "Ủy viên" (1–5) – UI §12.8. Mỗi ô là một ô chọn giảng viên; một ô tìm kiếm chung
- * lọc danh sách qua `GET /api/users?role=LECTURER&q=`. GV đã chọn ở ô khác bị làm mờ (disabled) trong danh sách.
+ * lọc danh sách qua `GET /api/users?role=LECTURER&facultyId=&q=`. GV đã chọn ở ô khác bị làm mờ (disabled) trong danh sách.
+ * Chỉ truy vấn khi đã biết khoa của đợt (`facultyId`) – server chỉ nhận GV cùng khoa (m1 DC-15).
  * `known`: tên của GV đã có sẵn (khi sửa) để ô vẫn hiện tên dù không nằm trong kết quả tìm.
  */
 export function CouncilMembersFields({ control, register, watch, errors, facultyId, known = [] }) {
@@ -27,6 +28,7 @@ export function CouncilMembersFields({ control, register, watch, errors, faculty
   const lecturers = useQuery({
     queryKey: ['users', 'council-lecturers', facultyId ?? '', q],
     queryFn: async () => (await api(`/users${qs({ role: 'LECTURER', isLocked: 'false', facultyId, q, pageSize: 100 })}`)).items,
+    enabled: !!facultyId,
   });
   const selected = (watch('members') ?? []).map((m) => m.lecturerId);
   // Gộp kết quả tìm + người đã chọn trước đó để ô chọn không mất tên khi đổi từ khóa
@@ -53,6 +55,7 @@ export function CouncilMembersFields({ control, register, watch, errors, faculty
       <legend className="text-sm font-semibold">Thành viên hội đồng</legend>
       {membersError(errors) && <p role="alert" className="break-words text-sm text-red-700">{membersError(errors)}</p>}
       <DebouncedInput label="Tìm giảng viên" value={q} onCommit={setQ} placeholder="Họ tên hoặc mã giảng viên" />
+      {!facultyId && <p className="text-sm text-muted-foreground">Chọn đợt trước để tìm giảng viên cùng khoa.</p>}
       {lecturers.isError && <p role="alert" className="text-sm text-red-700">{lecturers.error.message}</p>}
       {fields.map((f, i) => {
         if (f.role !== 'MEMBER') return slot(f, i, COUNCIL_ROLE_LABEL[f.role]);

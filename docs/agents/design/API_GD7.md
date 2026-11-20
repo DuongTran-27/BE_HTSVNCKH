@@ -392,13 +392,13 @@ Mọi endpoint §6: STAFF `inStaffScope` với `council.facultyId` (ghi); đọc
 ### 6.1 `CouncilView`
 ```json
 { "id": "c1", "code": "HD-2026-003", "name": "Hội đồng CNPM 1", "version": 2,
-  "round": { "id": "r1", "name": "…", "academicYear": "2026-2027" },
+  "round": { "id": "r1", "name": "…", "academicYear": "2026-2027", "facultyId": "f1" },
   "members": [{ "lecturerId": "l2", "fullName": "…", "role": "CHAIR" }, { "lecturerId": "l3", "fullName": "…", "role": "SECRETARY" }, { "lecturerId": "l4", "fullName": "…", "role": "MEMBER" }],
   "assignments": [{ "id": "as1", "topic": { "id": "t1", "code": "…", "title": "…", "status": "WAITING_DEFENSE" }, "advisor": { "fullName": "…" },
     "scoredCount": 2, "memberCount": 3, "finalScore": null, "decision": null, "decidedAt": null, "cancelledAt": null }],
   "locked": false, "createdAt": "…" }
 ```
-`locked` = có ít nhất một `DefenseScore` trong hội đồng. `assignments` chỉ phân công chưa hủy (query `includeCancelled=true` cho cán bộ).
+`round.facultyId` (DC-16): khoa của đợt – web lọc ô chọn giảng viên cùng khoa. `locked` = có ít nhất một `DefenseScore` trong hội đồng. `assignments` chỉ phân công chưa hủy (query `includeCancelled=true` cho cán bộ).
 
 ### 6.2 Tạo, sửa
 **`POST /api/councils`** – Body `councilCreateSchema { roundId, name: trim 3..200, members: [{ lecturerId, role }] }`: đúng 1 `CHAIR`, 1 `SECRETARY`, 1–5 `MEMBER`, `lecturerId` không trùng (lỗi theo trường `members`). Kiểm DB: đợt thuộc khoa trong phạm vi (403); mọi `lecturerId` là LECTURER không khóa, cùng khoa (400 `VALIDATION_ERROR` `{ members: "Giảng viên không hợp lệ" }`). Mã từ `council_code_seq`. AuditLog `COUNCIL_CREATE`. Thông báo `COUNCIL_MEMBER_ADDED` → từng thành viên. 201 `{ council }`.

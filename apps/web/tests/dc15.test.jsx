@@ -26,7 +26,7 @@ const topic = (o = {}) => ({
   processScore: null, defense: null, councilAccess: null, ...o,
 });
 const council = (o = {}) => ({
-  id: 'c1', code: 'HD-2026-001', name: 'Hội đồng CNPM 1', version: 1, round: { id: 'r1', name: 'Đợt 1', academicYear: '2026-2027' },
+  id: 'c1', code: 'HD-2026-001', name: 'Hội đồng CNPM 1', version: 1, round: { id: 'r1', name: 'Đợt 1', academicYear: '2026-2027', facultyId: 'f1' },
   members: [{ lecturerId: 'l1', fullName: 'Thầy Chủ', role: 'CHAIR' }, { lecturerId: 'l2', fullName: 'Cô Thư', role: 'SECRETARY' }, { lecturerId: 'l3', fullName: 'Thầy Ủy', role: 'MEMBER' }],
   assignments: [], locked: false, createdAt: '2026-11-18T03:00:00Z', ...o,
 });

@@ -8,7 +8,7 @@ import { notify, notifyTopic } from '../notifications/notify.js';
 
 const OPEN = { decidedAt: null, cancelledAt: null };
 const MEMBERS = { select: { lecturerId: true, role: true, lecturer: { select: { fullName: true } } } };
-const ROUND = { select: { id: true, name: true, academicYear: true } };
+const ROUND = { select: { id: true, name: true, academicYear: true, facultyId: true } };
 const ASSIGNMENT = {
   select: {
     id: true, finalScore: true, decision: true, decidedAt: true, cancelledAt: true, assignedAt: true, _count: { select: { scores: true } },

@@ -48,6 +48,8 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx').then((m) => ({ 
 const CouncilListPage = lazy(() => import('./pages/councils/CouncilListPage.jsx').then((m) => ({ default: m.CouncilListPage })));
 const CouncilCreatePage = lazy(() => import('./pages/councils/CouncilCreatePage.jsx').then((m) => ({ default: m.CouncilCreatePage })));
 const CouncilDetailPage = lazy(() => import('./pages/councils/CouncilDetailPage.jsx').then((m) => ({ default: m.CouncilDetailPage })));
+const DefenseAssignmentsPage = lazy(() => import('./pages/defense/DefenseAssignmentsPage.jsx').then((m) => ({ default: m.DefenseAssignmentsPage })));
+const DefenseScorePage = lazy(() => import('./pages/defense/DefenseScorePage.jsx').then((m) => ({ default: m.DefenseScorePage })));
 const RoundFormPage = lazy(() => import('./pages/admin/RoundFormPage.jsx').then((m) => ({ default: m.RoundFormPage })));
 
 // Lỗi tải chunk lazy (mất mạng, bản mới đã thay file cũ) → thông báo + tải lại, thay vì trang trắng
@@ -132,6 +134,8 @@ const SCREEN_ELEMENT = {
   'hoi-dong': <CouncilListPage />,
   'hoi-dong/moi': <CouncilCreatePage />,
   'hoi-dong/:id': <CouncilDetailPage />,
+  'cham-bao-ve': <DefenseAssignmentsPage />,
+  'cham-bao-ve/:assignmentId': <DefenseScorePage />,
   'de-nghi-huong-dan': <AdvisorRequestsPage />,
   'quan-ly/tai-khoan': <UsersPage />,
   'quan-ly/tai-khoan/moi': <UserCreatePage />,

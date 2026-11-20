@@ -63,7 +63,7 @@ const presentAssignment = (a, memberCount) => ({
 // CouncilView (§6.1); danh sách: không có assignments, thêm assignmentCount
 export const presentCouncil = (c) => ({
   id: c.id, code: c.code, name: c.name, version: c.version,
-  round: { id: c.round.id, name: c.round.name, academicYear: c.round.academicYear },
+  round: { id: c.round.id, name: c.round.name, academicYear: c.round.academicYear, facultyId: c.round.facultyId }, // facultyId: web lọc ô chọn GV cùng khoa (m1 DC-15)
   members: sortMembers(c.members).map((m) => ({ lecturerId: m.lecturerId, fullName: m.lecturer.fullName, role: m.role })),
   ...(c.assignments ? { assignments: c.assignments.map((a) => presentAssignment(a, c.members.length)) } : { assignmentCount: c._count.assignments }),
   locked: c.locked, createdAt: iso(c.createdAt),
