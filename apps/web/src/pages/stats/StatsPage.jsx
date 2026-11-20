@@ -4,7 +4,8 @@ import { ChartColumn, ChartPie, Download, FileStack, FilterX, Layers, Trophy } f
 import { FINAL_RESULT_LABEL, STATS_DIMENSION_LABEL, STATS_GROUP_BY, TOPIC_STATUS_LABEL } from '@nckh/shared';
 import { api } from '../../lib/api.js';
 import { useAuth } from '../../lib/auth.js';
-import { downloadCsv, qs } from '../../lib/format.js';
+import { downloadBlob, downloadCsv, qs } from '../../lib/format.js';
+import { toast } from '../../lib/toast.js';
 import { useCatalog } from '../../lib/queries.js';
 import { pickEnum, pickYear, useUrlParams } from '../../lib/urlParams.js';
 import { DebouncedInput, FilterSelect } from '../../components/ListFilters.jsx';
@@ -37,7 +38,7 @@ export function StatsPage() {
   const isStaff = user?.role === 'STAFF';
   const [chart, setChart] = useState('bar');
   const [csvError, setCsvError] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(''); // '' | 'csv' | 'xlsx'
   const params = {
     groupBy: pickEnum(u.get('groupBy'), STATS_GROUP_BY) || 'status',
     roundId: u.get('roundId'), academicYear: pickYear(u.get('academicYear')), fieldId: u.get('fieldId'),
@@ -51,16 +52,19 @@ export function StatsPage() {
   const stats = useQuery({ queryKey: ['stats', query], queryFn: () => api(`/stats${query}`), placeholderData: keepPreviousData });
   const yearBad = u.get('academicYear') && !params.academicYear;
 
-  const exportCsv = async () => {
-    setBusy(true);
+  // CSV và Excel (FR39, UI §12.11) cùng chuỗi query; tải qua api (Bearer) dạng blob. Lỗi CSV hiện tại chỗ, lỗi Excel là toast
+  const exportFile = async (ext) => {
+    setBusy(ext);
     setCsvError('');
     try {
       const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date()).replaceAll('-', '');
-      downloadCsv(await api(`/stats/export.csv${query}`, { as: 'blob' }), `thong-ke-${params.groupBy}-${day}.csv`);
+      const save = ext === 'csv' ? downloadCsv : downloadBlob; // Blob xlsx giữ MIME của server
+      save(await api(`/stats/export.${ext}${query}`, { as: 'blob' }), `thong-ke-${params.groupBy}-${day}.${ext}`);
     } catch (err) {
-      setCsvError(err.message);
+      if (ext === 'csv') setCsvError(err.message);
+      else if (!err.sessionExpired) toast(err.message, { type: 'error' });
     } finally {
-      setBusy(false);
+      setBusy('');
     }
   };
 
@@ -70,9 +74,12 @@ export function StatsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Thống kê</h1>
-          <p className="mt-1 text-sm text-slate-600">Số đề tài theo {dim.toLowerCase()}; biểu đồ, bảng và file CSV dùng cùng bộ lọc.</p>
+          <p className="mt-1 text-sm text-slate-600">Số đề tài theo {dim.toLowerCase()}; biểu đồ, bảng và file CSV/Excel dùng cùng bộ lọc.</p>
         </div>
-        <button type="button" className={btnPrimary} disabled={busy} onClick={exportCsv}><Download aria-hidden="true" className="size-4" />{busy ? 'Đang tải…' : 'Xuất CSV'}</button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={btnPrimary} disabled={!!busy} onClick={() => exportFile('csv')}><Download aria-hidden="true" className="size-4" />{busy === 'csv' ? 'Đang tải…' : 'Xuất CSV'}</button>
+          <button type="button" className={btnPrimary} disabled={!!busy} onClick={() => exportFile('xlsx')}><Download aria-hidden="true" className="size-4" />{busy === 'xlsx' ? 'Đang xuất…' : 'Xuất Excel'}</button>
+        </div>
       </div>
       {csvError && <p role="alert" className="mt-2 text-sm text-red-700">{csvError}</p>}
       <div className={`${card} mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4`}>

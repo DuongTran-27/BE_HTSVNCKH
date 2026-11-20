@@ -12,15 +12,18 @@ export const toLocalInput = (iso) => (iso ? new Date(new Date(iso).getTime() + O
 /** 'YYYY-MM-DDTHH:mm' (giờ VN) -> ISO có +07:00; rỗng giữ rỗng để schema báo lỗi */
 export const fromLocalInput = (v) => (v ? `${v}:00+07:00` : '');
 
-/** Tải chuỗi CSV xuống máy (đã qua toCsv) */
-export const downloadCsv = (text, filename) => {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+/** Tải một Blob xuống máy (CSV, Excel thống kê) */
+export const downloadBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
   const a = Object.assign(document.createElement('a'), { href: url, download: filename });
   document.body.append(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
 };
+
+/** Tải chuỗi CSV xuống máy (đã qua toCsv) */
+export const downloadCsv = (text, filename) => downloadBlob(new Blob([text], { type: 'text/csv;charset=utf-8' }), filename);
 
 // API từ chối q < 2 ký tự (400): chỉ gửi khi đủ 2 ký tự sau trim
 export const searchTerm = (v) => (v && v.trim().length >= 2 ? v.trim() : undefined);
