@@ -32,6 +32,7 @@ export function ExecTabs({ topic: t }) {
     <nav aria-label="Thực hiện đề tài" className="flex flex-wrap gap-1">
       <NavLink end to={base} className={tab}>Thông tin</NavLink>
       {exec && <NavLink to={`${base}/moc`} className={tab}>Mốc</NavLink>}
+      {exec && <NavLink to={`${base}/kanban`} className={tab}>Kanban</NavLink>}
       {exec && <NavLink to={`${base}/tien-do`} className={tab}>Tiến độ</NavLink>}
       <NavLink to={`${base}/tai-lieu`} className={tab}>Tài liệu</NavLink>
       <NavLink to={`${base}/yeu-cau`} className={tab}>Yêu cầu</NavLink>

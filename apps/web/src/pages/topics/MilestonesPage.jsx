@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -23,6 +23,9 @@ export function MilestonesPage() {
 function Milestones({ topic: t }) {
   const q = useMilestones(t.id);
   const [creating, setCreating] = useState(false);
+  const { hash } = useLocation();
+  // Mở từ thẻ Kanban (/moc#moc-<id>, DC-17): mốc tải xong mới cuộn tới được
+  useEffect(() => { if (q.data && hash) document.getElementById(hash.slice(1))?.scrollIntoView?.(); }, [q.data, hash]);
   return (
     <div className="space-y-4">
       {t.permissions?.manageMilestones && (creating
@@ -41,7 +44,7 @@ function MilestoneCard({ topic: t, m }) {
   const toggle = (x) => setMode((v) => (v === x ? null : x));
   const d = m.latestDocument;
   return (
-    <li className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
+    <li id={`moc-${m.id}`} className="scroll-mt-4 space-y-2 rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="break-words text-base font-semibold">{m.order}. {m.name}</h2>
         <Badge tone={EVAL_TONE[m.evaluation]}>{MILESTONE_EVAL_LABEL[m.evaluation] ?? m.evaluation}</Badge>

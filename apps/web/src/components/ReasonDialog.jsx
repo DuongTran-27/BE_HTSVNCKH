@@ -6,10 +6,13 @@ import { FormField } from './FormField.jsx';
 import { btnDanger, btnGhost, keepOpenOnEscIf, keepOpenOnOutside, useReturnFocus } from './ui.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
-/** Hộp nhập lý do bắt buộc (reasonSchema 5–2000). onSubmit(reason) ném ApiError → hiện lỗi dưới ô hoặc ở hộp */
-export function ReasonDialog({ title, message, label = 'Lý do', confirmLabel, onSubmit, onCancel }) {
+/**
+ * Hộp nhập lý do bắt buộc (reasonSchema 5–2000). onSubmit(reason) ném ApiError → hiện lỗi dưới ô hoặc ở hộp.
+ * schema (khóa `reason`) và confirmClassName cho phép dùng lại làm hộp nhận xét bắt buộc (Kanban DC-17).
+ */
+export function ReasonDialog({ title, message, label = 'Lý do', confirmLabel, onSubmit, onCancel, schema = reasonSchema, confirmClassName = btnDanger }) {
   const { register, handleSubmit, setError, formState: { errors, isDirty, isSubmitting } } = useForm({
-    resolver: zodResolver(reasonSchema), defaultValues: { reason: '' },
+    resolver: zodResolver(schema), defaultValues: { reason: '' },
   });
   const returnFocus = useReturnFocus();
   const submit = async ({ reason }) => {
@@ -29,7 +32,7 @@ export function ReasonDialog({ title, message, label = 'Lý do', confirmLabel, o
         {errors.root?.message && <p role="alert" className="text-sm text-red-700 break-words">{errors.root.message}</p>}
         <div className="flex flex-wrap justify-end gap-2">
           <button type="button" onClick={onCancel} className={btnGhost}>Hủy</button>
-          <button type="submit" disabled={isSubmitting} className={btnDanger}>{isSubmitting ? 'Đang xử lý…' : confirmLabel}</button>
+          <button type="submit" disabled={isSubmitting} className={confirmClassName}>{isSubmitting ? 'Đang xử lý…' : confirmLabel}</button>
         </div>
       </form>
       </DialogContent>

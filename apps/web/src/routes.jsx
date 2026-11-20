@@ -27,6 +27,7 @@ const SubmissionHistoryPage = lazy(() => import('./pages/topics/SubmissionHistor
 const SubmissionPage = lazy(() => import('./pages/topics/SubmissionPage.jsx').then((m) => ({ default: m.SubmissionPage })));
 const SubmissionDiffPage = lazy(() => import('./pages/topics/SubmissionDiffPage.jsx').then((m) => ({ default: m.SubmissionDiffPage })));
 const MilestonesPage = lazy(() => import('./pages/topics/MilestonesPage.jsx').then((m) => ({ default: m.MilestonesPage })));
+const KanbanPage = lazy(() => import('./pages/topics/KanbanPage.jsx').then((m) => ({ default: m.KanbanPage })));
 const ProgressPage = lazy(() => import('./pages/topics/ProgressPage.jsx').then((m) => ({ default: m.ProgressPage })));
 const DocumentsPage = lazy(() => import('./pages/topics/DocumentsPage.jsx').then((m) => ({ default: m.DocumentsPage })));
 const ReviewQueuePage = lazy(() => import('./pages/review/ReviewQueuePage.jsx').then((m) => ({ default: m.ReviewQueuePage })));
@@ -122,6 +123,7 @@ const SCREEN_ELEMENT = {
   'de-tai/:id/lan-gui/:seq': <SubmissionPage />,
   'de-tai/:id/so-sanh': <SubmissionDiffPage />,
   'de-tai/:id/moc': <MilestonesPage />,
+  'de-tai/:id/kanban': <KanbanPage />,
   'de-tai/:id/tien-do': <ProgressPage />,
   'de-tai/:id/tai-lieu': <DocumentsPage />,
   'de-tai/:id/yeu-cau': <TopicRequestsPage />,

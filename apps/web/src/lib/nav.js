@@ -33,6 +33,7 @@ export const SCREENS = [
   ['de-tai/:id/lan-gui/:seq', [S, L, F], 'Lần gửi'],
   ['de-tai/:id/so-sanh', [S, L, F], 'So sánh các lần gửi'],
   ['de-tai/:id/moc', [S, L, F], 'Mốc thực hiện'],
+  ['de-tai/:id/kanban', [S, L, F], 'Kanban tiến độ'], // R36 (DC-17, UI §12.10)
   ['de-tai/:id/tien-do', [S, L, F], 'Tiến độ'],
   ['de-tai/:id/tai-lieu', [S, L, F], 'Tài liệu'],
   ['de-tai/:id/yeu-cau', [S, L, F], 'Yêu cầu thay đổi'],
