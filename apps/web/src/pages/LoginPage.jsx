@@ -10,13 +10,41 @@ import { useCooldown } from '../lib/useCooldown.js';
 import { afterLoginPath, safeNext } from '../lib/nav.js';
 import { FormField } from '../components/FormField.jsx';
 import { btn, btnPrimary } from '../components/ui.jsx';
-import { BookOpenCheck, Eye, EyeOff, FlaskConical, ShieldCheck, Users } from 'lucide-react';
+import { Eye, EyeOff, FlaskConical } from 'lucide-react';
 
-const FEATURES = [
-  [BookOpenCheck, 'Đăng ký và theo dõi đề tài theo từng đợt'],
-  [Users, 'Kết nối nhóm sinh viên với giảng viên hướng dẫn'],
-  [ShieldCheck, 'Kiểm tra trùng lặp và xét duyệt minh bạch'],
-];
+// Panel trái luôn nền navy, tờ hồ sơ luôn giấy trắng: dùng mã màu cố định, không theo thang blue-*/slate-* đảo ở chế độ tối
+// Vòng đời một đề tài trong hệ thống (chuỗi thật, theo bảng chuyển trạng thái) – minh họa trên tờ hồ sơ ở panel trái
+const LIFECYCLE = ['Đăng ký đề tài', 'Xét duyệt', 'Thực hiện', 'Bảo vệ trước hội đồng', 'Nghiệm thu'];
+
+/**
+ * Panel trái (≥ lg): tờ hồ sơ đề tài mẫu (hư cấu) đã đi hết vòng đời, có con dấu son "Đã nghiệm thu" đóng một lần khi
+ * tải trang – cùng mô-típ con dấu ở trang chi tiết đề tài. Trang trí, trình đọc màn hình bỏ qua.
+ */
+function DossierSheet() {
+  return (
+    <div aria-hidden="true" className="relative mt-10 max-w-xl">
+      <div className="rounded-lg bg-white p-8 text-[#101129] shadow-[0_24px_48px_-12px_rgb(0_0_0/0.45)]">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+          <dt className="text-[#5b6178]">Mã đề tài</dt><dd className="font-semibold tabular-nums">NCKH-2026-0031</dd>
+          <dt className="text-[#5b6178]">Đợt</dt><dd>Đợt 1, năm học 2026–2027</dd>
+        </dl>
+        <p className="mt-4 text-xl leading-snug font-semibold text-balance">Hệ thống gợi ý học liệu cho sinh viên năm nhất</p>
+        <ol className="mt-6 space-y-3 border-t border-[#e2e4e9] pt-5">
+          {LIFECYCLE.map((step, i) => (
+            <li key={step} className="flex items-center gap-3">
+              <span className={`grid size-7 shrink-0 place-items-center rounded-full text-sm font-semibold tabular-nums ${i === LIFECYCLE.length - 1 ? 'bg-navy text-vlu-gold' : 'bg-[#e2e5f4] text-navy'}`}>{i + 1}</span>
+              {step}
+            </li>
+          ))}
+        </ol>
+      </div>
+      <span className="absolute -right-8 bottom-10 inline-flex animate-stamp flex-col items-center whitespace-nowrap rounded-md border-[5px] border-double border-seal bg-white/85 px-6 py-2 text-seal">
+        <span className="text-2xl leading-tight font-bold">Đã nghiệm thu</span>
+        <span className="text-sm font-semibold">Khoa Công nghệ Thông tin</span>
+      </span>
+    </div>
+  );
+}
 
 // Chỉ dev: tài khoản dữ liệu mẫu (prisma/seed.js). Bản build production thay DEV = false nên mảng và mật khẩu bị loại khỏi bundle.
 const DEMO_ACCOUNTS = import.meta.env.DEV ? [
@@ -75,26 +103,22 @@ export function LoginPage() {
   };
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative isolate hidden overflow-hidden bg-navy p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div aria-hidden="true" className="pointer-events-none absolute -z-10 -top-32 -right-32 size-96 rounded-full bg-vlu-red/25 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -z-10 -bottom-40 -left-24 size-96 rounded-full bg-blue-500/40 blur-3xl" />
+    <main className="grid min-h-screen lg:grid-cols-[7fr_5fr]">
+      {/* Panel nhận diện (≥ lg): thương hiệu, câu giới thiệu, tờ hồ sơ có con dấu */}
+      <div className="hidden overflow-hidden bg-navy px-14 py-12 text-white xl:px-20 lg:flex lg:flex-col lg:justify-between">
         <p className="flex items-center gap-3 text-lg font-bold"><span className="grid size-9 place-items-center rounded-lg bg-vlu-red"><FlaskConical aria-hidden="true" className="size-5" /></span>Nghiên cứu khoa học sinh viên</p>
         <div>
-          <p className="max-w-md text-5xl leading-[1.1] font-bold tracking-tight">Quản lý nghiên cứu khoa học sinh viên</p>
-          <ul className="mt-10 max-w-md divide-y divide-white/15 border-y border-white/15 text-blue-100">
-            {FEATURES.map(([Icon, text]) => (
-              <li key={text} className="flex items-center gap-3 py-3"><Icon aria-hidden="true" className="size-4 shrink-0" />{text}</li>
-            ))}
-          </ul>
+          <p className="text-5xl leading-[1.08] font-semibold tracking-tight"><span className="block">Từ ý tưởng đến nghiệm thu,</span><span className="block">trên một hồ sơ.</span></p>
+          <p className="mt-5 max-w-md text-lg leading-relaxed text-[#e2e5f4]">Sinh viên, giảng viên và cán bộ khoa cùng theo dõi một đề tài qua từng bước.</p>
+          <DossierSheet />
         </div>
-        <p className="text-sm text-blue-100/70">Khoa Công nghệ Thông tin</p>
+        <p className="text-sm text-[#e2e5f4]/80">Khoa Công nghệ Thông tin, Trường Đại học Văn Lang</p>
       </div>
-      <div className="flex items-center justify-center p-4 sm:p-8">
-      <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-md sm:p-8">
+      <div className="flex items-center justify-center p-4 sm:p-10">
+      <div className="w-full max-w-sm">
       <p className="mb-8 flex items-center gap-2.5 font-semibold text-blue-800 lg:hidden"><span className="grid size-8 place-items-center rounded-lg bg-vlu-red text-white"><FlaskConical aria-hidden="true" className="size-4" /></span>Nghiên cứu khoa học sinh viên</p>
-      <h1 className="text-2xl font-bold">Đăng nhập</h1>
-      <p className="mt-1 text-sm text-slate-600">Dùng mã sinh viên/giảng viên hoặc email do khoa cấp.</p>
+      <h1 className="text-3xl font-semibold tracking-tight">Đăng nhập</h1>
+      <p className="mt-2 text-slate-600">Dùng mã sinh viên, mã giảng viên hoặc email do khoa cấp.</p>
       {providers.data?.google === true && (
         <>
           {/* Liên kết GET cấp trên cùng, không form/window.location: CSP form-action 'self' chặn chuỗi chuyển hướng sang Google (API_GD7 §8.2) */}
