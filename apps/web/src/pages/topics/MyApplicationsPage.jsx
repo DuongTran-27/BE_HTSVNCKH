@@ -26,6 +26,7 @@ export function MyApplicationsPage() {
                     <p className="break-words font-semibold"><span className="mr-1.5 font-medium text-muted-foreground tabular-nums">{a.topic.code}</span>{a.topic.title}</p>
                     <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                       <Badge tone={APPLICATION_TONE[a.status]}>{APPLICATION_LABEL[a.status] ?? a.status}</Badge>
+                      {a.topic.advisor && <span>GV: {a.topic.advisor.fullName}</span>}
                       <span className="text-muted-foreground">Nộp {fmtDateTime(a.createdAt)}</span>
                     </p>
                     {a.status === 'DECLINED' && a.reason && <p className="mt-1 break-words text-sm">Lý do từ chối: {a.reason}</p>}

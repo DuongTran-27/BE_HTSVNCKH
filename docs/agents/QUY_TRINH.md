@@ -100,3 +100,7 @@ Chỉ tuyên bố hoàn thành khi `/kiem-tra-cuoi` đạt mọi mục:
 3. Độ phủ unit ≥ 70% ở module nghiệp vụ (NFR09).
 4. Ma trận truy vết `docs/agents/TRUY_VET.md`: mỗi FR P1/P2 có ít nhất 1 test tự động đạt.
 5. `reviewer` và `bao-mat` APPROVED cho lượt review toàn dự án.
+
+
+## Ghi chú E2E (2026-11-20, review DC-21..23)
+Mỗi project Playwright gửi `X-Forwarded-For` riêng (`apps/web/playwright.config.js`) để chia giới hạn `/api/auth/refresh` 300 lần/15 phút/IP (API `trust proxy 1`). Mỗi project dùng khoảng 160/300 lượt: khi bộ E2E tăng thêm ~40% thì thêm IP/project mới, **không** nới giới hạn của API.

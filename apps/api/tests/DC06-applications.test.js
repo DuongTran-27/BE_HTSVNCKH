@@ -82,7 +82,7 @@ describe('§4.6 #1 luồng đủ', () => {
 
     const ra = await apply(a, t);
     expect(ra.status, JSON.stringify(ra.body)).toBe(201);
-    expect(ra.body.application).toMatchObject({ status: 'PENDING', coverLetter: LETTER, topic: { id: t.id, status: 'RECRUITING' }, student: { code: a }, availableActions: ['WITHDRAW'] });
+    expect(ra.body.application).toMatchObject({ status: 'PENDING', coverLetter: LETTER, topic: { id: t.id, status: 'RECRUITING', advisor: { fullName: U[lec].fullName } }, student: { code: a }, availableActions: ['WITHDRAW'] });
     const rb = await apply(b, t);
     const rc = await apply(c, t);
     expect([rb.status, rc.status]).toEqual([201, 201]);

@@ -553,7 +553,7 @@ Chung        Hồ sơ cá nhân        /ho-so                         (menu ngư
 Khách        /dang-nhap           nút "Đăng nhập bằng Google" khi providers.google; /dang-nhap/google (nhận kết quả SSO)
 SV           Đề tài tuyển SV      /tuyen-sinh, /tuyen-sinh/:topicId
              Đơn ứng tuyển        /don-ung-tuyen
-GV           Đề tài tuyển SV      /tuyen-sinh (xem bảng tin), nút "Công bố đề tài" → /de-tai/moi?nguon=gv
+GV           Đề tài tuyển SV      /tuyen-sinh (xem bảng tin), nút "Công bố đề tài" → /de-tai/moi (GV tạo luôn là đề tài tuyển – không cần `?nguon=gv`, ghi nhận sau review DC-21..23)
              Ứng viên             /de-tai/:id/ung-vien          (GVHD đề tài GV công bố)
              Chấm bảo vệ          /cham-bao-ve, /cham-bao-ve/:assignmentId
 Cán bộ       Hội đồng             /hoi-dong, /hoi-dong/moi, /hoi-dong/:id
@@ -569,7 +569,7 @@ Thống kê     nút "Xuất Excel"     /thong-ke
 | R27 | `/tuyen-sinh/:topicId` | STUDENT, LECTURER, STAFF | Chi tiết + form ứng tuyển (SV) | `GET /api/recruitments/:topicId`, `POST …/applications`, `POST /api/applications/:id/withdraw` (GD7 §4.3) | DC-14 |
 | R28 | `/don-ung-tuyen` | STUDENT | Đơn của tôi | `GET /api/applications`, `POST /api/applications/:id/withdraw` | DC-14 |
 | R29 | `/de-tai/:id/ung-vien` | LECTURER, STAFF | Danh sách đơn; duyệt/từ chối; chốt nhóm | `GET /api/topics/:id/applications`, `POST /api/applications/:id/accept|decline`, `POST /api/topics/:id/actions` `FINALIZE_GROUP`/`UNPUBLISH_RECRUITMENT` | DC-13 |
-| R5', R7' | `/de-tai/moi?nguon=gv`, `/de-tai/:id/sua` | LECTURER | Tạo/sửa đề tài tuyển (thêm "Yêu cầu ứng viên", "Số SV cần tuyển"); công bố | `POST /api/topics`, `PUT /api/topics/:id`, `POST …/similarity-checks`, `/actions` `PUBLISH_RECRUITMENT` (GD7 §3) | DC-13 |
+| R5', R7' | `/de-tai/moi` (GV), `/de-tai/:id/sua` | LECTURER | Tạo/sửa đề tài tuyển (thêm "Yêu cầu ứng viên", "Số SV cần tuyển"); công bố | `POST /api/topics`, `PUT /api/topics/:id`, `POST …/similarity-checks`, `/actions` `PUBLISH_RECRUITMENT` (GD7 §3) | DC-13 |
 | R30 | `/hoi-dong` | STAFF | Danh sách hội đồng | `GET /api/councils` (GD7 §6.5) | DC-15 |
 | R31 | `/hoi-dong/moi` | STAFF | Lập hội đồng | `POST /api/councils`, `GET /api/users?role=LECTURER` | DC-15 |
 | R32 | `/hoi-dong/:id` | STAFF (thành viên HĐ: chỉ đọc) | Thành viên, đề tài được gán, gán thêm, hủy gán | `GET /api/councils/:id`, `PUT …/members`, `PATCH /api/councils/:id`, `POST …/assignments`, `POST /api/council-assignments/:id/cancel`, `GET /api/topics?status=WAITING_DEFENSE&councilAssigned=false` | DC-15 |

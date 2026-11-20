@@ -66,3 +66,13 @@ Lệch nhỏ so với UI §12 (không làm test đỏ, không mở BUG, để re
 ## Giới hạn
 - Kiểm tra 2 người chốt cùng lúc / 2 lần duyệt đơn đồng thời không làm ở E2E (đã có ở integration API: `apps/api/tests/DC06-applications.test.js`, `DC09-scoring.test.js`); E2E chỉ phủ luồng người dùng.
 - Kéo thả chuột HTML5 không kiểm ở E2E (task chỉ yêu cầu bàn phím); logic cột có unit test `kanbanColumn` (DC-17).
+
+## Sau review (phiên chính, 2026-11-20)
+- MINOR R28 thiếu cột GV (UI §12.6): backend `ApplicationView.topic.advisor { fullName } | null` (`applicationRepo.js` VIEW + `presentApplication`, API_GD7 §4.1), web R28 hiện "GV: …". Test: `DC06-applications.test.js` kỳ vọng `topic.advisor`, `dc14.test.jsx` ca mới "hiện GV của đề tài".
+- MINOR R26 `?nguon=gv`: chấp nhận, sửa UI.md theo hành vi hiện tại.
+- MINOR 429 lúc khởi động hiện "Không kết nối được máy chủ": **đúng đặc tả** UI §1 (dòng 24, quyết định T301 #5) – không sửa.
+- MINOR giới hạn IP E2E: ghi vào `QUY_TRINH.md`.
+```
+$ npm test → shared 115/115 · api 86 file 1222/1222 · web 39 file 384/384
+$ npm run lint → exit 0
+```

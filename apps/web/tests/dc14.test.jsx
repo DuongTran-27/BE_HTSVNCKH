@@ -225,6 +225,12 @@ describe('R28 đơn ứng tuyển của tôi', () => {
     await waitFor(() => expect(sent('POST', '/applications/ap1/withdraw')).toHaveLength(1));
   });
 
+  it('hiện GV của đề tài (UI §12.6)', async () => {
+    map['GET /applications'] = page([app({ topic: { ...app().topic, advisor: { fullName: 'Cô Lan' } } })]);
+    open('/don-ung-tuyen');
+    expect(await screen.findByText('GV: Cô Lan')).toBeTruthy();
+  });
+
   it('APPLICATION_CLOSED khi rút hiện trong hộp thoại', async () => {
     map['POST /applications/ap1/withdraw'] = apiErr(409, 'APPLICATION_CLOSED', 'Đơn đã được xử lý');
     open('/don-ung-tuyen');

@@ -277,11 +277,12 @@ Mã `GROUP_NOT_EMPTY` (§1.3) **bỏ**. Công bố lại sau đó là đề tài
 ### 4.1 `ApplicationView`
 ```json
 { "id": "ap1", "status": "PENDING", "coverLetter": "…", "reason": null, "createdAt": "…", "respondedAt": null,
-  "topic": { "id": "t9", "code": "NCKH-2026-0031", "title": "…", "status": "RECRUITING" },
+  "topic": { "id": "t9", "code": "NCKH-2026-0031", "title": "…", "status": "RECRUITING", "advisor": { "fullName": "…" } },
   "student": { "id": "s1", "code": "…", "fullName": "…", "classCode": "…" },
   "availableActions": ["ACCEPT", "DECLINE"] }
 ```
 - `student` chỉ mã, họ tên, mã lớp (không email, SĐT – FR30). Không trả cho SV khác.
+- `topic.advisor` (bổ sung sau DC-21..23): họ tên GVHD hiện hành, `null` nếu không có – cột "GV" của R28 (UI §12.6).
 - `availableActions`: `ACCEPT`, `DECLINE` cho GVHD hiện hành khi đơn `PENDING` và đề tài RECRUITING; `WITHDRAW` cho chính SV khi `PENDING`.
 
 ### 4.2 Bảng tin – đọc

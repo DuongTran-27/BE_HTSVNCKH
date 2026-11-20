@@ -36,7 +36,7 @@ const appOps = (db) => ({
 // ApplicationView (§4.1): SV chỉ mã, họ tên, mã lớp – không email, SĐT (FR30)
 const VIEW = {
   id: true, status: true, coverLetter: true, reason: true, createdAt: true, respondedAt: true, studentId: true, topicId: true,
-  topic: { select: { id: true, code: true, title: true, status: true, facultyId: true, advisings: { where: { endAt: null }, select: { lecturerId: true } } } },
+  topic: { select: { id: true, code: true, title: true, status: true, facultyId: true, advisings: { where: { endAt: null }, select: { lecturerId: true, lecturer: { select: { fullName: true } } } } } },
   student: { select: { id: true, code: true, fullName: true, class: { select: { code: true } } } },
 };
 

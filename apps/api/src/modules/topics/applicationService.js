@@ -20,7 +20,8 @@ export const presentApplication = (a, user) => {
   ];
   return {
     id: a.id, status: a.status, coverLetter: a.coverLetter, reason: a.reason, createdAt: iso(a.createdAt), respondedAt: iso(a.respondedAt),
-    topic: { id: a.topic.id, code: a.topic.code, title: a.topic.title, status: a.topic.status },
+    // advisor: GV đăng đề tài – cột "GV" của R28 (UI §12.6)
+    topic: { id: a.topic.id, code: a.topic.code, title: a.topic.title, status: a.topic.status, advisor: a.topic.advisings[0]?.lecturer ? { fullName: a.topic.advisings[0].lecturer.fullName } : null },
     student: { id: a.student.id, code: a.student.code, fullName: a.student.fullName, classCode: a.student.class?.code ?? null },
     availableActions,
   };
