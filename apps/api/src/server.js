@@ -41,8 +41,10 @@ const missingSmtp = missingSmtpEnv(env);
 if (missingSmtp.length) logger.info({ missing: missingSmtp }, 'Email thông báo tắt: thiếu biến môi trường');
 else {
   const { default: nodemailer } = await import('nodemailer');
+  const secure = env.SMTP_SECURE ?? env.SMTP_PORT === 465;
   const transport = nodemailer.createTransport({
-    host: env.SMTP_HOST, port: env.SMTP_PORT, secure: env.SMTP_SECURE ?? env.SMTP_PORT === 465,
+    host: env.SMTP_HOST, port: env.SMTP_PORT, secure,
+    requireTLS: !secure, // cổng 587: bắt buộc STARTTLS, máy chủ không hỗ trợ thì báo lỗi thay vì gửi SMTP_PASS không mã hóa (DC-20 bao-mat m1)
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
     // Máy chủ mail treo không được giữ một lượt gửi quá ngưỡng coi là treo (15 phút) → tránh gửi trùng (review DC-04 bao-mat m2)
     connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 30_000,

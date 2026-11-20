@@ -156,6 +156,10 @@ Sinh chuỗi ngẫu nhiên: `openssl rand -base64 48`. Không dán giá trị th
 | `API_ORIGIN` | Vercel | `https://<api>.onrender.com` | chỉ origin: `https`, không `/` cuối, không `/api` |
 | `API_BASE_URL` | GitHub secret | `https://<app>.vercel.app` | domain **Vercel**, không phải Render |
 | `MIGRATE_DATABASE_URL` | GitHub secret (environment `production`) | `postgresql://postgres.<ref>:<mk>@aws-0-<region>.pooler.supabase.com:5432/postgres` | Session pooler 5432, role `postgres`, chỉ workflow `migrate.yml` dùng |
+| `PUBLIC_APP_URL` | Render | `https://<app>.vercel.app` | domain **Vercel**, `https`, không `/` cuối; dùng cho Google (redirect) và link trong email (§6.5, §6.6) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Render | – | §6.5; bí mật, không vào repo |
+| `GOOGLE_ALLOWED_DOMAINS` | Render | `vanlanguni.vn,vlu.edu.vn` | danh sách tên miền email, cách nhau dấu phẩy (chuẩn hóa chữ thường) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` (tùy chọn) | Render | `smtp.example.com`, `465` | §6.6; `SMTP_SECURE` mặc định true khi cổng 465 |
 | `BACKUP_DATABASE_URL`, `BACKUP_PASSPHRASE`, `CLOUDINARY_URL` | GitHub secret | – | §3 |
 
 Biến Vercel đặt ở Settings > Environment Variables, môi trường Production (và Preview nếu dùng preview), **không** có tiền tố `VITE_` (tiền tố này đưa giá trị vào bundle công khai).
@@ -170,6 +174,26 @@ Biến Vercel đặt ở Settings > Environment Variables, môi trường Produc
 ### 6.3 Mỗi lần phát hành
 1. Có migration mới → chạy workflow "Migrate" **trước** (migration phải tương thích ngược với code cũ đang chạy).
 2. Render: Manual Deploy (`autoDeploy: false` trong `render.yaml`). Vercel tự deploy khi push nhánh chính.
+
+### 6.5 Đăng nhập Google (FR28, DC-03) – con người làm, agent không tạo tài khoản dịch vụ
+Tùy chọn: thiếu MỘT trong `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_ALLOWED_DOMAINS`, `PUBLIC_APP_URL` thì nút Google ẩn và `/api/auth/google/*` trả 404 (mật khẩu vẫn dùng được). Chỉ tài khoản đã có sẵn trong hệ thống đăng nhập được (không tự tạo tài khoản).
+1. Đăng nhập Google Cloud Console bằng tài khoản quản trị Google Workspace của trường. Tạo project (hoặc chọn project có sẵn).
+2. APIs & Services > OAuth consent screen: User type = **Internal** (chỉ người dùng trong tổ chức Workspace). Điền tên ứng dụng, email hỗ trợ. Scope chỉ `openid`, `email`, `profile`.
+3. APIs & Services > Credentials > Create credentials > OAuth client ID > Application type = **Web application**.
+4. Authorized redirect URIs: đúng `https://<domain web>/api/auth/google/callback` (domain **Vercel**, vì cookie và `/api/*` đi qua Vercel; sai một ký tự là Google báo `redirect_uri_mismatch`). Khi thử cục bộ thêm `http://localhost:5173/api/auth/google/callback`. Không cần Authorized JavaScript origins.
+5. Lấy Client ID và Client secret. Trên Render đặt `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_ALLOWED_DOMAINS` (vd. `vanlanguni.vn,vlu.edu.vn`, đúng tên miền Workspace; email phải thuộc miền `hd` của Google) và `PUBLIC_APP_URL` (`https://<domain web>`). Manual Deploy.
+6. Xác nhận: trang `/dang-nhap` hiện nút "Đăng nhập bằng Google"; đăng nhập bằng tài khoản có sẵn → vào trang chủ; email ngoài miền hoặc chưa có tài khoản → quay về `/dang-nhap` kèm thông báo lỗi. Không có nút = thiếu biến: xem log khởi động của Render (chỉ liệt kê TÊN biến thiếu).
+7. Xoay khóa: tạo secret mới ở Credentials, cập nhật Render, deploy lại, rồi xóa secret cũ.
+
+Về CSP (`apps/web/vercel.json`): **không cần đổi**. Nút Google là liên kết `<a href="/api/auth/google/start">` (điều hướng cấp trên cùng cùng nguồn), API trả 302 sang `accounts.google.com`, rồi Google 302 về `/api/auth/google/callback`. Điều hướng không thuộc `connect-src`/`script-src`/`img-src`; `form-action 'self'` chỉ áp cho việc gửi `<form>`; trình duyệt không tải script/ảnh/font của Google. Email không đi qua trình duyệt nên SMTP cũng không liên quan CSP. Thêm `https://accounts.google.com` vào CSP là nới lỏng không cần thiết. Nếu sau này dùng nút "Sign in with Google" của Google Identity Services (script từ `accounts.google.com`) thì mới phải sửa CSP.
+
+### 6.6 Email thông báo (FR29, DC-04) – con người làm
+Tùy chọn: thiếu MỘT trong `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `PUBLIC_APP_URL` thì không gửi email (thông báo trong web vẫn có). Thư chỉ gồm tiêu đề thông báo và đường dẫn vào hệ thống.
+1. Chọn nhà cung cấp SMTP có xác thực (Google Workspace SMTP relay/tài khoản dịch vụ với **mật khẩu ứng dụng**, hoặc dịch vụ như Brevo/Mailgun/SendGrid). Tạo tài khoản gửi riêng (vd. `no-reply@<tên miền trường>`), không dùng tài khoản cá nhân. Gói free của Render không chặn cổng 465/587 nhưng kiểm tra lại khi nâng/hạ gói.
+2. Với tên miền của địa chỉ gửi: cấu hình SPF, DKIM, DMARC theo hướng dẫn nhà cung cấp (nếu không thư dễ vào spam).
+3. Trên Render đặt `SMTP_HOST`, `SMTP_PORT` (465 hoặc 587), `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (vd. `NCKH Khoa CNTT <no-reply@<tên miền>>`, không xuống dòng), `PUBLIC_APP_URL`. Cổng 587 (STARTTLS): đặt thêm `SMTP_SECURE=false`. Manual Deploy.
+4. Xác nhận: tạo một thông báo (vd. mời thành viên vào đề tài) tới tài khoản có email thật; trong vài phút thư tới, link trỏ về `https://<domain web>/...`. Thư không tới: xem log Render (cảnh báo "Gửi email thông báo thất bại" chỉ ghi mã lỗi, không ghi địa chỉ). Mỗi thư thử tối đa 3 lần rồi `FAILED`.
+5. Đổi mật khẩu SMTP: cập nhật `SMTP_PASS` trên Render và deploy lại.
 
 ### 6.4 Checklist SAU KHI DEPLOY – bắt buộc trước khi dùng thật (MAJOR T703c mục 3)
 Ghi kết quả từng mục (ngày, người, số đo) vào `docs/agents/reports/T706a.md` mục "Kết quả đo thật" hoặc biên bản riêng.

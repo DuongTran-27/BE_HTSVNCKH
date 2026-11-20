@@ -31,3 +31,24 @@ services:
         sync: false # >= 32 ký tự, trùng secret CRON_SECRET của GitHub Actions
       - key: ORIGIN_SECRET
         sync: false # >= 32 ký tự, trùng ORIGIN_SECRET của Vercel; API kiểm từ T706 bước B
+      # DC-20: đăng nhập Google (FR28) và email thông báo (FR29). Tùy chọn: thiếu một biến của nhóm thì tính năng tắt êm (tên nhóm: GOOGLE_ENV_KEYS, SMTP_ENV_KEYS trong apps/api/src/config/env.js). Hướng dẫn: VAN_HANH §6.5, §6.6
+      - key: PUBLIC_APP_URL
+        sync: false # https://<domain Vercel>, không có / ở cuối; production bắt buộc https (cả Google lẫn SMTP dùng)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_ALLOWED_DOMAINS
+        sync: false # danh sách tên miền email trường, cách nhau dấu phẩy, vd. vanlanguni.vn,vlu.edu.vn
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false # 465 (SSL, SMTP_SECURE tự bật) hoặc 587 (STARTTLS, đặt SMTP_SECURE=false)
+      - key: SMTP_SECURE
+        sync: false # tùy chọn: true/false; bỏ qua thì mặc định true khi cổng 465
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false # vd. NCKH Khoa CNTT <no-reply@<tên miền>>
