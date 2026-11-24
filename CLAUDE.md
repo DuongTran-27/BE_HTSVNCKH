@@ -13,7 +13,7 @@ Cloudinary · pg_trgm + TF-IDF JS · Recharts + CSV · Vitest, Supertest, Playwr
 Muốn đổi/thêm thư viện → ghi đề xuất vào báo cáo task, chờ agent `kien-truc-su` duyệt.
 
 ## Cấu trúc
-Repo này là **backend** (API). Frontend ở repo riêng `../Website_HTWLHD_SV_NCKH_frontend` (tách 2026-11-24).
+Repo này là **backend** (API). Frontend ở repo riêng `../FE_HTSVNCKH` (tách 2026-11-24).
 `src/` · `prisma/` · `scripts/` · `tests/` · `shared/` (workspace `@nckh/shared`: enum, TRANSITIONS, schema Zod) · `docs/` (tài liệu chung cho cả hai repo).
 Bảng chuyển trạng thái chỉ được định nghĩa ở `shared/src/transitions.js`. Repo frontend có bản sao `shared/` – mọi thay đổi `shared/` phải chép y hệt sang frontend trong cùng đợt.
 

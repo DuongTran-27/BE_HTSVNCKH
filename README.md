@@ -1,6 +1,6 @@
 # Hệ thống quản lý NCKH sinh viên – Khoa CNTT
 
-**Backend** (API REST Node.js + Express 5 + Prisma, PostgreSQL/Supabase). Frontend React nằm ở repo riêng `Website_HTWLHD_SV_NCKH_frontend`,
+**Backend** (API REST Node.js + Express 5 + Prisma, PostgreSQL/Supabase). Frontend React nằm ở repo riêng `FE_HTSVNCKH`,
 gọi API này qua `/api` (dev: proxy Vite → `localhost:4000`; production: rewrite của Vercel → Render).
 
 | Thư mục | Nội dung |
