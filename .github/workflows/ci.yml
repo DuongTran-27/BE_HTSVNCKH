@@ -35,7 +35,6 @@ jobs:
         run: |
           git diff --name-only --diff-filter=A -z "origin/$BASE_REF...HEAD" -- '*.js' '*.jsx' '*.json' '*.yml' '*.yaml' '*.css' \
             | xargs -0 -r npx prettier --check
-      - run: npm run build -w @nckh/web
 
   test:
     runs-on: ubuntu-latest
@@ -48,7 +47,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres # chỉ cho DB test dùng một lần, khớp apps/api/.env.test – không phải bí mật
+          POSTGRES_PASSWORD: postgres # chỉ cho DB test dùng một lần, khớp .env.test – không phải bí mật
           POSTGRES_DB: nckh_test
           TZ: Asia/Ho_Chi_Minh
         ports:
@@ -68,16 +67,15 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
-      - run: npx -w @nckh/api prisma generate
+      - run: npx prisma generate
       - run: npm run db:test:up # external: tạo pg_trgm/unaccent ở template1 + nckh_test, in bảng K1–K7
       - run: npm run db:test:reset
       - name: Địa chỉ server mà lớp kiểm mức DB thấy (kỳ vọng 172.x qua cầu Docker)
-        working-directory: apps/api
         run: >-
           node -e 'process.loadEnvFile(".env.test"); const c = new (require("@prisma/client").PrismaClient)();
           c.$queryRawUnsafe("SELECT host(inet_server_addr()) AS a").then((r) => console.log("inet_server_addr =", r[0].a)).finally(() => c.$disconnect())'
       - run: npm test
-      - name: Độ phủ module nghiệp vụ (apps/api/src/modules, packages/shared/src)
+      - name: Độ phủ module nghiệp vụ (src/modules, shared/src)
         if: matrix.node == '24'
         run: |
           npm run test:coverage
@@ -87,48 +85,5 @@ jobs:
         with:
           name: coverage
           path: coverage/
-          if-no-files-found: ignore
-          retention-days: 7
-
-  # T707b B14: E2E Playwright trên Linux. Job riêng, chờ job test xanh để không chiếm runner khi test chính đã đỏ.
-  e2e:
-    needs: test
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres # khớp apps/web/e2e/env.js, chỉ DB dùng một lần – không phải bí mật
-          POSTGRES_DB: nckh_test
-          TZ: Asia/Ho_Chi_Minh
-        ports:
-          - 54329:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d nckh_test"
-          --health-interval 2s --health-timeout 3s --health-retries 30
-    env:
-      DB_TEST_DRIVER: external
-      NO_COLOR: '1'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci
-      - run: npx -w @nckh/api prisma generate
-      - run: npm run db:test:up # tạo pg_trgm/unaccent ở template1 để prepare.js tạo nckh_t309_test có đủ extension
-      - run: npx playwright install --with-deps chromium
-        working-directory: apps/web
-      - run: npm run test:e2e -w @nckh/web
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-e2e
-          path: apps/web/e2e/.out/test-results/
           if-no-files-found: ignore
           retention-days: 7

@@ -22,11 +22,11 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npx -w @nckh/api prisma generate
+      - run: npx prisma generate
       - name: Dry-run
         env:
           DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
           CLOUDINARY_FOLDER: ${{ vars.CLOUDINARY_FOLDER || 'nckh/production' }}
-        run: node apps/api/scripts/cleanup-orphans.js
+        run: node scripts/cleanup-orphans.js

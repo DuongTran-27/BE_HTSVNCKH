@@ -13,15 +13,15 @@ Cloudinary · pg_trgm + TF-IDF JS · Recharts + CSV · Vitest, Supertest, Playwr
 Muốn đổi/thêm thư viện → ghi đề xuất vào báo cáo task, chờ agent `kien-truc-su` duyệt.
 
 ## Cấu trúc
-`packages/shared` (enum, TRANSITIONS, schema Zod dùng chung) · `apps/api` · `apps/web` · `docs/`.
-Bảng chuyển trạng thái chỉ được định nghĩa ở `packages/shared/src/transitions.js`.
+Repo này là **backend** (API). Frontend ở repo riêng `../Website_HTWLHD_SV_NCKH_frontend` (tách 2026-11-24).
+`src/` · `prisma/` · `scripts/` · `tests/` · `shared/` (workspace `@nckh/shared`: enum, TRANSITIONS, schema Zod) · `docs/` (tài liệu chung cho cả hai repo).
+Bảng chuyển trạng thái chỉ được định nghĩa ở `shared/src/transitions.js`. Repo frontend có bản sao `shared/` – mọi thay đổi `shared/` phải chép y hệt sang frontend trong cùng đợt.
 
 ## Lệnh
-- `npm test` – toàn bộ unit + integration
+- `npm test` – toàn bộ unit + integration (cần DB test)
 - `npm run lint`
-- `npm run test:e2e -w @nckh/web` – Playwright
-- `npm run build -w @nckh/web`
-- Database test: `docker compose -f docker-compose.test.yml up -d` (Postgres 16 có pg_trgm, unaccent)
+- Database test: `npm run db:test:up` rồi `npm run db:test:reset` (Postgres 16 có pg_trgm, unaccent)
+- E2E Playwright chạy ở repo frontend (`npm run test:e2e`), dùng code backend này từ thư mục bên cạnh.
 
 ## Quy tắc bắt buộc
 1. Không sửa/xóa/skip test để cho qua. Test sai đặc tả → ghi rõ lý do trong báo cáo và để reviewer quyết.

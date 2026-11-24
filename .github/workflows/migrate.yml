@@ -33,5 +33,5 @@ jobs:
           DIRECT_URL: ${{ secrets.MIGRATE_DATABASE_URL }}
         run: |
           test -n "$DIRECT_URL" || { echo "Thiếu secret MIGRATE_DATABASE_URL"; exit 1; }
-          npx -w @nckh/api prisma migrate deploy
-          npx -w @nckh/api prisma migrate status
+          npx prisma migrate deploy
+          npx prisma migrate status

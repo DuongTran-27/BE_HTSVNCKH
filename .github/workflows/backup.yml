@@ -75,7 +75,7 @@ jobs:
           RUN_IDS="$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/workflows/backup.yml/runs?branch=$BRANCH&per_page=100" --jq '.workflow_runs[].id' | paste -sd, -)"
           export RUN_IDS
           gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" --jq '.artifacts[]' | jq -s '.' > artifacts.json
-          node apps/api/scripts/backup-prune.js 7 < artifacts.json > delete-ids.txt
+          node scripts/backup-prune.js 7 < artifacts.json > delete-ids.txt
           while read -r id; do
             if [ -n "$id" ]; then
               gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$id"

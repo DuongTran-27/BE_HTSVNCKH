@@ -1,20 +1,30 @@
 import { defineConfig } from 'vitest/config';
+import { assertTestDbEnv } from './scripts/test-db-guard.js';
 
-// BUG-005c: "npx vitest run apps/api/tests/..." từ gốc repo phải dùng config của từng workspace – nếu không,
-// chốt chặn DB test, globalSetup và fileParallelism:false trong apps/api/vitest.config.js bị bỏ qua (NFR08).
-// Vitest tìm config ngược lên thư mục cha: workspace nào không có config riêng sẽ nhặt file này (xem packages/shared).
+// NFR08 (BUG-004): nạp .env.test, rồi từ chối chạy nếu bất kỳ URL Prisma nào không trỏ DB test cục bộ
+// (shell đã export DATABASE_URL/DIRECT_URL của DB dev thắng .env.test vì loadEnvFile không ghi đè).
+try {
+  assertTestDbEnv('Từ chối chạy test');
+} catch (e) {
+  console.error(e.message);
+  process.exit(1);
+}
+
 export default defineConfig({
   test: {
-    projects: ['packages/*', 'apps/*'],
-    // T202 (NFR09): độ phủ module nghiệp vụ – "npm run test:coverage" (gốc). Ngưỡng ≥70% (đặc tả không nêu chỉ số → áp cả 4) theo từng thư mục; dưới ngưỡng thì vitest exit ≠ 0.
+    globalSetup: './tests/global-setup.js',
+    // Mọi file test integration dùng chung một DB nckh_test; chạy file song song thì file này xóa dữ liệu
+    // file kia đang dùng (kiem-thu tái hiện "expected 2 to be 1"). Test trong một file vẫn tuần tự như mặc định.
+    fileParallelism: false,
+    // T202 (NFR09): độ phủ module nghiệp vụ – "npm run test:coverage". Ngưỡng ≥70% theo từng thư mục; dưới ngưỡng thì vitest exit ≠ 0.
     coverage: {
       provider: 'v8',
-      include: ['apps/api/src/modules/**', 'packages/shared/src/**'],
+      include: ['src/modules/**', 'shared/src/**'],
       exclude: ['**/*.test.js'],
       reporter: ['text', 'json-summary', 'html'],
       thresholds: {
-        'apps/api/src/modules/**': { lines: 70, statements: 70, functions: 70, branches: 70 },
-        'packages/shared/src/**': { lines: 70, statements: 70, functions: 70, branches: 70 },
+        'src/modules/**': { lines: 70, statements: 70, functions: 70, branches: 70 },
+        'shared/src/**': { lines: 70, statements: 70, functions: 70, branches: 70 },
       },
     },
   },

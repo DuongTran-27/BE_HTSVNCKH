@@ -8,8 +8,8 @@ services:
     region: singapore # gần Supabase ap-southeast-1; đổi nếu project Supabase ở vùng khác
     plan: free
     rootDir: .
-    buildCommand: npm ci --include=dev && npx -w @nckh/api prisma generate # prisma CLI là devDependency; NODE_ENV=production làm npm ci bỏ dev
-    startCommand: node apps/api/src/server.js
+    buildCommand: npm ci --include=dev && npx prisma generate # prisma CLI là devDependency; NODE_ENV=production làm npm ci bỏ dev
+    startCommand: node src/server.js
     healthCheckPath: /api/health
     autoDeploy: false # deploy tay sau khi migrate (§6.3), tránh code mới chạy trên schema cũ
     envVars:
@@ -31,7 +31,7 @@ services:
         sync: false # >= 32 ký tự, trùng secret CRON_SECRET của GitHub Actions
       - key: ORIGIN_SECRET
         sync: false # >= 32 ký tự, trùng ORIGIN_SECRET của Vercel; API kiểm từ T706 bước B
-      # DC-20: đăng nhập Google (FR28) và email thông báo (FR29). Tùy chọn: thiếu một biến của nhóm thì tính năng tắt êm (tên nhóm: GOOGLE_ENV_KEYS, SMTP_ENV_KEYS trong apps/api/src/config/env.js). Hướng dẫn: VAN_HANH §6.5, §6.6
+      # DC-20: đăng nhập Google (FR28) và email thông báo (FR29). Tùy chọn: thiếu một biến của nhóm thì tính năng tắt êm (tên nhóm: GOOGLE_ENV_KEYS, SMTP_ENV_KEYS trong src/config/env.js). Hướng dẫn: VAN_HANH §6.5, §6.6
       - key: PUBLIC_APP_URL
         sync: false # https://<domain Vercel>, không có / ở cuối; production bắt buộc https (cả Google lẫn SMTP dùng)
       - key: GOOGLE_CLIENT_ID
