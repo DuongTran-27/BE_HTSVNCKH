@@ -269,34 +269,112 @@ Quy ước cột: **Mã ca** · **FR** · **Tiền điều kiện** · **Các b�
 
 ---
 
-## 5. Kịch bản demo trước hội đồng (≈ 15–20 phút)
+## 5. Kịch bản demo trước hội đồng (≈ 20 phút) – đã diễn tập trọn vẹn 2026-11-26
 
-Mở sẵn 3 cửa sổ trình duyệt (một cửa sổ ẩn danh cho mỗi vai trò) để không phải đăng xuất liên tục. Làm nóng server trước buổi demo (NFR10).
+Mọi bước dưới đây đã được chạy thử trên giao diện thật với **dữ liệu seed mới tinh** và cho đúng kết quả ở cột "Phải thấy".
+Kịch bản chỉ đúng khi DB vừa seed lại (mục 5.1). Các bước làm thay đổi dữ liệu, nên **diễn tập xong phải seed lại** trước buổi thật.
 
-| Bước | Vai trò | Thao tác | Điều cần chỉ cho hội đồng | Ca liên quan |
-|---|---|---|---|---|
-| 1 | Khách | Mở `/dang-nhap`, nhập sai mật khẩu 1 lần | Thông báo lỗi tiếng Việt, không lộ tài khoản có tồn tại hay không | KT-01, KT-02 |
-| 2 | ADMIN `QT001` | Đăng nhập → mở `/xet-duyet` | Trang 403: quản trị không có quyền nghiệp vụ | PQ-01 |
-| 3 | ADMIN | `/quan-ly/tai-khoan/nhap-csv` → tải CSV có lỗi | Bảng xem trước báo lỗi theo dòng, chưa ghi DB | KT-07 |
-| 4 | SV trưởng nhóm | `/de-tai/moi` → nhập tên "Nhan dien bien so xe bang hoc sau", tóm tắt ≥ 100 từ, 3 từ khóa → **Kiểm tra trước** | Cảnh báo đỏ, top 5 với 2 điểm riêng, từ khóa trùng | TT-01, TT-02 |
-| 5 | SV trưởng nhóm | Mời 1 bạn vào nhóm; đổi sang cửa sổ SV kia, chấp nhận ở `/loi-moi` | Lời mời chấp nhận mới thành thành viên | DK-04 |
-| 6 | SV trưởng nhóm | Mời `GV001` hướng dẫn | Trạng thái "Chờ giảng viên hướng dẫn", chuông thông báo của GV | DK-07 |
-| 7 | GV `GV001` | `/de-nghi-huong-dan` → Nhận | Trạng thái "Đã có giảng viên hướng dẫn" | DK-09 |
-| 8 | SV trưởng nhóm | Gửi xét duyệt khi giải trình < 50 từ, rồi đủ 50 từ | Bị chặn rồi gửi được: FR06 chỉ cảnh báo, buộc giải trình | TT-03 |
-| 9 | Cán bộ `CB001` | `/xet-duyet/:id` → xem cảnh báo FR06 + giải trình → Yêu cầu chỉnh sửa (có lý do) | Cán bộ thấy đủ thông tin trùng lặp | XD-01, TT-09 |
-| 10 | SV trưởng nhóm | Sửa tóm tắt, gửi lại → mở So sánh các lần gửi | Snapshot bất biến, so sánh khác biệt | XD-02 |
-| 11 | Cán bộ | Duyệt | Đang thực hiện; lịch sử ghi người duyệt | XD-03 |
-| 12 | GV | Tạo mốc bắt buộc có hạn | – | TH-01 |
-| 13 | SV | Nộp `bao-cao.pdf`; thử nộp `virus.exe` | File sai loại bị backend chặn | TH-06, TH-07 |
-| 14 | GV | `/de-tai/:id/kanban` → dùng **bàn phím** chuyển thẻ sang Đạt | Kanban, nhận xét gắn bản nộp | TH-15 |
-| 15 | GV | Nhập kết quả "Tốt" + nhận xét tổng kết → Gửi đóng | Chờ đóng | DD-02 |
-| 16 | Cán bộ | Xác nhận đóng → mở `/kho` | Đề tài đạt vào kho tra cứu, không lộ file/thành viên | DD-05 |
-| 17 | Cán bộ | `/thong-ke` → lọc → Xuất CSV và Excel, mở bằng Excel | Cùng số với biểu đồ, tiếng Việt đúng | TK-01, TK-04 |
-| 18 | (Tùy chọn) Thư ký `GV003` | `/cham-bao-ve` trên đề tài Chờ bảo vệ có sẵn → chốt | Luồng hội đồng: điểm trung bình, quy đổi kết quả | DD-10..12 |
-| 19 | (Tùy chọn) Bất kỳ | Thu trình duyệt về 360 px | Giao diện không tràn ngang | NFR07 |
-| 20 | Người trình bày | Chạy `npm run test:e2e -w @nckh/web` (hoặc chiếu ảnh chụp kết quả đã chạy) | Bằng chứng tự động hóa | Mục 7 |
+### 5.1 Chuẩn bị (trước buổi demo 15 phút)
 
-**Phương án dự phòng khi demo lỗi mạng/DB:** chụp sẵn màn hình kết quả `npm test` và `npm run test:e2e` (Playwright đang cấu hình reporter `list`, không sinh báo cáo HTML) cùng bảng kết quả mục 7.
+```bash
+# Terminal 1 – BE_HTSVNCKH (Git Bash)
+npm run db:dev:up
+export DATABASE_URL=postgresql://postgres:postgres@localhost:54330/nckh_dev DIRECT_URL=$DATABASE_URL
+npx prisma migrate reset --force       # xóa sạch DB dev, áp migration, tự chạy seed – kiểm dòng "Datasource" phải là localhost:54330
+node --input-type=module -e "
+import { PrismaClient } from '@prisma/client'; const p = new PrismaClient();
+const [{ db }] = await p.\$queryRaw\`select current_database() db\`;
+if (db !== 'nckh_dev') throw new Error('Không phải DB dev: ' + db);
+console.log(await p.user.updateMany({ data: { mustChangePassword: false } })); await p.\$disconnect();"
+npm run dev                            # chờ http://localhost:4000/api/health trả {"status":"ok","db":true}
+
+# Terminal 2 – FE_HTSVNCKH
+npm run dev                            # http://localhost:5173
+```
+- Bước `updateMany` bắt buộc: seed bật cờ "phải đổi mật khẩu", bỏ qua thì lần đăng nhập đầu của mọi tài khoản bị đẩy sang `/doi-mat-khau`.
+- `npm run demo:people` (tùy chọn) chỉ đổi SV mẫu thứ 21 trở đi và **họ tên** GV001–GV005; mọi tài khoản dùng trong kịch bản vẫn giữ mã.
+- Để sẵn 3 file trên Desktop: `bao-cao.pdf` (PDF bất kỳ < 10 MB), `virus.exe` (đổi đuôi một file txt), `tai-khoan.csv` (nội dung ở bước A2).
+- Mỗi vai trò một cửa sổ, khỏi đăng xuất. Các cửa sổ ẩn danh **cùng một Chrome** dùng chung cookie → dùng hồ sơ Chrome khác nhau hoặc Chrome + Edge + Firefox.
+- Mật khẩu mọi tài khoản: `Nckh@2026-dev`.
+
+| Cửa sổ | Tài khoản | Vai trò trong kịch bản |
+|---|---|---|
+| 1 | `2374801030016` (SV) | Trưởng nhóm đề tài mới |
+| 2 | `2374801040017` (SV) | Thành viên được mời |
+| 3 | `GV001` | Giảng viên hướng dẫn |
+| 4 | `CB001` | Cán bộ khoa |
+| (đổi lần lượt) | `QT001`, `GV002`, `GV003`, `2374802010018` | Quản trị; Chủ tịch, Thư ký hội đồng; SV ứng tuyển |
+
+### 5.2 Phần A – Phân quyền và tài khoản (2 phút)
+
+| Bước | Tài khoản | Thao tác | Phải thấy |
+|---|---|---|---|
+| A1 | `QT001` | Đăng nhập → gõ URL `/xet-duyet`, rồi `/thong-ke` | Vào `/quan-ly/tai-khoan`; hai URL kia hiện "Bạn không có quyền truy cập trang này" (quản trị không có quyền nghiệp vụ – FR25) |
+| A2 | `QT001` | Quản lý tài khoản → Nhập CSV → chọn Khoa CNTT → chọn `tai-khoan.csv` → **Xem trước** | "Hợp lệ: 1 · Lỗi: 2"; dòng 3 `code` "Mã đã tồn tại", dòng 4 `email` "Email không hợp lệ"; chưa ghi DB cho tới khi bấm "Xác nhận tạo 1 tài khoản" (không cần bấm) – FR02 |
+
+Nội dung `tai-khoan.csv` (UTF-8):
+```
+code,email,fullName,role,classCode
+2374801039001,sv9001@nckh.example,Nguyễn Văn Mới,STUDENT,71K29CNTT08
+GV001,gv-trung@nckh.example,Trùng Mã Giảng Viên,LECTURER,
+2374801039002,email-sai,Lê Thị Sai Email,STUDENT,71K29CNTT08
+```
+
+### 5.3 Phần B – Vòng đời một đề tài từ đầu đến cuối (12 phút)
+
+| Bước | Cửa sổ | Thao tác | Phải thấy |
+|---|---|---|---|
+| B1 | 1 (SV016) | Đề tài của tôi → **Tạo đề tài** → chọn đợt 2026-2027, tên `Tom tat van ban tieng Viet tu dong bang hoc sau` (cố ý gõ không dấu) → Tạo nháp | Toast "Đã tạo đề tài NCKH-2026-0037", vào màn soạn hồ sơ |
+| B2 | 1 | Lĩnh vực **Trí tuệ nhân tạo**; dán Tóm tắt (mục 5.5); Mục tiêu `Xây dựng mô hình tóm tắt văn bản tiếng Việt và đánh giá trên bộ dữ liệu tự thu thập.`; từ khóa (Enter sau mỗi từ): `tóm tắt văn bản`, `xử lý ngôn ngữ tự nhiên`, `tiếng Việt` → **Lưu nháp** → **Kiểm tra trước** | "Đủ điều kiện gửi 5/5"; **Nghi trùng cao** với *NCKH-2026-0019 – Tóm tắt văn bản tiếng Việt tự động*: Điểm tên 76%, Điểm nội dung 91%, từ khóa trùng. Hồ sơ đang chờ duyệt của nhóm khác chỉ hiện "Có 1 hồ sơ đang chờ duyệt…", không lộ tên (FR06) |
+| B3 | 1 | Trang đề tài → **Quản lý nhóm** → Mã sinh viên `2374801040017` → Mời thành viên | "Lời mời đang chờ: 2374801040017 – Vũ Ngọc Vy" |
+| B4 | 2 (SV017) | Menu **Lời mời** → Chấp nhận | Trang đề tài "Nhóm (2/5)" – chấp nhận rồi mới thành thành viên (FR03) |
+| B5 | 1 | Trang đề tài → **Gửi đề nghị hướng dẫn** → dòng GV001 bấm **Chọn** → Gửi đề nghị | Danh sách GV kèm "Đã nhận x/5" (hạn mức); trạng thái **Chờ giảng viên hướng dẫn** (FR16) |
+| B6 | 3 (GV001) | Đăng nhập (vào thẳng `/de-nghi-huong-dan`) → **Nhận hướng dẫn** → xác nhận | "Bạn đã nhận 3/5 đề tài…"; toast "Đã nhận hướng dẫn" |
+| B7 | 1 | F5 trang đề tài → **Gửi xét duyệt**, để trống Giải trình | Màn 4 bước hiện lại Nghi trùng cao; "Giải trình (bắt buộc) 0/50 từ"; nút **Gửi xét duyệt bị khóa** |
+| B8 | 1 | Dán Giải trình (mục 5.5) → Gửi xét duyệt | **Chờ xét duyệt**, "lần gửi 1" |
+| B9 | 4 (CB001) | Xét duyệt → mở NCKH-2026-0037 | Snapshot, nhóm, GVHD, top 5 trùng lặp và **giải trình của nhóm** |
+| B10 | 4 | **Yêu cầu chỉnh sửa** → bấm xác nhận khi chưa nhập lý do → nhập `Đề nghị nhóm làm rõ điểm khác biệt với đề tài NCKH-2026-0019 trong phần tóm tắt.` → xác nhận | Lỗi "Lý do tối thiểu 5 ký tự" trước; sau đó hồ sơ rời hàng chờ (FR07) |
+| B11 | 1 | **Sửa hồ sơ** → thêm vào cuối tóm tắt: `Điểm khác biệt so với đề tài NCKH-2026-0019 là nhóm tập trung vào tóm tắt tin tức và dùng bộ dữ liệu tự thu thập.` → Lưu nháp → **Gửi xét duyệt** → nút **Gửi lại sau chỉnh sửa** | "lần gửi 2" |
+| B12 | 1 | Gõ URL `/de-tai/<id đang mở>/so-sanh` | So sánh lần 1 ↔ lần 2: Tên "Không đổi", Tóm tắt "Có thay đổi" (FR17) |
+| B13 | 4 | Xét duyệt → NCKH-2026-0037 → **Duyệt** → xác nhận | "Duyệt hồ sơ NCKH-2026-0037, lần gửi 2?"; **Đang thực hiện**, hiện tab Mốc, Kanban, Tiến độ |
+| B14 | 3 (GV001) | Đề tài → tab **Mốc** → Thêm mốc: tên `Báo cáo tổng quan tài liệu`, đầu ra `File PDF tổng quan`, hạn 15/12/2026 17:00, tick **Mốc bắt buộc** → Lưu | "1. Báo cáo tổng quan tài liệu – Chưa đánh giá – Bắt buộc" (FR09) |
+| B15 | 1 | Tab **Tài liệu** → chọn mốc → chọn `virus.exe` → Nộp; rồi chọn `bao-cao.pdf` → Nộp | `.exe`: "Chỉ nhận file PDF, DOCX, PPTX, XLSX"; PDF: "Phiên bản 1 · Giữa kỳ · Mới nhất" (FR11) |
+| B16 | 3 | Tab **Kanban** → nhấn **Tab** tới nút "Chuyển Báo cáo tổng quan tài liệu sang…" → **Enter** → chọn **Đạt** → nhận xét `Tổng quan đầy đủ, trích dẫn đúng quy cách.` → Gửi đánh giá | Thẻ chuyển từ "Chờ đánh giá" sang **Đạt (1)**, hoàn toàn bằng bàn phím (FR38, FR12) |
+| B17 | 3 | Tab **Thông tin** → khối Kết quả cuối: chọn **Tốt**, nhập nhận xét tổng kết → **Lưu kết quả** → **Đề nghị đóng đề tài** → xác nhận | "Mốc bắt buộc: 1/1 Đạt; kết quả cuối: đã có"; **Chờ đóng** (FR27). Muốn demo điều kiện: bấm Đề nghị đóng *trước* khi Lưu kết quả → báo "Giảng viên hướng dẫn chưa nhập kết quả cuối…" |
+| B18 | 4 | Mở đề tài → **Xác nhận đóng đề tài** → xác nhận | **Đã đóng**, "Kết quả: Tốt"; menu **Kho đề tài** có NCKH-2026-0037 (chỉ tên + tóm tắt, không lộ file/thành viên – FR08) |
+
+### 5.4 Phần C – Tính năng bổ sung theo đề cương (5 phút)
+
+| Bước | Tài khoản | Thao tác | Phải thấy |
+|---|---|---|---|
+| C1 | `GV002` (Chủ tịch) | Chấm bảo vệ → NCKH-2026-0031 → Điểm `10.5`, nhận xét ≥ 10 ký tự → Lưu | "Điểm phải từ 0 đến 10, tối đa 2 chữ số thập phân" |
+| C2 | `GV002` | Sửa điểm `8.5` → Lưu | Lưu được |
+| C3 | `GV003` (Thư ký) | Chấm bảo vệ → NCKH-2026-0031 → điểm `8` → Lưu | Bảng điểm hội đồng "Đã chấm 3/3" (Ủy viên GV004 chấm sẵn 8,25); "Điểm trung bình tạm tính: 8,25" (FR36) |
+| C4 | `GV003` | **Chốt nghiệm thu** → biên bản ≥ 20 ký tự → Tiếp tục → Chốt nghiệm thu | "Kết quả dự kiến: Đạt – Tốt"; cảnh báo khóa điểm; đề tài sang **Chờ đóng** (FR37) |
+| C5 | `2374802010018` (SV) | Đề tài tuyển sinh viên → NCKH-2026-0034 → Lời giới thiệu → **Gửi ứng tuyển** | Menu Đơn ứng tuyển: "Đang chờ duyệt" (FR32) |
+| C6 | `GV002` | Đề tài NCKH-2026-0034 → **Xem ứng viên** → dòng *Võ Gia Khoa (2374802010018)* **Đồng ý** → **Chốt nhóm** | "Các đơn còn chờ sẽ bị từ chối…"; **Đã có giảng viên hướng dẫn**, Võ Gia Khoa là trưởng nhóm (FR33). **Chỉ Đồng ý dòng 2374802010018** – seed có sẵn đơn của SV016/SV017, đừng duyệt hai bạn này |
+| C7 | `CB001` | **Thống kê** → đổi "Thống kê theo"/bộ lọc → **Xuất CSV**, **Xuất Excel** → mở file | Tải `thong-ke-status-<ngày>.csv` và `.xlsx`, tiếng Việt đúng trong Excel (FR14, FR39) |
+| C8 | (tùy chọn) | Bấm chuông thông báo; thu trình duyệt về 360 px | Thông báo các sự kiện vừa làm (FR13); không tràn ngang (NFR07) |
+
+### 5.5 Văn bản dán sẵn
+
+**Tóm tắt (B2, 155 từ):**
+> Đề tài nghiên cứu bài toán tóm tắt văn bản tiếng Việt tự động bằng xử lý ngôn ngữ tự nhiên và học sâu. Nhóm khảo sát các nghiên cứu liên quan trong và ngoài nước, phân tích yêu cầu của người dùng thực tế tại Khoa Công nghệ Thông tin, sau đó đề xuất kiến trúc giải pháp, lựa chọn công nghệ phù hợp và hiện thực một bản mẫu có thể vận hành. Nhóm xây dựng bộ dữ liệu thử nghiệm gồm các bài báo tiếng Việt, thiết kế kịch bản đánh giá với các chỉ số định lượng rõ ràng như ROUGE, so sánh với một số phương pháp phổ biến hiện nay và phân tích ưu nhược điểm của từng cách tiếp cận. Kết quả dự kiến gồm mã nguồn, báo cáo tổng kết và một bài báo khoa học gửi hội nghị sinh viên nghiên cứu khoa học cấp trường.
+
+**Giải trình (B8, ≥ 50 từ):**
+> Đề tài của nhóm có một số từ khóa và phần mô tả phương pháp chung giống đề tài NCKH-2026-0019 vì cùng theo khung đề cương của khoa. Tuy vậy nhóm tập trung vào tóm tắt tin tức tiếng Việt bằng học sâu, tự thu thập bộ dữ liệu bài báo riêng, đánh giá bằng chỉ số ROUGE và kịch bản người dùng riêng. Nhóm cam kết trích dẫn đầy đủ các đề tài liên quan trong báo cáo tổng kết.
+
+### 5.6 Xử lý sự cố khi demo
+
+| Hiện tượng | Nguyên nhân | Cách xử lý |
+|---|---|---|
+| Đăng nhập bị đẩy sang `/doi-mat-khau` | Quên bước `updateMany` ở 5.1 | Chạy lại đoạn đó (không cần khởi động lại API) |
+| Báo sai mật khẩu / tài khoản bị tạm khóa | Gõ sai nhiều lần, hoặc lần diễn tập trước đã đổi mật khẩu | Seed lại theo 5.1 |
+| Mã đề tài mới không phải NCKH-2026-0037, hoặc B1 báo vượt số đề tài | DB chưa seed lại sau lần diễn tập | Seed lại theo 5.1 |
+| Đăng nhập cửa sổ này thì cửa sổ kia đổi người | Hai cửa sổ dùng chung cookie | Dùng hồ sơ/trình duyệt khác nhau cho từng vai trò |
+| Mọi đăng nhập lỗi dù API báo chạy | Cổng 4000 còn API cũ trỏ DB khác | Tắt tiến trình cũ ở cổng 4000, chạy lại `npm run dev` |
+
+**Bằng chứng tự động hóa:** chiếu ảnh chụp kết quả `npm test` của hai repo và `npm run test:e2e` ở `FE_HTSVNCKH` (100/100, mất ~6 phút nên không chạy trực tiếp) – số liệu ở mục 7.
 
 ---
 
